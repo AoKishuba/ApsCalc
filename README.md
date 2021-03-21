@@ -7,7 +7,9 @@ Known Issues:
   - Does not properly print number of shells tested
 
 Limitations:
-  - Does not calculate HE, frag, FlaK, or EMP damage; uses the multipier instead, because all those warheads scale the same way, so the most efficient HE configuration is also the most efficient configuration for FlaK, frag, and EMP.
+  - Does not calculate HE, frag, FlaK, or EMP damage; uses the multipier instead, because all those warheads scale the same way, so the most efficient HE configuration is also the most efficient configuration for FlaK, frag, and EMP
+  - Shells without a dedicated "head" module are not currently supported (and could break the module)
+  - Does not calculate accuracy
 
 Planned Features:
   - Integration with my armor layout pierce calculator, for testing pendepth shells against a given armor configuration and only saving shells which pen
