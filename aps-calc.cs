@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 // All dimensions in mm
 // Module positions.  Enum is faster than strings.
 public enum Position: int
@@ -201,17 +201,6 @@ public class Shell
         ChemDamage = GaugeCoefficient * ChemBodies;
     }
 
-    public void CalculateVelocity()
-    {
-        // Calculate weighted velocity modifier
-        float[] VelocityModifiers;
-        for (int i = 0; i < ShellModuleCounts.Length; i++)
-        {
-            VelocityModifiers
-        }
-        Velocity = (float)Math.Sqrt((RailDraw + GPRecoil) * 85 / (GaugeCoefficient * EffectiveProjectileModuleCount));
-    }
-
 }
 
 namespace aps_calc
@@ -250,26 +239,7 @@ namespace aps_calc
             Console.WriteLine("Reload Time " + TestShell.ReloadTime);
             TestShell.CalculateChemDamage();
             Console.WriteLine("Chem Damage: " + TestShell.ChemDamage);
-            TestShell.CalculateVelocity();
-            Console.WriteLine("Velocity " + TestShell.Velocity);
 
-
-            /*
-            bool stop = false;
-            while (!stop)
-            {
-                int GaugeTest = Convert.ToInt32(value);
-                if (GaugeTest < 18 || GaugeTest > 500)
-                {
-                    Console.WriteLine("Gauge must be an integer between 18 and 500");
-                }
-                else
-                {
-                    _gauge = value;
-                    stop = true;
-                }
-            }
-            */
         }
     }
 }
