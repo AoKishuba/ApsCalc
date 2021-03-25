@@ -10,5 +10,3 @@ Limitations:
 
 Planned Features:
   - Integration with my armor layout pierce calculator, for testing pendepth shells against a given armor configuration and only saving shells which pen
-  - NEAR-TOTAL REWRITE, with values being calculated in a cascade
-    - For example, get the range of gauges to be tested, then generate all possible values of GaugeCoefficient and store so they can be looked up rather than calculated
