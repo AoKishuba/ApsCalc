@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace aps_calc
+namespace ApsCalc
 {
     public class Module
     {

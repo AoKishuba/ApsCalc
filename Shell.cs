@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace aps_calc
+namespace ApsCalc
 {
     public class Shell
     {
@@ -20,8 +20,8 @@ namespace aps_calc
         }
         public float GaugeCoefficient { get; set; } // Expensive to calculate and used in several formulae
 
-        // Keep count of middle modules.  Bases and heads (index 5 thru 14) excluded because they are unique.
-        public float[] ShellModuleCounts { get; set; } = { 0, 0, 0, 0, 0 };
+        // Keep counts of body modules.  0 thru 4 are indices for body module types: solid, sabot, chem, fuse, fin.
+        public float[] BodyModuleCounts { get; set; } = { 0, 0, 0, 0, 0 };
 
         public Module BaseModule { get; set; } // Optional; is 'null' if no base is chosen by user
         public Module HeadModule { get; set; } // There must always be a Head
@@ -43,8 +43,9 @@ namespace aps_calc
 
         // Overall modifiers
         public float OverallVelocityModifier { get; set; }
-        public float OverallKDModifier { get; set; }
-        public float OverallAPModifier { get; set; }
+        public float OverallKineticDamageModifier { get; set; }
+        public float OverallArmorPierceModifier { get; set; }
+        public float OverallPayloadModifier { get; set; } = 1f;
 
         // Power
         public float GPRecoil { get; set; }
@@ -55,13 +56,20 @@ namespace aps_calc
 
         // Reload and Cooldown
         public float ReloadTime { get; set; }
-        public float BeltReloadTime { get; set; } = 0; // Beltfed Loader
+        public float ReloadTimeBelt { get; set; } = 0; // Beltfed Loader
         public float CooldownTime { get; set; }
 
         // Damage
         public float KineticDamage { get; set; }
         public float ArmorPierce { get; set; }
+        public float EffectiveKineticDamage { get; set; }
+        public float KineticDPS { get; set; } = 0;
+        public float KineticDPSBelt { get; set; } = 0;
         public float ChemDamage { get; set; } // Frag, FlaK, HE, and EMP all scale the same
+        public float ChemDPS { get; set; } = 0;
+        public float ChemDPSBelt { get; set; } = 0;
+
+        public float ModuleCountTotal { get; set; } = 1; // There must always be a head
 
 
         public void CalculateLengths()
@@ -75,10 +83,12 @@ namespace aps_calc
                 BodyLength = Math.Min(Gauge, BaseModule.MaxLength);
             }
 
-            for (int i = 0; i < ShellModuleCounts.Length; i++) // Module indices 0 thru 4 include all but bases and heads
+            int modIndex = 0;
+            foreach (float modCount in BodyModuleCounts)
             {
-                float ModuleLength = Math.Min(Gauge, Module.AllModules[i].MaxLength);
-                BodyLength += ModuleLength * ShellModuleCounts[i];
+                float ModuleLength = Math.Min(Gauge, Module.AllModules[modIndex].MaxLength);
+                BodyLength += ModuleLength * modCount;
+                modIndex++;
             }
 
             CasingLength = (GPCasingCount + RGCasingCount) * Gauge;
@@ -111,7 +121,114 @@ namespace aps_calc
 
         public void CalculateMaxDraw()
         {
-            MaxDraw = (GaugeCoefficient * ((ProjectileLength / Gauge) + (0.5f * RGCasingCount)) * 12500f);
+            MaxDraw = 12500f * GaugeCoefficient * (EffectiveProjectileModuleCount + (0.5f * RGCasingCount));
+        }
+
+        public void CalculateModifiers()
+        {
+            // Calculate weighted velocity modifier of body
+            float weightedVelocityMod = 0f;
+            if (BaseModule != null)
+            {
+                weightedVelocityMod += BaseModule.VelocityMod * Math.Min(Gauge, BaseModule.MaxLength);
+            }
+
+            // Add body module weighted modifiers
+            int modIndex = 0;
+            foreach (float modCount in BodyModuleCounts)
+            {
+                float modLength = Math.Min(Gauge, Module.AllModules[modIndex].MaxLength);
+                weightedVelocityMod += (modLength * Module.AllModules[modIndex].VelocityMod * modCount);
+                modIndex++;
+            }
+
+            if (LengthDifferential > 0f) // Add 'ghost' module for penalizing short shells; has no effect if body length >= 2 * gauge
+            {
+                weightedVelocityMod += 0.7f * LengthDifferential;
+            }
+
+            weightedVelocityMod /= EffectiveBodyLength;
+
+            OverallVelocityModifier = weightedVelocityMod * HeadModule.VelocityMod;
+            if (BaseModule?.Name == "Base Bleeder")
+            {
+                OverallVelocityModifier += 0.15f;
+            }
+
+
+            // Calculate weighted KineticDamage modifier of body
+            float weightedKineticDamageMod = 0f;
+            if (BaseModule != null)
+            {
+                weightedKineticDamageMod += BaseModule.KineticDamageMod * Math.Min(Gauge, BaseModule.MaxLength);
+            }
+
+            modIndex = 0;
+            foreach (float modCount in BodyModuleCounts)
+            {
+                float modLength = Math.Min(Gauge, Module.AllModules[modIndex].MaxLength);
+                weightedKineticDamageMod += (modLength * Module.AllModules[modIndex].KineticDamageMod * modCount);
+                modIndex++;
+            }
+
+            if (LengthDifferential > 0f) // Add 'ghost' module for penalizing short shells; has no effect if body length >= 2 * gauge
+            {
+                weightedKineticDamageMod += LengthDifferential;
+            }
+
+            weightedKineticDamageMod /= EffectiveBodyLength;
+
+            OverallKineticDamageModifier = weightedKineticDamageMod * HeadModule.KineticDamageMod;
+
+            // Calculate weighted AP modifier of body
+            float weightedArmorPierceMod = 0f;
+            if (BaseModule != null)
+            {
+                weightedArmorPierceMod += BaseModule.ArmorPierceMod * Math.Min(Gauge, BaseModule.MaxLength);
+            }
+
+            modIndex = 0;
+            foreach (float modCount in BodyModuleCounts)
+            {
+                float modLength = Math.Min(Gauge, Module.AllModules[modIndex].MaxLength);
+                weightedArmorPierceMod += (modLength * Module.AllModules[modIndex].ArmorPierceMod * modCount);
+                modIndex++;
+            }
+
+            if (LengthDifferential > 0f) // Add 'ghost' module for penalizing short shells; has no effect if body length >= 2 * gauge
+            {
+                weightedArmorPierceMod += LengthDifferential;
+            }
+
+            weightedArmorPierceMod /= EffectiveBodyLength;
+
+            OverallArmorPierceModifier = weightedArmorPierceMod * HeadModule.ArmorPierceMod;
+
+
+            // Get payload modifier for chemical shells
+            if (BaseModule != null)
+            {
+                OverallPayloadModifier = Math.Min(OverallPayloadModifier, BaseModule.PayloadMod);
+            }
+
+            modIndex = 0;
+            foreach (float modCount in BodyModuleCounts)
+            {
+                if (modCount > 0)
+                {
+                    OverallPayloadModifier = Math.Min(OverallPayloadModifier, Module.AllModules[modIndex].PayloadMod);
+                }
+                modIndex++;
+            }
+
+            if (HeadModule == Module.Disruptor) // Disruptor 50% penalty stacks
+            {
+                OverallPayloadModifier *= 0.5f;
+            }
+            else
+            {
+                OverallPayloadModifier = Math.Min(OverallPayloadModifier, HeadModule.PayloadMod);
+            }
         }
 
         public void CalculateVelocity()
@@ -125,35 +242,6 @@ namespace aps_calc
             {
                 TotalRecoil = GPRecoil + RailDraw;
 
-                // Calculate weighted velocity modifier of body
-                float weightedVelocityMod = 0f;
-                if (BaseModule != null)
-                {
-                    weightedVelocityMod += BaseModule.VelocityMod * Math.Min(Gauge, BaseModule.MaxLength);
-                }
-
-                int moduleIndex = 0;
-                foreach (int moduleCount in ShellModuleCounts) // Add body module weighted modifiers
-                {
-                    weightedVelocityMod += Module.AllModules[moduleIndex].VelocityMod
-                        * Math.Min(Gauge, Module.AllModules[moduleIndex].MaxLength)
-                        * moduleCount;
-                    moduleIndex++;
-                }
-
-                if (LengthDifferential > 0f) // Add 'ghost' module for penalizing short shells; has no effect if body length >= 2 * gauge
-                {
-                    weightedVelocityMod += 0.7f * LengthDifferential;
-                }
-
-                weightedVelocityMod /= EffectiveBodyLength;
-
-                OverallVelocityModifier = weightedVelocityMod * HeadModule.VelocityMod;
-                if (BaseModule?.Name == "Base Bleeder")
-                {
-                    OverallVelocityModifier += 0.15f;
-                }
-
                 Velocity = (float)Math.Sqrt((TotalRecoil * 85f * Gauge) / (GaugeCoefficient * ProjectileLength)) * OverallVelocityModifier;
             }
         }
@@ -165,29 +253,15 @@ namespace aps_calc
             {
                 Console.WriteLine("\nERROR: Cannot calculate kinetic damage.  Set Head Module first.\n");
             }
-
-            // Calculate weighted KD modifier of body
-            float weightedKDMod = 0f;
-            if (BaseModule != null)
+            else
             {
-                weightedKDMod += BaseModule.KineticDamageMod * Math.Min(Gauge, BaseModule.MaxLength);
+                KineticDamage = (float)Math.Pow(500 / Math.Max(Gauge, 100f), 0.15)
+                    * GaugeCoefficient
+                    * EffectiveProjectileModuleCount
+                    * Velocity
+                    * OverallKineticDamageModifier
+                    * 3.5f;
             }
-
-            foreach (int index in ShellModuleCounts) // Add body module weighted modifiers
-            {
-                weightedKDMod += Module.AllModules[index].KineticDamageMod * Math.Min(Gauge, Module.AllModules[index].MaxLength);
-            }
-
-            if (LengthDifferential > 0f) // Add 'ghost' module for penalizing short shells; has no effect if body length >= 2 * gauge
-            {
-                weightedKDMod += LengthDifferential;
-            }
-
-            weightedKDMod /= EffectiveBodyLength;
-
-            OverallKDModifier = weightedKDMod * HeadModule.KineticDamageMod;
-
-
         }
 
         public void CalculateAP()
@@ -198,26 +272,7 @@ namespace aps_calc
                 Console.WriteLine("\nERROR: Cannot calculate armor pierce.  Set Head Module first.\n");
             }
 
-            // Calculate weighted AP modifier of body
-            float weightedAPMod = 0f;
-            if (BaseModule != null)
-            {
-                weightedAPMod += BaseModule.ArmorPierceMod * Math.Min(Gauge, BaseModule.MaxLength);
-            }
-
-            foreach (int index in ShellModuleCounts) // Add body module weighted modifiers
-            {
-                weightedAPMod += Module.AllModules[index].ArmorPierceMod * Math.Min(Gauge, Module.AllModules[index].MaxLength);
-            }
-
-            if (LengthDifferential > 0f) // Add 'ghost' module for penalizing short shells; has no effect if body length >= 2 * gauge
-            {
-                weightedAPMod += LengthDifferential;
-            }
-
-            weightedAPMod /= EffectiveBodyLength;
-
-            OverallAPModifier = weightedAPMod * HeadModule.ArmorPierceMod;
+            ArmorPierce = Velocity * OverallArmorPierceModifier * 0.0175f;
         }
 
         public void CalculateReloadTime()
@@ -226,22 +281,31 @@ namespace aps_calc
                 * (2f + EffectiveProjectileModuleCount + 0.25f * (RGCasingCount + GPCasingCount))
                 * 17.5f);
 
-            if (Gauge >= 100)
+            if (TotalLength <= 1000f)
             {
-                BeltReloadTime = (ReloadTime * 0.75f * (float)Math.Pow(Gauge / 1000f, 0.45));
+                ReloadTimeBelt = (ReloadTime * 0.75f * (float)Math.Pow(Gauge / 1000f, 0.45));
+            }
+            else
+            {
+                ReloadTimeBelt = default(float);
             }
         }
 
         public void CalculateChemDamage()
         {
-            // Count chemical bodies
-            float ChemBodies = ShellModuleCounts[2];
-            if (BaseModule != null)
+            float ChemBodies = 0;
+            // Count chemical bodies.  This could be simplified to just adding the value at index 2, but indices might shift
+            int modIndex = 0;
+            foreach (float modCount in BodyModuleCounts)
             {
-                if (BaseModule.IsChem)
+                if (Module.AllModules[modIndex].IsChem)
                 {
-                    ChemBodies += 1;
+                    ChemBodies += modCount;
                 }
+            }
+            if (BaseModule?.IsChem == true)
+            {
+                ChemBodies += 1;
             }
             if (HeadModule.IsChem)
             {
@@ -249,6 +313,152 @@ namespace aps_calc
             }
 
             ChemDamage = GaugeCoefficient * ChemBodies;
+        }
+
+        public void CalculateKineticDPS(float targetAC)
+        {
+            EffectiveKineticDamage = KineticDamage * Math.Min(1, ArmorPierce / targetAC);
+            KineticDPS = EffectiveKineticDamage / ReloadTime;
+
+            if (TotalLength <= 1000f)
+            {
+                KineticDPSBelt = EffectiveKineticDamage / ReloadTimeBelt;
+            }
+            else
+            {
+                KineticDPSBelt = default(float); // Reset value
+            }
+        }
+
+        public void CalculateChemDPS()
+        {
+            ChemDPS = ChemDamage / ReloadTime;
+            ChemDPSBelt = default(float); // Reset value
+            if (TotalLength <= 1000f)
+            {
+                ChemDPSBelt = ChemDamage / ReloadTimeBelt;
+            }
+        }
+
+        public void GetModuleCounts()
+        {
+            // ModuleCountTotal starts at 1 for the head
+
+            if (BaseModule != null)
+            {
+                ModuleCountTotal += 1;
+            }
+
+            foreach (float modCount in BodyModuleCounts)
+            {
+                ModuleCountTotal += modCount;
+            }
+
+            ModuleCountTotal = (float)(Math.Ceiling(GPCasingCount) + RGCasingCount);
+        }
+
+        public void GetShellInfoKinetic()
+        {
+            Console.WriteLine("Gauge (mm): " + Gauge);
+            Console.WriteLine("Total length (mm): " + TotalLength);
+            Console.WriteLine("Length without casings: " + ProjectileLength);
+            Console.WriteLine("Head: " + HeadModule.Name);
+
+            // Add module counts
+            int modIndex = 0;
+            foreach (float modCount in BodyModuleCounts)
+            {
+                if (modCount > 0)
+                {
+                    Console.WriteLine(Module.AllModules[modIndex].Name + ": " + modCount);
+                }
+                modIndex++;
+            }
+
+            if (BaseModule != null)
+            {
+                Console.WriteLine("Base: " + BaseModule.Name);
+            }
+
+            if (GPCasingCount > 0)
+            {
+                Console.WriteLine("GP Casing: " + GPCasingCount);
+            }
+
+            if (RGCasingCount > 0)
+            {
+                Console.WriteLine("RG Casing: " + RGCasingCount);
+            }
+
+            Console.WriteLine("Rail draw: " + RailDraw);
+            Console.WriteLine("Reload time (s): " + ReloadTime);
+
+            if (ReloadTimeBelt > 0)
+            {
+                Console.WriteLine("Reload time (belt): " + ReloadTimeBelt);
+            }
+
+            Console.WriteLine("Velocity (m/s): " + Velocity);
+            Console.WriteLine("Base KD: " + KineticDamage);
+            Console.WriteLine("AP: " + ArmorPierce);
+            Console.WriteLine("Eff. KD: " + EffectiveKineticDamage);
+            Console.WriteLine("DPS: " + KineticDPS);
+
+            if (KineticDPSBelt > 0)
+            {
+                Console.WriteLine("DPS (beltfed): " + KineticDPSBelt);
+            }
+        }
+
+        public void GetShellInfoChem()
+        {
+            Console.WriteLine("Gauge (mm): " + Gauge);
+            Console.WriteLine("Total length (mm): " + TotalLength);
+            Console.WriteLine("Length without casings: " + ProjectileLength);
+            Console.WriteLine("Head:" + HeadModule.Name);
+
+            // Add module counts
+            int modIndex = 0;
+            foreach (float modCount in BodyModuleCounts)
+            {
+                if (modCount > 0)
+                {
+                    Console.WriteLine(Module.AllModules[modIndex].Name + ": " + modCount);
+                }
+                modIndex++;
+            }
+
+            if (BaseModule != null)
+            {
+                Console.WriteLine("Base: " + BaseModule.Name);
+            }
+
+            if (GPCasingCount > 0)
+            {
+                Console.WriteLine("GP Casing: " + GPCasingCount);
+            }
+
+            if (RGCasingCount > 0)
+            {
+                Console.WriteLine("RG Casing: " + RGCasingCount);
+            }
+
+            Console.WriteLine("Rail draw: " + RailDraw);
+            Console.WriteLine("Reload time (s): " + ReloadTime);
+
+            if (ReloadTimeBelt > 0)
+            {
+                Console.WriteLine("Reload time (belt): " + ReloadTimeBelt);
+            }
+
+            Console.WriteLine("Velocity (m/s): " + Velocity);
+            Console.WriteLine("Chem damage multiplier: " + ChemDamage);
+            Console.WriteLine("DPS: " + ChemDPS);
+
+            if (KineticDPSBelt > 0)
+            {
+                Console.WriteLine("DPS (beltfed): " + ChemDPSBelt);
+            }
         }
     }
 }
