@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using ApsCalc;
@@ -15,11 +15,28 @@ namespace ApsCalcTests
         {
             float[] testModCounts = new float[] { 16f, 0, 0, 0, 0 };
             int[] testVarModIndices = new int[] { 1, 2 };
+            List<int> testHeadList = new List<int> { 7 };
             List<ModuleCount> moduleCounts = new List<ModuleCount>();
-            ModuleCount expectedFirstCount = new ModuleCount { Gauge = 18f, Var0Count = 0, Var1Count = 0, GPCount = 0, RGCount = 0 };
-            ModuleCount expectedLastCount = new ModuleCount { Gauge = 18f, Var0Count = 2, Var1Count = 0, GPCount = 0, RGCount = 0 };
+            ModuleCount expectedFirstCount = new ModuleCount { Gauge = 18f, HeadIndex = 7, Var0Count = 0, Var1Count = 0, GPCount = 0, RGCount = 0 };
+            ModuleCount expectedLastCount = new ModuleCount { Gauge = 18f, HeadIndex = 7, Var0Count = 2, Var1Count = 0, GPCount = 0, RGCount = 0 };
 
-            ShellCalc testCalc = new ShellCalc ( 18f, 18f, Module.APHead, Module.BaseBleeder, testModCounts, 18, testVarModIndices, 0, 18, 10000f, 0, 0, 20, 0);
+            ShellCalc testCalc = new ShellCalc
+                (
+                18f,
+                18f,
+                testHeadList,
+                Module.BaseBleeder,
+                testModCounts,
+                18,
+                testVarModIndices,
+                0,
+                18,
+                10000f,
+                0,
+                0,
+                20,
+                0
+                );
 
             foreach (ModuleCount counts in testCalc.GetModuleCounts())
             {
@@ -41,7 +58,24 @@ namespace ApsCalcTests
             // None of the test stats should matter for this test, but are needed in order to initialize the class
             float[] testModCounts = new float[] { 16f, 0, 0, 0, 0 };
             int[] testVarModIndices = new int[] { 1, 2 };
-            ShellCalc testCalc = new ShellCalc(18, 18, Module.APHead, Module.BaseBleeder, testModCounts, 18f, testVarModIndices, 0, 18, 10000f, 0, 0, 20, 0);
+            List<int> testHeadList = new List<int> { 7 };
+            ShellCalc testCalc = new ShellCalc
+                (
+                18, 
+                18, 
+                testHeadList, 
+                Module.BaseBleeder, 
+                testModCounts, 
+                18f, 
+                testVarModIndices, 
+                0, 
+                18, 
+                10000f, 
+                0, 
+                0, 
+                20, 
+                0
+                );
 
             foreach (KeyValuePair<string, Shell> entry in testCalc.TopDpsShells)
             {
