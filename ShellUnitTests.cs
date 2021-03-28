@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using ApsCalc;
@@ -373,6 +373,41 @@ namespace ApsCalcTests
             Assert.AreEqual(expectedArmorPierceWithRecoil, actualArmorPierceWithRecoil);
             Assert.AreEqual(expectedKineticDamageWithoutRecoil, actualKineticDamageWithoutRecoil);
             Assert.AreEqual(expectedArmorPierceWithoutRecoil, actualArmorPierceWithoutRecoil);
+        }
+
+        [TestMethod]
+        public void Chem_Math()
+        {
+            float[] testBodyModuleCounts0 = { 0, 0, 0, 0, 0 };
+            float[] testBodyModuleCounts5 = { 0, 0, 5, 0, 0 };
+            float expectedChemDamage0 = 0;
+            float expectedChemDamage5_500 = 5f;
+            float expectedChemDamage5_18 = 0.012598374f;
+
+
+            Shell TestShell = new Shell();
+            TestShell.Gauge = 500;
+            TestShell.HeadModule = Module.APHead;
+            TestShell.BodyModuleCounts = testBodyModuleCounts0;
+            TestShell.CalculateChemDamage();
+            float actualChemDamage0 = TestShell.ChemDamage;
+
+            TestShell.Gauge = 500;
+            TestShell.HeadModule = Module.APHead;
+            TestShell.BodyModuleCounts = testBodyModuleCounts5;
+            TestShell.CalculateChemDamage();
+            float actualChemDamage5_500 = TestShell.ChemDamage;
+
+            TestShell.Gauge = 18;
+            TestShell.HeadModule = Module.APHead;
+            TestShell.BodyModuleCounts = testBodyModuleCounts5;
+            TestShell.CalculateChemDamage();
+            float actualChemDamage5_18 = TestShell.ChemDamage;
+
+
+            Assert.AreEqual(expectedChemDamage0, actualChemDamage0);
+            Assert.AreEqual(expectedChemDamage5_500, actualChemDamage5_500);
+            Assert.AreEqual(expectedChemDamage5_18, actualChemDamage5_18);
         }
 
         [TestMethod]
