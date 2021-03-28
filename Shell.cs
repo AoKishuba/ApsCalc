@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -66,7 +66,7 @@ namespace ApsCalc
         public float KineticDPS { get; set; } = 0;
         public float KineticDPSBelt { get; set; } = 0;
         public float ChemDamage { get; set; } // Frag, FlaK, HE, and EMP all scale the same
-        public float ChemDPS { get; set; } = 0;
+        public float ChemDPS { get; set; } = 0; // Effective Warheads per Second
         public float ChemDPSBelt { get; set; } = 0;
 
         public float ModuleCountTotal { get; set; } = 1; // There must always be a head
@@ -298,16 +298,17 @@ namespace ApsCalc
             int modIndex = 0;
             foreach (float modCount in BodyModuleCounts)
             {
-                if (Module.AllModules[modIndex].IsChem)
+                if (Module.AllModules[modIndex]?.IsChem == true)
                 {
                     ChemBodies += modCount;
                 }
+                modIndex++;
             }
             if (BaseModule?.IsChem == true)
             {
                 ChemBodies += 1;
             }
-            if (HeadModule.IsChem)
+            if (HeadModule.IsChem == true)
             {
                 ChemBodies += 1;
             }
@@ -415,7 +416,7 @@ namespace ApsCalc
             Console.WriteLine("Gauge (mm): " + Gauge);
             Console.WriteLine("Total length (mm): " + TotalLength);
             Console.WriteLine("Length without casings: " + ProjectileLength);
-            Console.WriteLine("Head:" + HeadModule.Name);
+            Console.WriteLine("Head: " + HeadModule.Name);
 
             // Add module counts
             int modIndex = 0;
@@ -452,7 +453,7 @@ namespace ApsCalc
             }
 
             Console.WriteLine("Velocity (m/s): " + Velocity);
-            Console.WriteLine("Chem damage multiplier: " + ChemDamage);
+            Console.WriteLine("Effective Chem Warheads: " + ChemDamage);
             Console.WriteLine("DPS: " + ChemDPS);
 
             if (KineticDPSBelt > 0)
