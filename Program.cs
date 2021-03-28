@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace ApsCalc
@@ -61,44 +61,72 @@ namespace ApsCalc
             Console.WriteLine("\nWill test gauges from " + MinGauge + " mm thru " + MaxGauge + " mm.\n");
 
             // Get head
-            Module Head;
-            for (int i = 0; i < 12; i++) // Indices of all modules which can be used as heads
-            {
-                if (i < 10)
-                {
-                    Console.WriteLine(" " + i + " : " + Module.AllModules[i].Name); // Fix indentation
-                }
-                else
-                {
-                    Console.WriteLine(i + " : " + Module.AllModules[i].Name);
-                }
 
-            }
-            Console.WriteLine("\nEnter a number to select a head.  The head will be at the front of every shell.");
 
-            int headIndex;
+            int modIndex;
+            int headCount = 0;
+            List<int> HeadIndices = new List<int>();
             while (true)
             {
-                input = Console.ReadLine();
-                if (int.TryParse(input, out headIndex))
+                for (int i = 0; i < 12; i++) // Indices of all modules which can be used as heads
                 {
-                    if (headIndex < 0 || headIndex > 11) // Indices of all modules which can be used as heads
+                    if (i < 10)
                     {
-                        Console.WriteLine("\nHEAD INDEX RANGE ERROR: Enter an integer from 0 thru 11.");
+                        Console.WriteLine(" " + i + " : " + Module.AllModules[i].Name); // Fix indentation
                     }
                     else
                     {
-                        Head = (Module.AllModules[headIndex]);
-                        Console.WriteLine("\n" + Head.Name + " selected.\n");
+                        Console.WriteLine(i + " : " + Module.AllModules[i].Name);
+                    }
+                }
+                if (headCount > 0)
+                {
+                    Console.WriteLine("\nEnter a number to select an additional head, or type 'done' if finished.");
+                }
+                else
+                {
+                    Console.WriteLine("\nEnter a number to select a head.");
+
+                }
+                input = Console.ReadLine();
+                if (input == "done")
+                {
+                    if (headCount > 0)
+                    {
                         break;
+                    }
+                    else
+                    {
+                        Console.WriteLine("\n ERROR: At least one head must be selected.");
+                    }
+                }
+                if (int.TryParse(input, out modIndex))
+                {
+                    if (modIndex < 0 || modIndex > 12) // Indices of all modules which can be used as heads
+                    {
+                        Console.WriteLine("\nHEAD INDEX RANGE ERROR: Enter an integer from 0 thru 11, or type 'done'.");
+                    }
+                    else
+                    {
+                        if (HeadIndices.Contains(modIndex))
+                        {
+                            Console.WriteLine("\nERROR: Duplicate head index.");
+                        }
+                        else
+                        {
+                            HeadIndices.Add(modIndex);
+                            Console.WriteLine("\n" + Module.AllModules[modIndex].Name + " added to head list.\n");
+                            headCount++;
+                        }
                     }
                 }
                 else
                 {
-                    Console.WriteLine("\nHEAD INDEX PARSE ERROR: Enter an integer from 0 thru 11.");
+                    Console.WriteLine("\nHEAD INDEX PARSE ERROR: Enter an integer from 0 thru 11, or type 'done'.");
                 }
+
             }
-            TestShell.HeadModule = Head;
+
 
             // Get base
             Module Base = default(Module);
@@ -139,7 +167,6 @@ namespace ApsCalc
             
             // Get fixed modules
             float[] FixedModuleCounts = { 0, 0, 0, 0, 0 };
-            int modIndex = 0;
             while (true)
             {
                 for (int i = 0; i < 5; i++) // Indices of all modules except bases and heads
@@ -171,29 +198,24 @@ namespace ApsCalc
             }
 
             // Calculate minimum module count
-            Console.WriteLine("\n\n");
             float MinModuleCount = 1; // The head
-            Console.WriteLine("Current shell configuration:");
-            Console.WriteLine(Head.Name);
 
             modIndex = 0;
             foreach (float modCount in FixedModuleCounts)
             {
-                Console.WriteLine(Module.AllModules[modIndex].Name + ": " + modCount);
                 MinModuleCount += modCount;
                 modIndex++;
             }
 
             if (Base != null)
             {
-                Console.WriteLine(Base.Name);
                 MinModuleCount++;
             }
 
             // Calculate maximum casings and variable modules
             float MaxOtherCount = 20 - MinModuleCount;
 
-            Console.WriteLine("Minimum module count: " + MinModuleCount);
+            Console.WriteLine("Fixed module count: " + MinModuleCount);
             Console.WriteLine("Maximum casing and variable module count: " + MaxOtherCount);
 
             // Get variable modules
@@ -300,7 +322,7 @@ namespace ApsCalc
 
 
             // Calculate minimum shell length
-            float MinShellLengthInput = Math.Min(MinGauge, Head.MaxLength);
+            float MinShellLengthInput = MinGauge;
 
             modIndex = 0;
             foreach (float modCount in FixedModuleCounts)
@@ -318,15 +340,15 @@ namespace ApsCalc
             
             // Get maximum shell length
             float MaxShellLengthInput;
-            Console.WriteLine("\nEnter maximum shell length in mm from " + MinShellLengthInput + " thru 10 000.");
+            Console.WriteLine("\nEnter maximum shell length in mm from " + MinShellLengthInput + " thru 8 000.");
             while (true)
             {
                 input = Console.ReadLine();
                 if (float.TryParse(input, out MaxShellLengthInput))
                 {
-                    if (MaxShellLengthInput < MinShellLengthInput || MaxShellLengthInput > 10000f)
+                    if (MaxShellLengthInput < MinShellLengthInput || MaxShellLengthInput > 8000f)
                     {
-                        Console.WriteLine("\nMAX SHELL LENGTH RANGE ERROR: Enter an integer from " + MinShellLengthInput + " thru 10 000.");
+                        Console.WriteLine("\nMAX SHELL LENGTH RANGE ERROR: Enter an integer from " + MinShellLengthInput + " thru 8 000.");
                     }
                     else
                     {
@@ -336,7 +358,7 @@ namespace ApsCalc
                 }
                 else
                 {
-                    Console.WriteLine("\nMAX SHELL LENGTH PARSE ERROR: Enter an integer from " + MinShellLengthInput + " thru 10 000.");
+                    Console.WriteLine("\nMAX SHELL LENGTH PARSE ERROR: Enter an integer from " + MinShellLengthInput + " thru 8 000.");
                 }
             }
 
@@ -423,7 +445,7 @@ namespace ApsCalc
             ShellCalc Calc1 = new ShellCalc(
                 MinGauge,
                 MaxGauge,
-                Head,
+                HeadIndices,
                 Base,
                 FixedModuleCounts,
                 MinModuleCount,
