@@ -57,19 +57,27 @@ namespace ApsCalc
         // Reload and Cooldown
         public float ReloadTime { get; set; }
         public float ReloadTimeBelt { get; set; } = 0; // Beltfed Loader
-        public float CooldownTime { get; set; }
+        public float CooldownTime { get; set; } // Applies to both regular and beltfed
 
         // Damage
         public float KineticDamage { get; set; }
         public float ArmorPierce { get; set; }
         public float EffectiveKineticDamage { get; set; }
         public float KineticDPS { get; set; } = 0;
+        public float KineticDPSPerVolume { get; set; } = 0;
         public float KineticDPSBelt { get; set; } = 0;
+        public float KineticDPSPerVolumeBelt { get; set; } = 0;
         public float ChemDamage { get; set; } // Frag, FlaK, HE, and EMP all scale the same
         public float ChemDPS { get; set; } = 0; // Effective Warheads per Second
+        public float ChemDPSPerVolume { get; set; } = 0;
         public float ChemDPSBelt { get; set; } = 0;
+        public float ChemDPSPerVolumeBelt { get; set; } = 0;
 
         public float ModuleCountTotal { get; set; } = 1; // There must always be a head
+
+
+        // Volume
+        public float VolumePerIntake { get; set; }
 
 
         public void CalculateLengths()
@@ -246,6 +254,35 @@ namespace ApsCalc
             }
         }
 
+        public void CalculateVolume()
+        {
+            float intakeVolume = 1f; // Always have an intake
+
+            float loaderVolume;
+            if (TotalLength <= 1000f)
+            {
+                loaderVolume = 1f;
+            }
+            else if (TotalLength <= 2000f)
+            {
+                loaderVolume = 2f;
+            }
+            else if (TotalLength <= 4000f)
+            {
+                loaderVolume = 4f;
+            }
+            else if (TotalLength <= 6000f)
+            {
+                loaderVolume = 6f;
+            }
+            else
+            {
+                loaderVolume = 8f;
+            }
+
+            VolumePerIntake = loaderVolume + intakeVolume;
+        }
+
         public void CalculateKineticDamage()
         {
             // Head must be set before this can be called
@@ -277,7 +314,7 @@ namespace ApsCalc
 
         public void CalculateReloadTime()
         {
-            ReloadTime = (float)(Math.Pow((Gauge * Gauge * Gauge / 125000000f), 0.45)
+            ReloadTime = (float)(Math.Pow(Gauge * Gauge * Gauge / 125000000f, 0.45)
                 * (2f + EffectiveProjectileModuleCount + 0.25f * (RGCasingCount + GPCasingCount))
                 * 17.5f);
 
@@ -289,6 +326,14 @@ namespace ApsCalc
             {
                 ReloadTimeBelt = default(float);
             }
+        }
+
+        public void CalculateCooldownTime()
+        {
+            CooldownTime = (float)(Math.Pow(GPCasingCount, 0.35f)
+                * 3.75
+                * ReloadTime
+                / (2 * (2 + EffectiveProjectileModuleCount + 0.25f * (GPCasingCount + RGCasingCount))));
         }
 
         public void CalculateChemDamage()
@@ -320,24 +365,34 @@ namespace ApsCalc
         {
             EffectiveKineticDamage = KineticDamage * Math.Min(1, ArmorPierce / targetAC);
             KineticDPS = EffectiveKineticDamage / ReloadTime;
+            KineticDPSPerVolume = KineticDPS / VolumePerIntake;
 
             if (TotalLength <= 1000f)
             {
                 KineticDPSBelt = EffectiveKineticDamage / ReloadTimeBelt;
+                KineticDPSPerVolumeBelt = KineticDPSBelt / VolumePerIntake;
             }
             else
             {
                 KineticDPSBelt = default(float); // Reset value
+                KineticDPSPerVolumeBelt = default(float);
             }
         }
 
         public void CalculateChemDPS()
         {
             ChemDPS = ChemDamage / ReloadTime;
-            ChemDPSBelt = default(float); // Reset value
+            ChemDPSPerVolume = ChemDPS / VolumePerIntake;
+
             if (TotalLength <= 1000f)
             {
                 ChemDPSBelt = ChemDamage / ReloadTimeBelt;
+                ChemDPSPerVolumeBelt = ChemDPSBelt / VolumePerIntake;
+            }
+            else
+            {
+                ChemDPSBelt = default(float); // Reset value
+                ChemDPSPerVolume = default(float);
             }
         }
 
@@ -404,10 +459,12 @@ namespace ApsCalc
             Console.WriteLine("AP: " + ArmorPierce);
             Console.WriteLine("Eff. KD: " + EffectiveKineticDamage);
             Console.WriteLine("DPS: " + KineticDPS);
+            Console.WriteLine("DPS per Volume: " + KineticDPSPerVolume);
 
             if (KineticDPSBelt > 0)
             {
-                Console.WriteLine("DPS (beltfed): " + KineticDPSBelt);
+                Console.WriteLine("DPS (belt): " + KineticDPSBelt);
+                Console.WriteLine("DPS per volume (belt): " + KineticDPSPerVolumeBelt);
             }
         }
 
@@ -453,12 +510,14 @@ namespace ApsCalc
             }
 
             Console.WriteLine("Velocity (m/s): " + Velocity);
-            Console.WriteLine("Effective Chem Warheads: " + ChemDamage);
+            Console.WriteLine("Effective chem warheads: " + ChemDamage);
             Console.WriteLine("DPS: " + ChemDPS);
+            Console.WriteLine("DPS per loader volume: " + ChemDPSPerVolume);
 
             if (KineticDPSBelt > 0)
             {
-                Console.WriteLine("DPS (beltfed): " + ChemDPSBelt);
+                Console.WriteLine("DPS (belt): " + ChemDPSBelt);
+                Console.WriteLine("DPS per loader volume (belt): " + ChemDPSPerVolumeBelt);
             }
         }
     }
