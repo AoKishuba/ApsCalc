@@ -411,40 +411,113 @@ namespace ApsCalcTests
         }
 
         [TestMethod]
-        public void Reload_Math()
+        public void Reload_And_Cooldown_Math()
         {
             // A shell with a bit of everything
             float[] testBodyModuleCounts = { 1, 1, 1, 1, 1 };
 
             float expectedReloadTime500 = 166.25f;
+            float expectedCooldownTime500 = 57.634007f;
             float expectedReloadTime500Belt = default(float); // Total length > 1000 mm
 
             float expectedReloadTime18 = 2.2633111f;
+            float expectedCooldownTime18 = 0.64816743f;
             float expectedReloadTime18Belt = 2.2633111f * 0.75f * (float)Math.Pow(0.018f, 0.45f);
 
             Shell TestShell = new Shell();
             TestShell.Gauge = 500;
-            TestShell.BodyModuleCounts = testBodyModuleCounts;
+            testBodyModuleCounts.CopyTo(TestShell.BodyModuleCounts, 0);
             TestShell.GPCasingCount = 5;
             TestShell.RGCasingCount = 5;
             TestShell.HeadModule = Module.APHead;
             TestShell.BaseModule = Module.BaseBleeder;
             TestShell.CalculateLengths();
             TestShell.CalculateReloadTime();
+            TestShell.CalculateCooldownTime();
             float actualReloadTime500 = TestShell.ReloadTime;
+            float actualCooldownTime500 = TestShell.CooldownTime;
             float actualReloadTime500Belt = TestShell.ReloadTimeBelt;
 
             TestShell.Gauge = 18;
             TestShell.CalculateLengths();
             TestShell.CalculateReloadTime();
+            TestShell.CalculateCooldownTime();
             float actualReloadTime18 = TestShell.ReloadTime;
+            float actualCooldownTime18 = TestShell.CooldownTime;
             float actualReloadTime18Belt = TestShell.ReloadTimeBelt;
 
 
             Assert.AreEqual(expectedReloadTime500, actualReloadTime500);
+            Assert.AreEqual(expectedCooldownTime500, actualCooldownTime500);
             Assert.AreEqual(expectedReloadTime500Belt, actualReloadTime500Belt);
+
             Assert.AreEqual(expectedReloadTime18, actualReloadTime18);
+            Assert.AreEqual(expectedCooldownTime18, actualCooldownTime18);
             Assert.AreEqual(expectedReloadTime18Belt, actualReloadTime18Belt);
+        }
+
+        [TestMethod]
+        public void Volume_Math()
+        {
+            // A shell with a bit of everything
+            float[] testBodyModuleCounts = { 1, 1, 1, 1, 1 };
+
+            float expectedVolume500 = 9f;
+            //float expectedKdpsPerVolume500 = ;
+            //float expectedKdpsPerVolume500Belt = default(float); // Total length > 1000 mm
+
+            float expectedVolume18 = 2f;
+            //float expectedKdpsPerVolume18 = ;
+            //float expectedKdpsPerVolume18Belt =  * 0.75f * (float)Math.Pow(0.018f, 0.45f);
+
+            Shell TestShell = new Shell();
+            TestShell.Gauge = 500;
+            testBodyModuleCounts.CopyTo(TestShell.BodyModuleCounts, 0);
+            TestShell.GPCasingCount = 5;
+            TestShell.RGCasingCount = 5;
+            TestShell.HeadModule = Module.APHead;
+            TestShell.BaseModule = Module.BaseBleeder;
+            TestShell.CalculateLengths();
+            TestShell.CalculateVolume();
+            TestShell.CalculateGPRecoil();
+            TestShell.CalculateModifiers();
+            TestShell.CalculateVelocity();
+            TestShell.CalculateAP();
+            TestShell.CalculateKineticDamage();
+            TestShell.CalculateChemDamage();
+            TestShell.CalculateReloadTime();
+            TestShell.CalculateKineticDPS(20f);
+            TestShell.CalculateChemDPS();
+            float actualVolume500 = TestShell.VolumePerIntake;
+            float actualKdpsPerVolume500 = TestShell.KineticDPSPerVolume;
+            float actualKdpsPerVolume500Belt = TestShell.KineticDPSPerVolumeBelt;
+            //float actualKdpsPerVolume500 = TestShell.CooldownTime;
+            //float actualKdpsPerVolume500Belt = TestShell.ReloadTimeBelt;
+
+            TestShell.Gauge = 18;
+            TestShell.CalculateLengths();
+            TestShell.CalculateVolume();
+            TestShell.CalculateGPRecoil();
+            TestShell.CalculateModifiers();
+            TestShell.CalculateVelocity();
+            TestShell.CalculateAP();
+            TestShell.CalculateKineticDamage();
+            TestShell.CalculateChemDamage();
+            TestShell.CalculateReloadTime();
+            TestShell.CalculateKineticDPS(20f);
+            TestShell.CalculateChemDPS();
+            float actualVolume18 = TestShell.VolumePerIntake;
+            float actualKdpsPerVolume18 = TestShell.KineticDPSPerVolume;
+            float actualKdpsPerVolume18Belt = TestShell.KineticDPSPerVolumeBelt;
+
+
+            Assert.AreEqual(expectedVolume500, actualVolume500);
+            //Assert.AreEqual(expectedKdpsPerVolume500, actualKdpsPerVolume500);
+            //Assert.AreEqual(expectedKdpsPerVolume500Belt, actualKdpsPerVolume500Belt);
+
+            Assert.AreEqual(expectedVolume18, actualVolume18);
+            //Assert.AreEqual(expectedKdpsPerVolume18, actualKdpsPerVolume18);
+            //Assert.AreEqual(expectedKdpsPerVolume18Belt, actualKdpsPerVolume18Belt);
         }
     }
 }
