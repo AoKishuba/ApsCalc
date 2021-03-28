@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -134,6 +134,16 @@ namespace ApsCalc
             }
         }
 
+        public IEnumerable<float> GetRailDraw(float MaxDraw)
+        {
+            float maxDraw = Math.Min(MaxDraw, MaxDrawInput);
+
+            for (float draw = 0; draw <= maxDraw; draw++)
+            {
+                yield return draw;
+            }
+        }
+
 
         public void GetTopShells()
         {
@@ -180,30 +190,46 @@ namespace ApsCalc
 
             foreach (ModuleCount counts in GetModuleCounts())
             {
-                Shell ShellUnderTesting = new Shell();
-                ShellUnderTesting.HeadModule = HeadModule;
-                ShellUnderTesting.BaseModule = BaseModule;
-                FixedModuleCounts.CopyTo(ShellUnderTesting.BodyModuleCounts, 0);
+                Shell ShellUnderTestingSetup = new Shell();
+                ShellUnderTestingSetup.HeadModule = HeadModule;
+                ShellUnderTestingSetup.BaseModule = BaseModule;
+                FixedModuleCounts.CopyTo(ShellUnderTestingSetup.BodyModuleCounts, 0);
 
-                ShellUnderTesting.Gauge = counts.Gauge;
-                ShellUnderTesting.BodyModuleCounts[VariableModuleIndices[0]] += counts.Var0Count;
-                ShellUnderTesting.BodyModuleCounts[VariableModuleIndices[1]] += counts.Var1Count;
-                ShellUnderTesting.GPCasingCount = counts.GPCount;
-                ShellUnderTesting.RGCasingCount = counts.RGCount;
+                ShellUnderTestingSetup.Gauge = counts.Gauge;
+                ShellUnderTestingSetup.BodyModuleCounts[VariableModuleIndices[0]] += counts.Var0Count;
+                ShellUnderTestingSetup.BodyModuleCounts[VariableModuleIndices[1]] += counts.Var1Count;
+                ShellUnderTestingSetup.GPCasingCount = counts.GPCount;
+                ShellUnderTestingSetup.RGCasingCount = counts.RGCount;
 
-                ShellUnderTesting.CalculateLengths();
+                ShellUnderTestingSetup.CalculateLengths();
 
-                if (ShellUnderTesting.TotalLength <= MaxShellLength)
+                if (ShellUnderTestingSetup.TotalLength <= MaxShellLength)
                 {
-                    ShellUnderTesting.CalculateGPRecoil();
-                    ShellUnderTesting.CalculateModifiers();
-
-                    ShellUnderTesting.CalculateMaxDraw();
-                    float maxDraw = Math.Min(MaxDrawInput, ShellUnderTesting.MaxDraw);
-                    for (float draw = 0f; draw <= maxDraw; draw++)
+                    ShellUnderTestingSetup.CalculateMaxDraw();
+                    float maxDraw = Math.Min(MaxDrawInput, ShellUnderTestingSetup.MaxDraw);
+                    foreach (float draw in GetRailDraw(ShellUnderTestingSetup.MaxDraw))
                     {
+                        // Reset shell
+                        Shell ShellUnderTesting = new Shell();
+                        ShellUnderTesting.HeadModule = HeadModule;
+                        ShellUnderTesting.BaseModule = BaseModule;
+                        FixedModuleCounts.CopyTo(ShellUnderTesting.BodyModuleCounts, 0);
+
+                        ShellUnderTesting.Gauge = counts.Gauge;
+                        ShellUnderTesting.BodyModuleCounts[VariableModuleIndices[0]] += counts.Var0Count;
+                        ShellUnderTesting.BodyModuleCounts[VariableModuleIndices[1]] += counts.Var1Count;
+                        ShellUnderTesting.GPCasingCount = counts.GPCount;
+                        ShellUnderTesting.RGCasingCount = counts.RGCount;
+                        ShellUnderTesting.CalculateLengths();
+                        ShellUnderTesting.CalculateGPRecoil();
+                        ShellUnderTesting.CalculateModifiers();
+
                         ShellUnderTesting.RailDraw = draw;
                         ShellUnderTesting.CalculateVelocity();
+
+                        // DEBUG
+                        Console.WriteLine(ShellUnderTesting.RailDraw);
+                        Console.WriteLine(ShellUnderTesting.Velocity + "\n");
 
                         if (ShellUnderTesting.Velocity >= MinVelocityInput)
                         {
@@ -265,7 +291,6 @@ namespace ApsCalc
                             if (DamageType == 1) // Chem
                             {
                                 ShellUnderTesting.CalculateChemDamage();
-                                ShellUnderTesting.CalculateAP();
                                 ShellUnderTesting.CalculateChemDPS();
 
                                 if (ShellUnderTesting.TotalLength <= 10000f)
@@ -323,6 +348,10 @@ namespace ApsCalc
 
                     }
 
+                }
+                else
+                {
+                    TestRejectLength++;
                 }
 
             }
