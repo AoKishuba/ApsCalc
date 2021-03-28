@@ -7,6 +7,7 @@ namespace ApsCalc
     public struct ModuleCount
     {
         public float Gauge;
+        public int HeadIndex;
         public float Var0Count;
         public float Var1Count;
         public float GPCount;
@@ -35,7 +36,7 @@ namespace ApsCalc
         public ShellCalc(
             float minGauge,
             float maxGauge,
-            Module headModule,
+            List<int> headList,
             Module baseModule,
             float[] fixedModuleCounts,
             float fixedModuleTotal,
@@ -50,7 +51,7 @@ namespace ApsCalc
         {
             MinGauge = minGauge;
             MaxGauge = maxGauge;
-            HeadModule = headModule;
+            HeadList = headList;
             BaseModule = baseModule;
             FixedModuleCounts = fixedModuleCounts;
             FixedModuleTotal = fixedModuleTotal;
@@ -66,7 +67,7 @@ namespace ApsCalc
 
         public float MinGauge { get; }
         public float MaxGauge { get; }
-        public Module HeadModule { get; }
+        public List<int> HeadList { get; }
         public Module BaseModule { get; }
         public float[] FixedModuleCounts { get; }
         public float FixedModuleTotal { get; }
@@ -92,7 +93,6 @@ namespace ApsCalc
         public Shell TopDps4000 { get; set; } = new Shell();
         public Shell TopDps6000 { get; set; } = new Shell();
         public Shell TopDps8000 { get; set; } = new Shell();
-        public Shell TopDpsDif { get; set; } = new Shell();
 
         public Dictionary<string, Shell> TopDpsShells { get; set; } = new Dictionary<string, Shell>();
 
@@ -103,30 +103,34 @@ namespace ApsCalc
             float gpMax;
             float rgMax;
 
-            for (float gauge = MinGauge; gauge <= MaxGauge; gauge++)
+            foreach (int index in HeadList)
             {
-                for (float var0Count = 0; var0Count <= var0Max; var0Count++)
+                for (float gauge = MinGauge; gauge <= MaxGauge; gauge++)
                 {
-                    var1Max = 20f - (FixedModuleTotal + var0Count);
-
-                    for (float var1Count = 0; var1Count <= var1Max; var1Count++)
+                    for (float var0Count = 0; var0Count <= var0Max; var0Count++)
                     {
-                        gpMax = Math.Min(20f - (FixedModuleTotal + var0Count + var1Count), MaxGPInput);
+                        var1Max = 20f - (FixedModuleTotal + var0Count);
 
-                        for (float gpCount = 0; gpCount <= gpMax; gpCount += 0.01f)
+                        for (float var1Count = 0; var1Count <= var1Max; var1Count++)
                         {
-                            rgMax = Math.Min(20f - (FixedModuleTotal + var0Count + var1Count + gpCount), MaxRGInput);
+                            gpMax = Math.Min(20f - (FixedModuleTotal + var0Count + var1Count), MaxGPInput);
 
-                            for (float rgCount = 0; rgCount <= rgMax; rgCount++)
+                            for (float gpCount = 0; gpCount <= gpMax; gpCount += 0.01f)
                             {
-                                yield return new ModuleCount
+                                rgMax = Math.Min(20f - (FixedModuleTotal + var0Count + var1Count + gpCount), MaxRGInput);
+
+                                for (float rgCount = 0; rgCount <= rgMax; rgCount++)
                                 {
-                                    Gauge = gauge,
-                                    Var0Count = var0Count,
-                                    Var1Count = var1Count,
-                                    GPCount = gpCount,
-                                    RGCount = rgCount                                
-                                };
+                                    yield return new ModuleCount
+                                    {
+                                        Gauge = gauge,
+                                        HeadIndex = index,
+                                        Var0Count = var0Count,
+                                        Var1Count = var1Count,
+                                        GPCount = gpCount,
+                                        RGCount = rgCount
+                                    };
+                                }
                             }
                         }
                     }
@@ -176,11 +180,6 @@ namespace ApsCalc
             {
                 TopDpsShells.Add("8 m", TopDps8000);
             }
-
-            if (TopDpsDif.KineticDPS > 0 || TopDpsDif.ChemDPS > 0)
-            {
-                TopDpsShells.Add("DIF", TopDpsDif);
-            }
         }
 
 
@@ -191,7 +190,7 @@ namespace ApsCalc
             foreach (ModuleCount counts in GetModuleCounts())
             {
                 Shell ShellUnderTestingSetup = new Shell();
-                ShellUnderTestingSetup.HeadModule = HeadModule;
+                ShellUnderTestingSetup.HeadModule = Module.AllModules[counts.HeadIndex];
                 ShellUnderTestingSetup.BaseModule = BaseModule;
                 FixedModuleCounts.CopyTo(ShellUnderTestingSetup.BodyModuleCounts, 0);
 
@@ -211,7 +210,7 @@ namespace ApsCalc
                     {
                         // Reset shell
                         Shell ShellUnderTesting = new Shell();
-                        ShellUnderTesting.HeadModule = HeadModule;
+                        ShellUnderTesting.HeadModule = Module.AllModules[counts.HeadIndex];
                         ShellUnderTesting.BaseModule = BaseModule;
                         FixedModuleCounts.CopyTo(ShellUnderTesting.BodyModuleCounts, 0);
 
@@ -226,14 +225,10 @@ namespace ApsCalc
 
                         ShellUnderTesting.RailDraw = draw;
                         ShellUnderTesting.CalculateVelocity();
-
-                        // DEBUG
-                        Console.WriteLine(ShellUnderTesting.RailDraw);
-                        Console.WriteLine(ShellUnderTesting.Velocity + "\n");
-
                         if (ShellUnderTesting.Velocity >= MinVelocityInput)
                         {
                             ShellUnderTesting.CalculateReloadTime();
+                            ShellUnderTesting.CalculateVolume();
 
                             if (DamageType == 0) // Kinetic
                             {
@@ -241,105 +236,91 @@ namespace ApsCalc
                                 ShellUnderTesting.CalculateAP();
                                 ShellUnderTesting.CalculateKineticDPS(TargetAC);
 
-                                if (ShellUnderTesting.TotalLength <= 10000f)
+                                if (ShellUnderTesting.TotalLength <= 8000f)
                                 {
-                                    if (ShellUnderTesting.KineticDPS > TopDpsDif.KineticDPS)
+                                    if (ShellUnderTesting.KineticDPSPerVolume > TopDps8000.KineticDPSPerVolume)
                                     {
-                                        TopDpsDif = ShellUnderTesting;
+                                        TopDps8000 = ShellUnderTesting;
                                     }
-                                    if (ShellUnderTesting.TotalLength <= 8000f)
+                                    if (ShellUnderTesting.TotalLength <= 6000f)
                                     {
-                                        if (ShellUnderTesting.KineticDPS > TopDps8000.KineticDPS)
+                                        if (ShellUnderTesting.KineticDPSPerVolume > TopDps6000.KineticDPSPerVolume)
                                         {
-                                            TopDps8000 = ShellUnderTesting;
+                                            TopDps6000 = ShellUnderTesting;
                                         }
-                                        if (ShellUnderTesting.TotalLength <= 6000f)
+                                        if (ShellUnderTesting.TotalLength <= 4000f)
                                         {
-                                            if (ShellUnderTesting.KineticDPS > TopDps6000.KineticDPS)
+                                            if (ShellUnderTesting.KineticDPSPerVolume > TopDps4000.KineticDPSPerVolume)
                                             {
-                                                TopDps6000 = ShellUnderTesting;
+                                                TopDps4000 = ShellUnderTesting;
                                             }
-                                            if (ShellUnderTesting.TotalLength <= 4000f)
+                                            if (ShellUnderTesting.TotalLength <= 2000f)
                                             {
-                                                if (ShellUnderTesting.KineticDPS > TopDps4000.KineticDPS)
+                                                if (ShellUnderTesting.KineticDPSPerVolume > TopDps2000.KineticDPSPerVolume)
                                                 {
-                                                    TopDps4000 = ShellUnderTesting;
+                                                    TopDps2000 = ShellUnderTesting;
                                                 }
-                                                if (ShellUnderTesting.TotalLength <= 2000f)
+                                                if (ShellUnderTesting.TotalLength <= 1000f)
                                                 {
-                                                    if (ShellUnderTesting.KineticDPS > TopDps2000.KineticDPS)
+                                                    if (ShellUnderTesting.KineticDPSPerVolume > TopDps1000.KineticDPSPerVolume)
                                                     {
-                                                        TopDps2000 = ShellUnderTesting;
+                                                        TopDps1000 = ShellUnderTesting;
                                                     }
-                                                    if (ShellUnderTesting.TotalLength <= 1000f)
+                                                    if (ShellUnderTesting.KineticDPSPerVolumeBelt > TopDpsBelt.KineticDPSPerVolumeBelt)
                                                     {
-                                                        if (ShellUnderTesting.KineticDPS > TopDps1000.KineticDPS)
-                                                        {
-                                                            TopDps1000 = ShellUnderTesting;
-                                                        }
-                                                        if (ShellUnderTesting.KineticDPSBelt > TopDpsBelt.KineticDPSBelt)
-                                                        {
-                                                            TopDpsBelt = ShellUnderTesting;
-                                                        }
+                                                        TopDpsBelt = ShellUnderTesting;
                                                     }
                                                 }
                                             }
                                         }
                                     }
-                                }
+                                }                            
                             }
                             if (DamageType == 1) // Chem
                             {
                                 ShellUnderTesting.CalculateChemDamage();
                                 ShellUnderTesting.CalculateChemDPS();
 
-                                if (ShellUnderTesting.TotalLength <= 10000f)
+                                if (ShellUnderTesting.TotalLength <= 8000f)
                                 {
-                                    if (ShellUnderTesting.ChemDPS > TopDpsDif.ChemDPS)
+                                    if (ShellUnderTesting.ChemDPSPerVolume > TopDps8000.ChemDPSPerVolume)
                                     {
-                                        TopDpsDif = ShellUnderTesting;
+                                        TopDps8000 = ShellUnderTesting;
                                     }
-                                    if (ShellUnderTesting.TotalLength <= 8000f)
+                                    if (ShellUnderTesting.TotalLength <= 6000f)
                                     {
-                                        if (ShellUnderTesting.ChemDPS > TopDps8000.ChemDPS)
+                                        if (ShellUnderTesting.ChemDPSPerVolume > TopDps6000.ChemDPSPerVolume)
                                         {
-                                            TopDps8000 = ShellUnderTesting;
+                                            TopDps6000 = ShellUnderTesting;
                                         }
-                                        if (ShellUnderTesting.TotalLength <= 6000f)
+                                        if (ShellUnderTesting.TotalLength <= 4000f)
                                         {
-                                            if (ShellUnderTesting.ChemDPS > TopDps6000.ChemDPS)
+                                            if (ShellUnderTesting.ChemDPSPerVolume > TopDps4000.ChemDPSPerVolume)
                                             {
-                                                TopDps6000 = ShellUnderTesting;
+                                                TopDps4000 = ShellUnderTesting;
                                             }
-                                            if (ShellUnderTesting.TotalLength <= 4000f)
+                                            if (ShellUnderTesting.TotalLength <= 2000f)
                                             {
-                                                if (ShellUnderTesting.ChemDPS > TopDps4000.ChemDPS)
+                                                if (ShellUnderTesting.ChemDPSPerVolume > TopDps2000.ChemDPSPerVolume)
                                                 {
-                                                    TopDps4000 = ShellUnderTesting;
+                                                    TopDps2000 = ShellUnderTesting;
                                                 }
-                                                if (ShellUnderTesting.TotalLength <= 2000f)
+                                                if (ShellUnderTesting.TotalLength <= 1000f)
                                                 {
-                                                    if (ShellUnderTesting.ChemDPS > TopDps2000.ChemDPS)
+                                                    if (ShellUnderTesting.ChemDPSPerVolume > TopDps1000.ChemDPSPerVolume)
                                                     {
-                                                        TopDps2000 = ShellUnderTesting;
+                                                        TopDps1000 = ShellUnderTesting;
                                                     }
-                                                    if (ShellUnderTesting.TotalLength <= 1000f)
+                                                    if (ShellUnderTesting.ChemDPSPerVolumeBelt > TopDpsBelt.ChemDPSPerVolumeBelt)
                                                     {
-                                                        if (ShellUnderTesting.ChemDPS > TopDps1000.ChemDPS)
-                                                        {
-                                                            TopDps1000 = ShellUnderTesting;
-                                                        }
-                                                        if (ShellUnderTesting.ChemDPSBelt > TopDpsBelt.ChemDPSBelt)
-                                                        {
-                                                            TopDpsBelt = ShellUnderTesting;
-                                                        }
+                                                        TopDpsBelt = ShellUnderTesting;
                                                     }
                                                 }
                                             }
                                         }
                                     }
                                 }
-                            }
+                            }        
                         }
                         else
                         {
