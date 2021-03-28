@@ -109,7 +109,14 @@ namespace ApsCalc
                 {
                     for (float var0Count = 0; var0Count <= var0Max; var0Count++)
                     {
-                        var1Max = 20f - (FixedModuleTotal + var0Count);
+                        if (VariableModuleIndices[0] == VariableModuleIndices[1])
+                        {
+                            var1Max = 0; // No need to add duplicates
+                        }
+                        else
+                        {
+                            var1Max = 20f - (FixedModuleTotal + var0Count);
+                        }
 
                         for (float var1Count = 0; var1Count <= var1Max; var1Count++)
                         {
@@ -186,9 +193,15 @@ namespace ApsCalc
 
         public void ShellTest()
         {
+            float lastGauge = MinGauge;
 
             foreach (ModuleCount counts in GetModuleCounts())
             {
+                if (counts.Gauge != lastGauge)
+                {
+                    Console.WriteLine("\nTesting " + Module.AllModules[counts.HeadIndex].Name + " " + counts.Gauge + " mm.  Max " + MaxGauge + " mm.");
+                    lastGauge = counts.Gauge;
+                }
                 Shell ShellUnderTestingSetup = new Shell();
                 ShellUnderTestingSetup.HeadModule = Module.AllModules[counts.HeadIndex];
                 ShellUnderTestingSetup.BaseModule = BaseModule;
@@ -227,6 +240,7 @@ namespace ApsCalc
                         ShellUnderTesting.CalculateVelocity();
                         if (ShellUnderTesting.Velocity >= MinVelocityInput)
                         {
+                            TestComparisons++;
                             ShellUnderTesting.CalculateReloadTime();
                             ShellUnderTesting.CalculateVolume();
 
@@ -235,92 +249,93 @@ namespace ApsCalc
                                 ShellUnderTesting.CalculateKineticDamage();
                                 ShellUnderTesting.CalculateAP();
                                 ShellUnderTesting.CalculateKineticDPS(TargetAC);
-
-                                if (ShellUnderTesting.TotalLength <= 8000f)
+                                
+                                if (ShellUnderTesting.TotalLength <= 1000f)
+                                {
+                                    if (ShellUnderTesting.KineticDPSPerVolume > TopDps1000.KineticDPSPerVolume)
+                                    {
+                                        TopDps1000 = ShellUnderTesting;
+                                    }
+                                    if (ShellUnderTesting.KineticDPSPerVolumeBelt > TopDpsBelt.KineticDPSPerVolumeBelt)
+                                    {
+                                        TopDpsBelt = ShellUnderTesting;
+                                    }
+                                }
+                                else if (ShellUnderTesting.TotalLength <= 2000f)
+                                {
+                                    if (ShellUnderTesting.KineticDPSPerVolume > TopDps2000.KineticDPSPerVolume)
+                                    {
+                                        TopDps2000 = ShellUnderTesting;
+                                    }
+                                }
+                                else if (ShellUnderTesting.TotalLength <= 4000f)
+                                {
+                                    if (ShellUnderTesting.KineticDPSPerVolume > TopDps4000.KineticDPSPerVolume)
+                                    {
+                                        TopDps4000 = ShellUnderTesting;
+                                    }
+                                }
+                                else if (ShellUnderTesting.TotalLength <= 6000f)
+                                {
+                                    if (ShellUnderTesting.KineticDPSPerVolume > TopDps6000.KineticDPSPerVolume)
+                                    {
+                                        TopDps6000 = ShellUnderTesting;
+                                    }
+                                }
+                                else if (ShellUnderTesting.TotalLength <= 8000f)
                                 {
                                     if (ShellUnderTesting.KineticDPSPerVolume > TopDps8000.KineticDPSPerVolume)
                                     {
                                         TopDps8000 = ShellUnderTesting;
                                     }
-                                    if (ShellUnderTesting.TotalLength <= 6000f)
-                                    {
-                                        if (ShellUnderTesting.KineticDPSPerVolume > TopDps6000.KineticDPSPerVolume)
-                                        {
-                                            TopDps6000 = ShellUnderTesting;
-                                        }
-                                        if (ShellUnderTesting.TotalLength <= 4000f)
-                                        {
-                                            if (ShellUnderTesting.KineticDPSPerVolume > TopDps4000.KineticDPSPerVolume)
-                                            {
-                                                TopDps4000 = ShellUnderTesting;
-                                            }
-                                            if (ShellUnderTesting.TotalLength <= 2000f)
-                                            {
-                                                if (ShellUnderTesting.KineticDPSPerVolume > TopDps2000.KineticDPSPerVolume)
-                                                {
-                                                    TopDps2000 = ShellUnderTesting;
-                                                }
-                                                if (ShellUnderTesting.TotalLength <= 1000f)
-                                                {
-                                                    if (ShellUnderTesting.KineticDPSPerVolume > TopDps1000.KineticDPSPerVolume)
-                                                    {
-                                                        TopDps1000 = ShellUnderTesting;
-                                                    }
-                                                    if (ShellUnderTesting.KineticDPSPerVolumeBelt > TopDpsBelt.KineticDPSPerVolumeBelt)
-                                                    {
-                                                        TopDpsBelt = ShellUnderTesting;
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }                            
+                                }
                             }
+
                             if (DamageType == 1) // Chem
                             {
                                 ShellUnderTesting.CalculateChemDamage();
                                 ShellUnderTesting.CalculateChemDPS();
 
-                                if (ShellUnderTesting.TotalLength <= 8000f)
+                                if (ShellUnderTesting.TotalLength <= 1000f)
+                                {
+                                    if (ShellUnderTesting.ChemDPSPerVolume > TopDps1000.ChemDPSPerVolume)
+                                    {
+                                        TopDps1000 = ShellUnderTesting;
+                                    }
+                                    if (ShellUnderTesting.ChemDPSPerVolumeBelt > TopDpsBelt.ChemDPSPerVolumeBelt)
+                                    {
+                                        TopDpsBelt = ShellUnderTesting;
+                                    }
+                                }
+                                else if (ShellUnderTesting.TotalLength <= 2000f)
+                                {
+                                    if (ShellUnderTesting.ChemDPSPerVolume > TopDps2000.ChemDPSPerVolume)
+                                    {
+                                        TopDps2000 = ShellUnderTesting;
+                                    }
+                                }
+                                else if (ShellUnderTesting.TotalLength <= 4000f)
+                                {
+                                    if (ShellUnderTesting.ChemDPSPerVolume > TopDps4000.ChemDPSPerVolume)
+                                    {
+                                        TopDps4000 = ShellUnderTesting;
+                                    }
+                                }
+                                else if (ShellUnderTesting.TotalLength <= 6000f)
+                                {
+                                    if (ShellUnderTesting.ChemDPSPerVolume > TopDps6000.ChemDPSPerVolume)
+                                    {
+                                        TopDps6000 = ShellUnderTesting;
+                                    }
+                                }
+                                else if (ShellUnderTesting.TotalLength <= 8000f)
                                 {
                                     if (ShellUnderTesting.ChemDPSPerVolume > TopDps8000.ChemDPSPerVolume)
                                     {
                                         TopDps8000 = ShellUnderTesting;
                                     }
-                                    if (ShellUnderTesting.TotalLength <= 6000f)
-                                    {
-                                        if (ShellUnderTesting.ChemDPSPerVolume > TopDps6000.ChemDPSPerVolume)
-                                        {
-                                            TopDps6000 = ShellUnderTesting;
-                                        }
-                                        if (ShellUnderTesting.TotalLength <= 4000f)
-                                        {
-                                            if (ShellUnderTesting.ChemDPSPerVolume > TopDps4000.ChemDPSPerVolume)
-                                            {
-                                                TopDps4000 = ShellUnderTesting;
-                                            }
-                                            if (ShellUnderTesting.TotalLength <= 2000f)
-                                            {
-                                                if (ShellUnderTesting.ChemDPSPerVolume > TopDps2000.ChemDPSPerVolume)
-                                                {
-                                                    TopDps2000 = ShellUnderTesting;
-                                                }
-                                                if (ShellUnderTesting.TotalLength <= 1000f)
-                                                {
-                                                    if (ShellUnderTesting.ChemDPSPerVolume > TopDps1000.ChemDPSPerVolume)
-                                                    {
-                                                        TopDps1000 = ShellUnderTesting;
-                                                    }
-                                                    if (ShellUnderTesting.ChemDPSPerVolumeBelt > TopDpsBelt.ChemDPSPerVolumeBelt)
-                                                    {
-                                                        TopDpsBelt = ShellUnderTesting;
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
                                 }
-                            }        
+                            }
                         }
                         else
                         {
