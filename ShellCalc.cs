@@ -17,22 +17,22 @@ namespace ApsCalc
     public class ShellCalc
     {
         /// <summary>
-        /// Perform calculations on every possible permutation of the given shell configuration within the given limits
+        /// Takes shell parameters and calculates performance of shell permutations.
         /// </summary>
-        /// <param name="minGauge"></param>
-        /// <param name="maxGauge"></param>
-        /// <param name="headModule"></param>
-        /// <param name="baseModule"></param>
-        /// <param name="fixedModuleCounts"></param>
-        /// <param name="fixedModuleTotal"></param>
-        /// <param name="variableModuleIndices"></param>
-        /// <param name="maxGPInput"></param>
-        /// <param name="maxRGInput"></param>
-        /// <param name="maxShellLengthInput"></param>
-        /// <param name="maxDrawInput"></param>
-        /// <param name="minVelocityInput"></param>
-        /// <param name="targetAC"></param>
-        /// <param name="damageType"></param>
+        /// <param name="minGauge">Min desired gauge in mm</param>
+        /// <param name="maxGauge">Max desired gauge in mm</param>
+        /// <param name="headList">List of module indices for every module to be used as the head</param>
+        /// <param name="baseModule">The special base module, if any</param>
+        /// <param name="fixedModuleCounts">An array of integers representing the number of shells at that index in the module list</param>
+        /// <param name="fixedModuleTotal">Minimum number of modules on every shell</param>
+        /// <param name="variableModuleIndices">Module indices of the modules to be used in varying numbers in testing</param>
+        /// <param name="maxGPInput">Max desired number of gunpowder casings</param>
+        /// <param name="maxRGInput">Max desired number of railgun casings</param>
+        /// <param name="maxShellLengthInput">Max desired shell length in mm</param>
+        /// <param name="maxDrawInput">Max desired rail draw</param>
+        /// <param name="minVelocityInput">Min required velocity</param>
+        /// <param name="targetAC">Armor class of the target for kinetic damage calculations</param>
+        /// <param name="damageType">0 for kinetic, 1 for chemical</param>
         public ShellCalc(
             float minGauge,
             float maxGauge,
@@ -96,6 +96,10 @@ namespace ApsCalc
 
         public Dictionary<string, Shell> TopDpsShells { get; set; } = new Dictionary<string, Shell>();
 
+        /// <summary>
+        /// The iterable generator for shells.  Generates all shell possible permutations of shell within the given parameters.
+        /// </summary>
+        /// <returns></returns>
         public IEnumerable<ModuleCount> GetModuleCounts()
         {
             float var0Max = 20f - FixedModuleTotal;
@@ -145,6 +149,11 @@ namespace ApsCalc
             }
         }
 
+        /// <summary>
+        /// The iterable for generating rail draw numbers.
+        /// </summary>
+        /// <param name="MaxDraw"></param>
+        /// <returns></returns>
         public IEnumerable<float> GetRailDraw(float MaxDraw)
         {
             float maxDraw = Math.Min(MaxDraw, MaxDrawInput);
@@ -156,6 +165,9 @@ namespace ApsCalc
         }
 
 
+        /// <summary>
+        /// Adds the current top-performing shells to the TopDpsShells list
+        /// </summary>
         public void GetTopShells()
         {
             if (TopDps1000.KineticDPS > 0 || TopDps1000.ChemDPS > 0)
@@ -190,7 +202,9 @@ namespace ApsCalc
         }
 
 
-
+        /// <summary>
+        /// The main test body.  Iterates over the IEnumerables to compare every permutation within the given parameters, then stores the results
+        /// </summary>
         public void ShellTest()
         {
             float lastGauge = MinGauge;
