@@ -10,6 +10,9 @@ namespace ApsCalcTests
     [TestClass]
     public class ShellCalcUnitTests
     {
+        /// <summary>
+        /// Tests the output of the ModuleCount IEnumerator
+        /// </summary>
         [TestMethod]
         public void TestEnumOutput()
         {
@@ -52,6 +55,10 @@ namespace ApsCalcTests
             Assert.AreEqual(expectedLastCount, moduleCounts.Last());
         }
 
+
+        /// <summary>
+        /// Verifies the TopDpsShells list starts with all DPS values at 0
+        /// </summary>
         [TestMethod]
         public void TopDps_Shells_Start_At_0()
         {
