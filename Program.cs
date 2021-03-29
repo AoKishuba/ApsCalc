@@ -5,6 +5,10 @@ namespace ApsCalc
 {
     class Program
     {
+        /// <summary>
+        /// Gathers shell parameters from the user, then runs the ShellCalc tests to find the highest-performing shells within those parameters
+        /// </summary>
+        /// <param name="args"></param>
         static void Main(string[] args)
         {
             // Initialize shell
@@ -228,7 +232,7 @@ namespace ApsCalc
                 {
                     Console.WriteLine(i + " : " + Module.AllModules[i].Name);
                 }
-                Console.WriteLine("\nEnter a number to add a variable module.  Two must be selected in total."
+                Console.WriteLine("\nEnter a number to add a variable module.  If only one variable module is desired, enter the same number both times."
                     + "\nVariable modules will be tested at every combination from 0 thru " + MaxOtherCount + " modules.");
                 input = Console.ReadLine();
                 if (int.TryParse(input, out modIndex))
