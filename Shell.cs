@@ -1,6 +1,4 @@
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace ApsCalc
 {
@@ -8,6 +6,9 @@ namespace ApsCalc
     {
         public Shell() { BaseModule = default(Module); }
 
+        /// <summary>
+        /// Sets the gauge and simultaneously calculates the Gauge Coefficient, which is used in several formulae as a way to scale with gauge.
+        /// </summary>
         private float _gauge;
         public float Gauge
         {
@@ -78,8 +79,12 @@ namespace ApsCalc
 
         // Volume
         public float VolumePerIntake { get; set; }
+        public float VolumePerIntakeBelt { get; set; }
 
 
+        /// <summary>
+        /// Calculates the body, projectile, casing, and total lengths, as well as the length differential, which is used to penalize short shells
+        /// </summary>
         public void CalculateLengths()
         {
             if (BaseModule == null)
@@ -122,16 +127,26 @@ namespace ApsCalc
             EffectiveProjectileModuleCount = ProjectileLength / Gauge;
         }
 
+        /// <summary>
+        /// Calculates recoil from gunpowder casings
+        /// </summary>
         public void CalculateGPRecoil()
         {
             GPRecoil = GaugeCoefficient * GPCasingCount * 2500;
         }
 
+        /// <summary>
+        /// Calculates max rail draw of the shell
+        /// </summary>
         public void CalculateMaxDraw()
         {
             MaxDraw = 12500f * GaugeCoefficient * (EffectiveProjectileModuleCount + (0.5f * RGCasingCount));
         }
 
+
+        /// <summary>
+        /// Calculates velocity, kinetic damage, armor pierce, and chemical payload modifiers
+        /// </summary>
         public void CalculateModifiers()
         {
             // Calculate weighted velocity modifier of body
@@ -239,6 +254,10 @@ namespace ApsCalc
             }
         }
 
+
+        /// <summary>
+        /// Calculates shell velocity
+        /// </summary>
         public void CalculateVelocity()
         {
             // Head must be set before this can be called
@@ -254,6 +273,10 @@ namespace ApsCalc
             }
         }
 
+
+        /// <summary>
+        /// Calculates the volume used by the shell, including intake, loader, cooling, recoil absorbers, and rail chargers
+        /// </summary>
         public void CalculateVolume()
         {
             float intakeVolume = 1f; // Always have an intake
@@ -280,9 +303,31 @@ namespace ApsCalc
                 loaderVolume = 8f;
             }
 
-            VolumePerIntake = loaderVolume + intakeVolume;
+            float recoilVolume = TotalRecoil / (ReloadTime * 120f); // Absorbers absorb 120 per second per metre
+
+            float rpmPerCooler = 200f * (float)Math.Pow(ReloadTime, -1.4f);
+            float coolerVolume = 60f / (ReloadTime * rpmPerCooler);
+
+            float chargerVolume = RailDraw / (ReloadTime * 200f); // Chargers are 200 Energy per second
+
+            VolumePerIntake = loaderVolume + intakeVolume + recoilVolume + coolerVolume + chargerVolume;
+
+            if (TotalLength <= 1000f)
+            {
+                float recoilVolumeBelt = TotalRecoil / (ReloadTimeBelt * 120f); // Absorbers absorb 120 per second per metre
+
+                float coolerVolumeBelt = 60f / (ReloadTimeBelt * rpmPerCooler);
+
+                float chargerVolumeBelt = RailDraw / (ReloadTimeBelt * 200f); // Chargers are 200 Energy per second
+
+                VolumePerIntakeBelt = loaderVolume + intakeVolume + recoilVolumeBelt + coolerVolumeBelt + chargerVolumeBelt;
+            }
         }
 
+
+        /// <summary>
+        /// Calculates raw kinetic damage
+        /// </summary>
         public void CalculateKineticDamage()
         {
             // Head must be set before this can be called
@@ -301,6 +346,10 @@ namespace ApsCalc
             }
         }
 
+
+        /// <summary>
+        /// Calculates the armor pierce rating
+        /// </summary>
         public void CalculateAP()
         {
             // Head must be set before this can be called
@@ -312,6 +361,10 @@ namespace ApsCalc
             ArmorPierce = Velocity * OverallArmorPierceModifier * 0.0175f;
         }
 
+
+        /// <summary>
+        /// Calculates reload time; also calculates beltfed reload time for shells 1000 mm or shorter
+        /// </summary>
         public void CalculateReloadTime()
         {
             ReloadTime = (float)(Math.Pow(Gauge * Gauge * Gauge / 125000000f, 0.45)
@@ -328,6 +381,10 @@ namespace ApsCalc
             }
         }
 
+
+        /// <summary>
+        /// Calculates barrel cooldown time
+        /// </summary>
         public void CalculateCooldownTime()
         {
             CooldownTime = (float)(Math.Pow(GPCasingCount, 0.35f)
@@ -336,31 +393,32 @@ namespace ApsCalc
                 / (2 * (2 + EffectiveProjectileModuleCount + 0.25f * (GPCasingCount + RGCasingCount))));
         }
 
+
+        /// <summary>
+        /// Calculates chemical payload damage in "Equivalent warheads", which serves as a multiplier for the various kinds of chemical damage
+        /// </summary>
         public void CalculateChemDamage()
         {
-            float ChemBodies = 0;
-            // Count chemical bodies.  This could be simplified to just adding the value at index 2, but indices might shift
-            int modIndex = 0;
-            foreach (float modCount in BodyModuleCounts)
-            {
-                if (Module.AllModules[modIndex]?.IsChem == true)
-                {
-                    ChemBodies += modCount;
-                }
-                modIndex++;
-            }
+            // Count chemical bodies.
+            float chemBodies = BodyModuleCounts[2];
+
             if (BaseModule?.IsChem == true)
             {
-                ChemBodies += 1;
+                chemBodies += 1;
             }
             if (HeadModule.IsChem == true)
             {
-                ChemBodies += 1;
+                chemBodies += 1;
             }
 
-            ChemDamage = GaugeCoefficient * ChemBodies;
+            ChemDamage = GaugeCoefficient * chemBodies;
         }
 
+
+        /// <summary>
+        /// Calculates applied kinetic damage for a given target armor class
+        /// </summary>
+        /// <param name="targetAC"></param>
         public void CalculateKineticDPS(float targetAC)
         {
             EffectiveKineticDamage = KineticDamage * Math.Min(1, ArmorPierce / targetAC);
@@ -370,15 +428,14 @@ namespace ApsCalc
             if (TotalLength <= 1000f)
             {
                 KineticDPSBelt = EffectiveKineticDamage / ReloadTimeBelt;
-                KineticDPSPerVolumeBelt = KineticDPSBelt / VolumePerIntake;
-            }
-            else
-            {
-                KineticDPSBelt = default(float); // Reset value
-                KineticDPSPerVolumeBelt = default(float);
+                KineticDPSPerVolumeBelt = KineticDPSBelt / VolumePerIntakeBelt;
             }
         }
 
+
+        /// <summary>
+        /// Calculates relative chemical payload damage per second, in Equivalent Warheads per second
+        /// </summary>
         public void CalculateChemDPS()
         {
             ChemDPS = ChemDamage / ReloadTime;
@@ -387,15 +444,14 @@ namespace ApsCalc
             if (TotalLength <= 1000f)
             {
                 ChemDPSBelt = ChemDamage / ReloadTimeBelt;
-                ChemDPSPerVolumeBelt = ChemDPSBelt / VolumePerIntake;
-            }
-            else
-            {
-                ChemDPSBelt = default(float); // Reset value
-                ChemDPSPerVolume = default(float);
+                ChemDPSPerVolumeBelt = ChemDPSBelt / VolumePerIntakeBelt;
             }
         }
 
+
+        /// <summary>
+        /// Calculates the total number of modules in the shell
+        /// </summary>
         public void GetModuleCounts()
         {
             // ModuleCountTotal starts at 1 for the head
@@ -413,6 +469,10 @@ namespace ApsCalc
             ModuleCountTotal = (float)(Math.Ceiling(GPCasingCount) + RGCasingCount);
         }
 
+
+        /// <summary>
+        /// Gathers useful information about the shell and writes it to console
+        /// </summary>
         public void GetShellInfoKinetic()
         {
             Console.WriteLine("Gauge (mm): " + Gauge);
