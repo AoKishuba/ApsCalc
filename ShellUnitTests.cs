@@ -9,6 +9,9 @@ namespace ApsCalcTests
     [TestClass]
     public class ShellUnitTests
     {
+        /// <summary>
+        /// Verifies the gauge coefficient updates whenever the gauge is changed
+        /// </summary>
         [TestMethod]
         public void Gauge_Coefficient_Updates()
         {
@@ -26,6 +29,10 @@ namespace ApsCalcTests
             Assert.AreEqual(expectedGaugeCoefficient18, actual18);
         }
 
+
+        /// <summary>
+        /// Verifies new shells start with a null value for the base module
+        /// </summary>
         [TestMethod]
         public void Default_Base_Is_Null()
         {
@@ -37,6 +44,10 @@ namespace ApsCalcTests
             Assert.AreEqual(expectedDefaultBase, actualDefaultBase);
         }
 
+
+        /// <summary>
+        /// Verifies the base module can be set
+        /// </summary>
         [TestMethod]
         public void Base_Can_Be_Set()
         {
@@ -49,6 +60,10 @@ namespace ApsCalcTests
             Assert.AreEqual(expectedNewBase, actualNewBase);
         }
 
+
+        /// <summary>
+        /// Verifies the lengths are correct for shells at max gauge
+        /// </summary>
         [TestMethod]
         public void Long_Lengths_Are_Correct()
         {
@@ -111,6 +126,10 @@ namespace ApsCalcTests
             Assert.AreEqual(expectedEffectiveProjectileModuleCount, actualEffectiveProjectileModuleCount);
         }
 
+
+        /// <summary>
+        /// Verifies lengths are correct for shells with gauges between 100 and 300 mm (max length of fuzes/bases and fins, respectively)
+        /// </summary>
         [TestMethod]
         public void Mid_Lengths_Are_Correct()
         {
@@ -174,6 +193,10 @@ namespace ApsCalcTests
             Assert.AreEqual(expectedEffectiveProjectileModuleCount, actualEffectiveProjectileModuleCount);
         }
 
+
+        /// <summary>
+        /// Verifies lengths are correct for shells whose projectile length is < 2*gauge, which incurs a penalty proprotional to the Length Differential
+        /// </summary>
         [TestMethod]
         public void Short_Lengths_Are_Correct()
         {
@@ -237,6 +260,10 @@ namespace ApsCalcTests
             Assert.AreEqual(expectedEffectiveProjectileModuleCount, actualEffectiveProjectileModuleCount);
         }
 
+
+        /// <summary>
+        /// Checks gunpowder recoil calculations
+        /// </summary>
         [TestMethod]
         public void GP_Recoil_Math()
         {
@@ -259,6 +286,10 @@ namespace ApsCalcTests
             Assert.AreEqual(expectedGPRecoil18, actualGPRecoil18);
         }
 
+
+        /// <summary>
+        /// Checks max rail draw calculations
+        /// </summary>
         [TestMethod]
         public void Max_Draw_Math()
         {
@@ -286,6 +317,10 @@ namespace ApsCalcTests
             Assert.AreEqual(expectedDraw18, actualDraw18);
         }
 
+
+        /// <summary>
+        /// Checks shell velocity calculations
+        /// </summary>
         [TestMethod]
         public void Velocity_Math()
         {
@@ -325,7 +360,11 @@ namespace ApsCalcTests
             Assert.AreEqual(expectedVelocityWithRecoil, actualVelocityWithRecoil);
             Assert.AreEqual(expectedVelocityWithoutRecoil, actualVelocityWithoutRecoil);
         }
+        
 
+        /// <summary>
+        /// Checks armor pierce and kinetic damage calculations
+        /// </summary>
         [TestMethod]
         public void AP_KD_Math()
         {
@@ -375,6 +414,10 @@ namespace ApsCalcTests
             Assert.AreEqual(expectedArmorPierceWithoutRecoil, actualArmorPierceWithoutRecoil);
         }
 
+
+        /// <summary>
+        /// Checks chemical payload calculations
+        /// </summary>
         [TestMethod]
         public void Chem_Math()
         {
@@ -410,6 +453,10 @@ namespace ApsCalcTests
             Assert.AreEqual(expectedChemDamage5_18, actualChemDamage5_18);
         }
 
+
+        /// <summary>
+        /// Checks reload and cooldown time math
+        /// </summary>
         [TestMethod]
         public void Reload_And_Cooldown_Math()
         {
@@ -456,6 +503,10 @@ namespace ApsCalcTests
             Assert.AreEqual(expectedReloadTime18Belt, actualReloadTime18Belt);
         }
 
+
+        /// <summary>
+        /// Checks volume per intake math
+        /// </summary>
         [TestMethod]
         public void Volume_Math()
         {
