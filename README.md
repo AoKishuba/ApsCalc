@@ -10,3 +10,6 @@ Limitations:
 
 Planned Features:
   - Integration with my armor layout pierce calculator, for testing pendepth shells against a given armor configuration and only saving shells which pen
+
+
+Massive thanks to Herp and Nuke, without whom this project would not have been possible.
