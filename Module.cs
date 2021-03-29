@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -6,6 +6,17 @@ namespace ApsCalc
 {
     public class Module
     {
+        /// <summary>
+        /// Stores module information
+        /// </summary>
+        /// <param name="name">Module name</param>
+        /// <param name="vMod">Velocity modifier</param>
+        /// <param name="kdMod">Kinetic damage modifier</param>
+        /// <param name="apMod">Armor pierce modifier</param>
+        /// <param name="pMod">Chemical payload modifier</param>
+        /// <param name="mLength">Max length of module in mm (length equals gauge at or below this value)</param>
+        /// <param name="mType">The type of module - base, middle, or head</param>
+        /// <param name="_isChem">True if the module carries a chemical payload</param>
         public Module(string name, float vMod, float kdMod, float apMod, float pMod, float mLength, Position mType, bool _isChem)
         {
             Name = name;
