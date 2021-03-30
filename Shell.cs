@@ -68,6 +68,7 @@ namespace ApsCalc
         public float KineticDPSPerVolume { get; set; } = 0;
         public float KineticDPSBelt { get; set; } = 0;
         public float KineticDPSPerVolumeBelt { get; set; } = 0;
+        public bool IsBelt { get; set; } = false; // Whether the shell should use its beltfed for comparison
         public float ChemDamage { get; set; } // Frag, FlaK, HE, and EMP all scale the same
         public float ChemDPS { get; set; } = 0; // Effective Warheads per Second
         public float ChemDPSPerVolume { get; set; } = 0;
@@ -314,13 +315,13 @@ namespace ApsCalc
 
             if (TotalLength <= 1000f)
             {
-                float recoilVolumeBelt = TotalRecoil / (ReloadTimeBelt * 120f); // Absorbers absorb 120 per second per metre
+                float recoilVolumeBelt = TotalRecoil / (ReloadTimeBelt * 120f);
 
                 float coolerVolumeBelt = 60f / (ReloadTimeBelt * rpmPerCooler);
 
-                float chargerVolumeBelt = RailDraw / (ReloadTimeBelt * 200f); // Chargers are 200 Energy per second
-
-                VolumePerIntakeBelt = loaderVolume + intakeVolume + recoilVolumeBelt + coolerVolumeBelt + chargerVolumeBelt;
+                float chargerVolumeBelt = RailDraw / (ReloadTimeBelt * 200f);
+                // The extra 1 volume is for the clip, which is required for beltfed
+                VolumePerIntakeBelt = 1f + loaderVolume + intakeVolume + recoilVolumeBelt + coolerVolumeBelt + chargerVolumeBelt;
             }
         }
 
@@ -411,7 +412,7 @@ namespace ApsCalc
                 chemBodies += 1;
             }
 
-            ChemDamage = GaugeCoefficient * chemBodies;
+            ChemDamage = GaugeCoefficient * chemBodies * OverallPayloadModifier;
         }
 
 
@@ -471,113 +472,180 @@ namespace ApsCalc
 
 
         /// <summary>
-        /// Gathers useful information about the shell and writes it to console
+        /// Gather info for top-performing shells and write to console
         /// </summary>
-        public void GetShellInfoKinetic()
+        /// <param name="labels">False if labels should be omitted from result printout.  Labels are hard to copy to spreadsheets</param>
+        public void GetShellInfoKinetic(bool labels)
         {
-            Console.WriteLine("Gauge (mm): " + Gauge);
-            Console.WriteLine("Total length (mm): " + TotalLength);
-            Console.WriteLine("Length without casings: " + ProjectileLength);
-            Console.WriteLine("Head: " + HeadModule.Name);
-
-            // Add module counts
-            int modIndex = 0;
-            foreach (float modCount in BodyModuleCounts)
+            if (labels)
             {
-                if (modCount > 0)
+                Console.WriteLine("Gauge (mm): " + Gauge);
+                Console.WriteLine("Total length (mm): " + TotalLength);
+                Console.WriteLine("Length without casings: " + ProjectileLength);
+
+
+                if (RGCasingCount > 0)
                 {
-                    Console.WriteLine(Module.AllModules[modIndex].Name + ": " + modCount);
+                    Console.WriteLine("RG Casing: " + RGCasingCount);
                 }
-                modIndex++;
+
+                if (GPCasingCount > 0)
+                {
+                    Console.WriteLine("GP Casing: " + GPCasingCount);
+                }
+
+                int modIndex = 0;
+                foreach (float modCount in BodyModuleCounts)
+                {
+                    if (modCount > 0)
+                    {
+                        Console.WriteLine(Module.AllModules[modIndex].Name + ": " + modCount);
+                    }
+                    modIndex++;
+                }
+
+                Console.WriteLine("Head: " + HeadModule.Name);
+                Console.WriteLine("Rail draw: " + RailDraw);
+                Console.WriteLine("Recoil: " + TotalRecoil);
+                Console.WriteLine("Velocity (m/s): " + Velocity);
+                Console.WriteLine("Raw kinetic damage: " + KineticDamage);
+                Console.WriteLine("AP: " + ArmorPierce);
+                Console.WriteLine("Effective kinetic damage: " + EffectiveKineticDamage);
+
+                if (IsBelt)
+                {
+                    Console.WriteLine("Reload time (belt): " + ReloadTimeBelt);
+                    Console.WriteLine("Effective kinetic DPS (belt): " + KineticDPSBelt);
+                    Console.WriteLine("Effective kinetic DPS per volume (belt): " + KineticDPSPerVolumeBelt);
+                }
+                else
+                {
+                    Console.WriteLine("Reload time: " + ReloadTime);
+                    Console.WriteLine("Effective kinetic DPS: " + KineticDPS);
+                    Console.WriteLine("Effective kinetic DPS per volume: " + KineticDPSPerVolume);
+                }
             }
 
-            if (BaseModule != null)
+
+            else if (!labels)
             {
-                Console.WriteLine("Base: " + BaseModule.Name);
-            }
+                Console.WriteLine(Gauge);
+                Console.WriteLine(TotalLength);
+                Console.WriteLine(ProjectileLength);
+                Console.WriteLine(RGCasingCount);
+                Console.WriteLine(GPCasingCount);
 
-            if (GPCasingCount > 0)
-            {
-                Console.WriteLine("GP Casing: " + GPCasingCount);
-            }
+                foreach (float modCount in BodyModuleCounts)
+                {
+                    Console.WriteLine(modCount);
+                }
 
-            if (RGCasingCount > 0)
-            {
-                Console.WriteLine("RG Casing: " + RGCasingCount);
-            }
+                Console.WriteLine(HeadModule.Name);
 
-            Console.WriteLine("Rail draw: " + RailDraw);
-            Console.WriteLine("Reload time (s): " + ReloadTime);
+                Console.WriteLine(RailDraw);
+                Console.WriteLine(TotalRecoil);
+                Console.WriteLine(Velocity);
+                Console.WriteLine(KineticDamage);
+                Console.WriteLine(ArmorPierce);
+                Console.WriteLine(EffectiveKineticDamage);
 
-            if (ReloadTimeBelt > 0)
-            {
-                Console.WriteLine("Reload time (belt): " + ReloadTimeBelt);
-            }
-
-            Console.WriteLine("Velocity (m/s): " + Velocity);
-            Console.WriteLine("Base KD: " + KineticDamage);
-            Console.WriteLine("AP: " + ArmorPierce);
-            Console.WriteLine("Eff. KD: " + EffectiveKineticDamage);
-            Console.WriteLine("DPS: " + KineticDPS);
-            Console.WriteLine("DPS per Volume: " + KineticDPSPerVolume);
-
-            if (KineticDPSBelt > 0)
-            {
-                Console.WriteLine("DPS (belt): " + KineticDPSBelt);
-                Console.WriteLine("DPS per volume (belt): " + KineticDPSPerVolumeBelt);
+                if (IsBelt)
+                {
+                    Console.WriteLine(ReloadTimeBelt);
+                    Console.WriteLine(KineticDPSBelt);
+                    Console.WriteLine(KineticDPSPerVolumeBelt);
+                }
+                else
+                {
+                    Console.WriteLine(ReloadTime);
+                    Console.WriteLine(KineticDPS);
+                    Console.WriteLine(KineticDPSPerVolume);
+                }
             }
         }
 
-        public void GetShellInfoChem()
+        public void GetShellInfoChem(bool labels)
         {
-            Console.WriteLine("Gauge (mm): " + Gauge);
-            Console.WriteLine("Total length (mm): " + TotalLength);
-            Console.WriteLine("Length without casings: " + ProjectileLength);
-            Console.WriteLine("Head: " + HeadModule.Name);
-
-            // Add module counts
-            int modIndex = 0;
-            foreach (float modCount in BodyModuleCounts)
+            if (labels)
             {
-                if (modCount > 0)
+                Console.WriteLine("Gauge (mm): " + Gauge);
+                Console.WriteLine("Total length (mm): " + TotalLength);
+                Console.WriteLine("Length without casings: " + ProjectileLength);
+
+
+                if (RGCasingCount > 0)
                 {
-                    Console.WriteLine(Module.AllModules[modIndex].Name + ": " + modCount);
+                    Console.WriteLine("RG Casing: " + RGCasingCount);
                 }
-                modIndex++;
+
+                if (GPCasingCount > 0)
+                {
+                    Console.WriteLine("GP Casing: " + GPCasingCount);
+                }
+
+                int modIndex = 0;
+                foreach (float modCount in BodyModuleCounts)
+                {
+                    if (modCount > 0)
+                    {
+                        Console.WriteLine(Module.AllModules[modIndex].Name + ": " + modCount);
+                    }
+                    modIndex++;
+                }
+
+                Console.WriteLine("Head: " + HeadModule.Name);
+                Console.WriteLine("Rail draw: " + RailDraw);
+                Console.WriteLine("Recoil: " + TotalRecoil);
+                Console.WriteLine("Velocity (m/s): " + Velocity);
+                Console.WriteLine("Chemical payload strength: " + ChemDamage);
+
+
+                if (IsBelt)
+                {
+                    Console.WriteLine("Reload time (belt): " + ReloadTimeBelt);
+                    Console.WriteLine("Chemical DPS (belt): " + ChemDPSBelt);
+                    Console.WriteLine("Chemical DPS per volume (belt): " + ChemDPSPerVolumeBelt);
+                }
+                else
+                {
+                    Console.WriteLine("Reload time: " + ReloadTime);
+                    Console.WriteLine("Chemical DPS: " + ChemDPS);
+                    Console.WriteLine("Chemical DPS per volume: " + ChemDPSPerVolume);
+                }
             }
 
-            if (BaseModule != null)
+
+            else if (!labels)
             {
-                Console.WriteLine("Base: " + BaseModule.Name);
-            }
+                Console.WriteLine(Gauge);
+                Console.WriteLine(TotalLength);
+                Console.WriteLine(ProjectileLength);
+                Console.WriteLine(RGCasingCount);
+                Console.WriteLine(GPCasingCount);
 
-            if (GPCasingCount > 0)
-            {
-                Console.WriteLine("GP Casing: " + GPCasingCount);
-            }
+                foreach (float modCount in BodyModuleCounts)
+                {
+                    Console.WriteLine(modCount);
+                }
 
-            if (RGCasingCount > 0)
-            {
-                Console.WriteLine("RG Casing: " + RGCasingCount);
-            }
+                Console.WriteLine(HeadModule.Name);
+                Console.WriteLine(RailDraw);
+                Console.WriteLine(TotalRecoil);
+                Console.WriteLine(Velocity);
+                Console.WriteLine(ChemDamage);
 
-            Console.WriteLine("Rail draw: " + RailDraw);
-            Console.WriteLine("Reload time (s): " + ReloadTime);
-
-            if (ReloadTimeBelt > 0)
-            {
-                Console.WriteLine("Reload time (belt): " + ReloadTimeBelt);
-            }
-
-            Console.WriteLine("Velocity (m/s): " + Velocity);
-            Console.WriteLine("Effective chem warheads: " + ChemDamage);
-            Console.WriteLine("DPS: " + ChemDPS);
-            Console.WriteLine("DPS per loader volume: " + ChemDPSPerVolume);
-
-            if (KineticDPSBelt > 0)
-            {
-                Console.WriteLine("DPS (belt): " + ChemDPSBelt);
-                Console.WriteLine("DPS per loader volume (belt): " + ChemDPSPerVolumeBelt);
+                if (IsBelt)
+                {
+                    Console.WriteLine(ReloadTimeBelt);
+                    Console.WriteLine(ChemDPSBelt);
+                    Console.WriteLine(ChemDPSPerVolumeBelt);
+                }
+                else
+                {
+                    Console.WriteLine(ReloadTime);
+                    Console.WriteLine(ChemDPS);
+                    Console.WriteLine(ChemDPSPerVolume);
+                }
             }
         }
     }
