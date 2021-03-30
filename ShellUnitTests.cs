@@ -416,41 +416,144 @@ namespace ApsCalcTests
 
 
         /// <summary>
-        /// Checks chemical payload calculations
+        /// Verifies chemical shells start with 0 damage
         /// </summary>
         [TestMethod]
-        public void Chem_Math()
+        public void Chem_Starts_At_0()
         {
             float[] testBodyModuleCounts0 = { 0, 0, 0, 0, 0 };
             float[] testBodyModuleCounts5 = { 0, 0, 5, 0, 0 };
             float expectedChemDamage0 = 0;
             float expectedChemDamage5_500 = 5f;
-            float expectedChemDamage5_18 = 0.012598374f;
 
 
             Shell TestShell = new Shell();
             TestShell.Gauge = 500;
             TestShell.HeadModule = Module.APHead;
             TestShell.BodyModuleCounts = testBodyModuleCounts0;
+            TestShell.CalculateModifiers();
             TestShell.CalculateChemDamage();
             float actualChemDamage0 = TestShell.ChemDamage;
 
             TestShell.Gauge = 500;
             TestShell.HeadModule = Module.APHead;
             TestShell.BodyModuleCounts = testBodyModuleCounts5;
+            TestShell.CalculateModifiers();
             TestShell.CalculateChemDamage();
             float actualChemDamage5_500 = TestShell.ChemDamage;
-
-            TestShell.Gauge = 18;
-            TestShell.HeadModule = Module.APHead;
-            TestShell.BodyModuleCounts = testBodyModuleCounts5;
-            TestShell.CalculateChemDamage();
-            float actualChemDamage5_18 = TestShell.ChemDamage;
 
 
             Assert.AreEqual(expectedChemDamage0, actualChemDamage0);
             Assert.AreEqual(expectedChemDamage5_500, actualChemDamage5_500);
+        }
+
+
+        /// <summary>
+        /// Checks chemical payload math with varying gauge
+        /// </summary>
+        [TestMethod]
+        public void Chem_Math_Gauge()
+        {
+            Shell TestShell = new Shell();
+            float[] testBodyModuleCounts5 = { 0, 0, 5, 0, 0 };
+
+            float expectedChemDamage5_18 = 0.012598374f;
+            float expectedChemDamage5_500 = 5f;
+
+            TestShell.Gauge = 18;
+            TestShell.HeadModule = Module.APHead;
+            TestShell.BodyModuleCounts = testBodyModuleCounts5;
+            TestShell.CalculateModifiers();
+            TestShell.CalculateChemDamage();
+            float actualChemDamage5_18 = TestShell.ChemDamage;
+
+            TestShell.Gauge = 500;
+            TestShell.HeadModule = Module.APHead;
+            TestShell.BodyModuleCounts = testBodyModuleCounts5;
+            TestShell.CalculateModifiers();
+            TestShell.CalculateChemDamage();
+            float actualChemDamage5_500 = TestShell.ChemDamage;
+
+
             Assert.AreEqual(expectedChemDamage5_18, actualChemDamage5_18);
+            Assert.AreEqual(expectedChemDamage5_500, actualChemDamage5_500);
+        }
+
+
+        /// <summary>
+        /// Checks payload modifier of supercavitation base
+        /// </summary>
+        [TestMethod]
+        public void Payload_Modifier_Supercav()
+        {
+            Shell TestShell = new Shell();
+            float expectedPayloadModifierSupercav = 0.75f;
+
+            TestShell.HeadModule = Module.APHead;
+            TestShell.BaseModule = Module.Supercav;
+            TestShell.CalculateModifiers();
+            float actualPayloadModifierSupercav = TestShell.OverallPayloadModifier;
+
+
+            Assert.AreEqual(expectedPayloadModifierSupercav, actualPayloadModifierSupercav);
+        }
+
+
+        /// <summary>
+        /// Checks payload modifier of sabot
+        /// </summary>
+        [TestMethod]
+        public void Payload_Modifier_Sabot()
+        {
+            Shell TestShell = new Shell();
+            float expectedPayloadModifierSabot = 0.25f;
+
+
+            TestShell.HeadModule = Module.SabotHead;
+            TestShell.CalculateModifiers();
+            float actualPayloadModifierSabot = TestShell.OverallPayloadModifier;
+
+
+            Assert.AreEqual(expectedPayloadModifierSabot, actualPayloadModifierSabot);
+        }
+
+
+        /// <summary>
+        /// Checks payload modifier of disruptor
+        /// </summary>
+        [TestMethod]
+        public void Payload_Modifier_Disruptor()
+        {
+            Shell TestShell = new Shell();
+            float expectedPayloadModifierDisruptor = 0.5f;
+
+
+            TestShell.HeadModule = Module.Disruptor;
+            TestShell.CalculateModifiers();
+            float actualPayloadModifierDisruptor = TestShell.OverallPayloadModifier;
+
+
+            Assert.AreEqual(expectedPayloadModifierDisruptor, actualPayloadModifierDisruptor);
+        }
+
+
+        /// <summary>
+        /// Verifies the 50% payload modifier penalty from the disruptor head stacks
+        /// </summary>
+        [TestMethod]
+        public void Payload_Modifier_Disruptor_Stacks()
+        {
+            Shell TestShell = new Shell();
+            float expectedPayloadModDisruptorAndSupercav = 0.75f * 0.5f;
+
+
+            TestShell.BaseModule = Module.Supercav;
+            TestShell.HeadModule = Module.Disruptor;
+            TestShell.CalculateModifiers();
+            float actualPayloadModifierDisruptorAndSupercav = TestShell.OverallPayloadModifier;
+
+
+            Assert.AreEqual(expectedPayloadModDisruptorAndSupercav, actualPayloadModifierDisruptorAndSupercav);
         }
 
 
@@ -503,7 +606,7 @@ namespace ApsCalcTests
             Assert.AreEqual(expectedReloadTime18Belt, actualReloadTime18Belt);
         }
 
-
+        /*
         /// <summary>
         /// Checks volume per intake math
         /// </summary>
@@ -513,62 +616,33 @@ namespace ApsCalcTests
             // A shell with a bit of everything
             float[] testBodyModuleCounts = { 1, 1, 1, 1, 1 };
 
-            float expectedVolume500 = 9f;
-            //float expectedKdpsPerVolume500 = ;
-            //float expectedKdpsPerVolume500Belt = default(float); // Total length > 1000 mm
-
+            float expectedVolume500 = 5f;
             float expectedVolume18 = 2f;
-            //float expectedKdpsPerVolume18 = ;
-            //float expectedKdpsPerVolume18Belt =  * 0.75f * (float)Math.Pow(0.018f, 0.45f);
 
             Shell TestShell = new Shell();
             TestShell.Gauge = 500;
             testBodyModuleCounts.CopyTo(TestShell.BodyModuleCounts, 0);
-            TestShell.GPCasingCount = 5;
-            TestShell.RGCasingCount = 5;
+            TestShell.GPCasingCount = 0;
+            TestShell.RGCasingCount = 0;
+            TestShell.RailDraw = 0;
             TestShell.HeadModule = Module.APHead;
             TestShell.BaseModule = Module.BaseBleeder;
             TestShell.CalculateLengths();
-            TestShell.CalculateVolume();
             TestShell.CalculateGPRecoil();
-            TestShell.CalculateModifiers();
-            TestShell.CalculateVelocity();
-            TestShell.CalculateAP();
-            TestShell.CalculateKineticDamage();
-            TestShell.CalculateChemDamage();
+            TestShell.CalculateCooldownTime();
             TestShell.CalculateReloadTime();
-            TestShell.CalculateKineticDPS(20f);
-            TestShell.CalculateChemDPS();
+            TestShell.CalculateVolume();
             float actualVolume500 = TestShell.VolumePerIntake;
-            float actualKdpsPerVolume500 = TestShell.KineticDPSPerVolume;
-            float actualKdpsPerVolume500Belt = TestShell.KineticDPSPerVolumeBelt;
-            //float actualKdpsPerVolume500 = TestShell.CooldownTime;
-            //float actualKdpsPerVolume500Belt = TestShell.ReloadTimeBelt;
 
             TestShell.Gauge = 18;
             TestShell.CalculateLengths();
             TestShell.CalculateVolume();
-            TestShell.CalculateGPRecoil();
-            TestShell.CalculateModifiers();
-            TestShell.CalculateVelocity();
-            TestShell.CalculateAP();
-            TestShell.CalculateKineticDamage();
-            TestShell.CalculateChemDamage();
-            TestShell.CalculateReloadTime();
-            TestShell.CalculateKineticDPS(20f);
-            TestShell.CalculateChemDPS();
             float actualVolume18 = TestShell.VolumePerIntake;
-            float actualKdpsPerVolume18 = TestShell.KineticDPSPerVolume;
-            float actualKdpsPerVolume18Belt = TestShell.KineticDPSPerVolumeBelt;
 
 
             Assert.AreEqual(expectedVolume500, actualVolume500);
-            //Assert.AreEqual(expectedKdpsPerVolume500, actualKdpsPerVolume500);
-            //Assert.AreEqual(expectedKdpsPerVolume500Belt, actualKdpsPerVolume500Belt);
-
             Assert.AreEqual(expectedVolume18, actualVolume18);
-            //Assert.AreEqual(expectedKdpsPerVolume18, actualKdpsPerVolume18);
-            //Assert.AreEqual(expectedKdpsPerVolume18Belt, actualKdpsPerVolume18Belt);
         }
+        */
     }
 }
