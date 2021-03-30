@@ -235,6 +235,7 @@ namespace ApsCalc
                 OverallPayloadModifier = Math.Min(OverallPayloadModifier, BaseModule.PayloadMod);
             }
 
+
             modIndex = 0;
             foreach (float modCount in BodyModuleCounts)
             {
@@ -405,11 +406,11 @@ namespace ApsCalc
 
             if (BaseModule?.IsChem == true)
             {
-                chemBodies += 1;
+                chemBodies++;
             }
             if (HeadModule.IsChem == true)
             {
-                chemBodies += 1;
+                chemBodies++;
             }
 
             ChemDamage = GaugeCoefficient * chemBodies * OverallPayloadModifier;
