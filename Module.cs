@@ -58,7 +58,7 @@ namespace ApsCalc
         public static Module SabotHead { get; } = new Module("Sabot Head", 1.6f, 0.85f, 2.5f, 0.25f, 500, Position.Head, false);
         public static Module HeavyHead { get; } = new Module("Heavy Head", 1.45f, 1.65f, 1.0f, 1.0f, 500, Position.Head, false);
         public static Module SkimmerTip { get; } = new Module("Skimmer Tip", 1.6f, 1.0f, 1.4f, 1.0f, 500, Position.Head, false);
-        public static Module Disruptor { get; } = new Module("Disruptor Conduit", 1.6f, 1.0f, 0.1f, 0.5f, 500, Position.Head, true);
+        public static Module Disruptor { get; } = new Module("Disruptor Conduit", 1.6f, 1.0f, 0.1f, 1f, 500, Position.Head, true);
         public static Module BaseBleeder { get; } = new Module("Base Bleeder", 1.0f, 1.0f, 1.0f, 1.0f, 100, Position.Base, false);
         public static Module Supercav { get; } = new Module("Supercavitation Base", 1.0f, 1.0f, 1.0f, 0.75f, 100, Position.Base, false);
         public static Module Tracer { get; } = new Module("Visible Tracer", 1.0f, 1.0f, 1.0f, 1.0f, 100, Position.Base, false);
