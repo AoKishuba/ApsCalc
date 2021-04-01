@@ -170,14 +170,14 @@ namespace ApsCalc
         /// </summary>
         public void GetTopShells()
         {
-            if (TopDps1000.KineticDPS > 0 || TopDps1000.ChemDPS > 0)
-            {
-                TopDpsShells.Add("1 m", TopDps1000);
-            }
-
             if (TopDpsBelt.KineticDPS > 0 || TopDpsBelt.ChemDPS > 0)
             {
                 TopDpsShells.Add("1 m (belt)", TopDpsBelt);
+            }
+
+            if (TopDps1000.KineticDPS > 0 || TopDps1000.ChemDPS > 0)
+            {
+                TopDpsShells.Add("1 m", TopDps1000);
             }
 
             if (TopDps2000.KineticDPS > 0 || TopDps2000.ChemDPS > 0)
@@ -263,7 +263,7 @@ namespace ApsCalc
                                 ShellUnderTesting.CalculateKineticDamage();
                                 ShellUnderTesting.CalculateAP();
                                 ShellUnderTesting.CalculateKineticDPS(TargetAC);
-                                
+
                                 if (ShellUnderTesting.TotalLength <= 1000f)
                                 {
                                     if (ShellUnderTesting.KineticDPSPerVolume > TopDps1000.KineticDPSPerVolume)
@@ -373,31 +373,6 @@ namespace ApsCalc
             Console.WriteLine("\n");
 
             GetTopShells();
-
-            if (DamageType == 0) // Kinetic
-            {
-                foreach (KeyValuePair<string, Shell> topShell in TopDpsShells)
-                {
-                    if (topShell.Value.KineticDPS > 0)
-                    {
-                        Console.WriteLine(topShell.Key);
-                        topShell.Value.GetShellInfoKinetic();
-                        Console.WriteLine("\n");
-                    }
-                }
-            }
-            else if (DamageType == 1) // Chemical
-            {
-                foreach (KeyValuePair<string, Shell> topShell in TopDpsShells)
-                {
-                    if (topShell.Value.ChemDPS > 0)
-                    {
-                        Console.WriteLine(topShell.Key);
-                        topShell.Value.GetShellInfoChem();
-                        Console.WriteLine("\n");
-                    }
-                }
-            }
         }
     }
 }
