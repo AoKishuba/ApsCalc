@@ -81,10 +81,10 @@ namespace ApsCalc
         public float DamageType { get; }
 
         // Testing data
-        public float TestComparisons { get; set; } = 0;
-        public float TestRejectLength { get; set; } = 0;
-        public float TestRejectVelocity { get; set; } = 0;
-        public float TestTotal { get; set; } = 0;
+        public float testComparisons { get; set; } = 0;
+        public float testRejectLength { get; set; } = 0;
+        public float testRejectVelocity { get; set; } = 0;
+        public float testTotal { get; set; } = 0;
 
         // Store top-DPS shells by loader length
         public Shell TopDps1000 { get; set; } = new Shell();
@@ -216,144 +216,144 @@ namespace ApsCalc
                     Console.WriteLine("\nTesting " + Module.AllModules[counts.HeadIndex].Name + " " + counts.Gauge + " mm.  Max " + MaxGauge + " mm.");
                     lastGauge = counts.Gauge;
                 }
-                Shell ShellUnderTestingSetup = new Shell();
-                ShellUnderTestingSetup.HeadModule = Module.AllModules[counts.HeadIndex];
-                ShellUnderTestingSetup.BaseModule = BaseModule;
-                FixedModuleCounts.CopyTo(ShellUnderTestingSetup.BodyModuleCounts, 0);
+                Shell shellUnderTestingSetup = new Shell();
+                shellUnderTestingSetup.HeadModule = Module.AllModules[counts.HeadIndex];
+                shellUnderTestingSetup.BaseModule = BaseModule;
+                FixedModuleCounts.CopyTo(shellUnderTestingSetup.BodyModuleCounts, 0);
 
-                ShellUnderTestingSetup.Gauge = counts.Gauge;
-                ShellUnderTestingSetup.BodyModuleCounts[VariableModuleIndices[0]] += counts.Var0Count;
-                ShellUnderTestingSetup.BodyModuleCounts[VariableModuleIndices[1]] += counts.Var1Count;
-                ShellUnderTestingSetup.GPCasingCount = counts.GPCount;
-                ShellUnderTestingSetup.RGCasingCount = counts.RGCount;
+                shellUnderTestingSetup.Gauge = counts.Gauge;
+                shellUnderTestingSetup.BodyModuleCounts[VariableModuleIndices[0]] += counts.Var0Count;
+                shellUnderTestingSetup.BodyModuleCounts[VariableModuleIndices[1]] += counts.Var1Count;
+                shellUnderTestingSetup.GPCasingCount = counts.GPCount;
+                shellUnderTestingSetup.RGCasingCount = counts.RGCount;
 
-                ShellUnderTestingSetup.CalculateLengths();
+                shellUnderTestingSetup.CalculateLengths();
 
-                if (ShellUnderTestingSetup.TotalLength <= MaxShellLength)
+                if (shellUnderTestingSetup.TotalLength <= MaxShellLength)
                 {
-                    ShellUnderTestingSetup.CalculateMaxDraw();
-                    float maxDraw = Math.Min(MaxDrawInput, ShellUnderTestingSetup.MaxDraw);
-                    foreach (float draw in GetRailDraw(ShellUnderTestingSetup.MaxDraw))
+                    shellUnderTestingSetup.CalculateMaxDraw();
+                    float maxDraw = Math.Min(MaxDrawInput, shellUnderTestingSetup.MaxDraw);
+                    foreach (float draw in GetRailDraw(shellUnderTestingSetup.MaxDraw))
                     {
                         // Reset shell
-                        Shell ShellUnderTesting = new Shell();
-                        ShellUnderTesting.HeadModule = Module.AllModules[counts.HeadIndex];
-                        ShellUnderTesting.BaseModule = BaseModule;
-                        FixedModuleCounts.CopyTo(ShellUnderTesting.BodyModuleCounts, 0);
+                        Shell shellUnderTesting = new Shell();
+                        shellUnderTesting.HeadModule = Module.AllModules[counts.HeadIndex];
+                        shellUnderTesting.BaseModule = BaseModule;
+                        FixedModuleCounts.CopyTo(shellUnderTesting.BodyModuleCounts, 0);
 
-                        ShellUnderTesting.Gauge = counts.Gauge;
-                        ShellUnderTesting.BodyModuleCounts[VariableModuleIndices[0]] += counts.Var0Count;
-                        ShellUnderTesting.BodyModuleCounts[VariableModuleIndices[1]] += counts.Var1Count;
-                        ShellUnderTesting.GPCasingCount = counts.GPCount;
-                        ShellUnderTesting.RGCasingCount = counts.RGCount;
-                        ShellUnderTesting.CalculateLengths();
-                        ShellUnderTesting.CalculateGPRecoil();
-                        ShellUnderTesting.CalculateModifiers();
+                        shellUnderTesting.Gauge = counts.Gauge;
+                        shellUnderTesting.BodyModuleCounts[VariableModuleIndices[0]] += counts.Var0Count;
+                        shellUnderTesting.BodyModuleCounts[VariableModuleIndices[1]] += counts.Var1Count;
+                        shellUnderTesting.GPCasingCount = counts.GPCount;
+                        shellUnderTesting.RGCasingCount = counts.RGCount;
+                        shellUnderTesting.CalculateLengths();
+                        shellUnderTesting.CalculateGPRecoil();
+                        shellUnderTesting.CalculateModifiers();
 
-                        ShellUnderTesting.RailDraw = draw;
-                        ShellUnderTesting.CalculateVelocity();
-                        if (ShellUnderTesting.Velocity >= MinVelocityInput)
+                        shellUnderTesting.RailDraw = draw;
+                        shellUnderTesting.CalculateVelocity();
+                        if (shellUnderTesting.Velocity >= MinVelocityInput)
                         {
-                            TestComparisons++;
-                            ShellUnderTesting.CalculateReloadTime();
-                            ShellUnderTesting.CalculateVolume();
+                            testComparisons++;
+                            shellUnderTesting.CalculateReloadTime();
+                            shellUnderTesting.CalculateVolume();
 
                             if (DamageType == 0) // Kinetic
                             {
-                                ShellUnderTesting.CalculateKineticDamage();
-                                ShellUnderTesting.CalculateAP();
-                                ShellUnderTesting.CalculateKineticDPS(TargetAC);
+                                shellUnderTesting.CalculateKineticDamage();
+                                shellUnderTesting.CalculateAP();
+                                shellUnderTesting.CalculateKineticDPS(TargetAC);
 
-                                if (ShellUnderTesting.TotalLength <= 1000f)
+                                if (shellUnderTesting.TotalLength <= 1000f)
                                 {
-                                    if (ShellUnderTesting.KineticDPSPerVolume > TopDps1000.KineticDPSPerVolume)
+                                    if (shellUnderTesting.KineticDPSPerVolume > TopDps1000.KineticDPSPerVolume)
                                     {
-                                        TopDps1000 = ShellUnderTesting;
+                                        TopDps1000 = shellUnderTesting;
                                     }
-                                    if (ShellUnderTesting.KineticDPSPerVolumeBelt > TopDpsBelt.KineticDPSPerVolumeBelt)
+                                    if (shellUnderTesting.KineticDPSPerVolumeBelt > TopDpsBelt.KineticDPSPerVolumeBelt)
                                     {
-                                        TopDpsBelt = ShellUnderTesting;
-                                    }
-                                }
-                                else if (ShellUnderTesting.TotalLength <= 2000f)
-                                {
-                                    if (ShellUnderTesting.KineticDPSPerVolume > TopDps2000.KineticDPSPerVolume)
-                                    {
-                                        TopDps2000 = ShellUnderTesting;
+                                        TopDpsBelt = shellUnderTesting;
                                     }
                                 }
-                                else if (ShellUnderTesting.TotalLength <= 4000f)
+                                else if (shellUnderTesting.TotalLength <= 2000f)
                                 {
-                                    if (ShellUnderTesting.KineticDPSPerVolume > TopDps4000.KineticDPSPerVolume)
+                                    if (shellUnderTesting.KineticDPSPerVolume > TopDps2000.KineticDPSPerVolume)
                                     {
-                                        TopDps4000 = ShellUnderTesting;
+                                        TopDps2000 = shellUnderTesting;
                                     }
                                 }
-                                else if (ShellUnderTesting.TotalLength <= 6000f)
+                                else if (shellUnderTesting.TotalLength <= 4000f)
                                 {
-                                    if (ShellUnderTesting.KineticDPSPerVolume > TopDps6000.KineticDPSPerVolume)
+                                    if (shellUnderTesting.KineticDPSPerVolume > TopDps4000.KineticDPSPerVolume)
                                     {
-                                        TopDps6000 = ShellUnderTesting;
+                                        TopDps4000 = shellUnderTesting;
                                     }
                                 }
-                                else if (ShellUnderTesting.TotalLength <= 8000f)
+                                else if (shellUnderTesting.TotalLength <= 6000f)
                                 {
-                                    if (ShellUnderTesting.KineticDPSPerVolume > TopDps8000.KineticDPSPerVolume)
+                                    if (shellUnderTesting.KineticDPSPerVolume > TopDps6000.KineticDPSPerVolume)
                                     {
-                                        TopDps8000 = ShellUnderTesting;
+                                        TopDps6000 = shellUnderTesting;
+                                    }
+                                }
+                                else if (shellUnderTesting.TotalLength <= 8000f)
+                                {
+                                    if (shellUnderTesting.KineticDPSPerVolume > TopDps8000.KineticDPSPerVolume)
+                                    {
+                                        TopDps8000 = shellUnderTesting;
                                     }
                                 }
                             }
 
                             if (DamageType == 1) // Chem
                             {
-                                ShellUnderTesting.CalculateChemDamage();
-                                ShellUnderTesting.CalculateChemDPS();
+                                shellUnderTesting.CalculateChemDamage();
+                                shellUnderTesting.CalculateChemDPS();
 
-                                if (ShellUnderTesting.TotalLength <= 1000f)
+                                if (shellUnderTesting.TotalLength <= 1000f)
                                 {
-                                    if (ShellUnderTesting.ChemDPSPerVolume > TopDps1000.ChemDPSPerVolume)
+                                    if (shellUnderTesting.ChemDPSPerVolume > TopDps1000.ChemDPSPerVolume)
                                     {
-                                        TopDps1000 = ShellUnderTesting;
+                                        TopDps1000 = shellUnderTesting;
                                     }
-                                    if (ShellUnderTesting.ChemDPSPerVolumeBelt > TopDpsBelt.ChemDPSPerVolumeBelt)
+                                    if (shellUnderTesting.ChemDPSPerVolumeBelt > TopDpsBelt.ChemDPSPerVolumeBelt)
                                     {
-                                        TopDpsBelt = ShellUnderTesting;
-                                    }
-                                }
-                                else if (ShellUnderTesting.TotalLength <= 2000f)
-                                {
-                                    if (ShellUnderTesting.ChemDPSPerVolume > TopDps2000.ChemDPSPerVolume)
-                                    {
-                                        TopDps2000 = ShellUnderTesting;
+                                        TopDpsBelt = shellUnderTesting;
                                     }
                                 }
-                                else if (ShellUnderTesting.TotalLength <= 4000f)
+                                else if (shellUnderTesting.TotalLength <= 2000f)
                                 {
-                                    if (ShellUnderTesting.ChemDPSPerVolume > TopDps4000.ChemDPSPerVolume)
+                                    if (shellUnderTesting.ChemDPSPerVolume > TopDps2000.ChemDPSPerVolume)
                                     {
-                                        TopDps4000 = ShellUnderTesting;
+                                        TopDps2000 = shellUnderTesting;
                                     }
                                 }
-                                else if (ShellUnderTesting.TotalLength <= 6000f)
+                                else if (shellUnderTesting.TotalLength <= 4000f)
                                 {
-                                    if (ShellUnderTesting.ChemDPSPerVolume > TopDps6000.ChemDPSPerVolume)
+                                    if (shellUnderTesting.ChemDPSPerVolume > TopDps4000.ChemDPSPerVolume)
                                     {
-                                        TopDps6000 = ShellUnderTesting;
+                                        TopDps4000 = shellUnderTesting;
                                     }
                                 }
-                                else if (ShellUnderTesting.TotalLength <= 8000f)
+                                else if (shellUnderTesting.TotalLength <= 6000f)
                                 {
-                                    if (ShellUnderTesting.ChemDPSPerVolume > TopDps8000.ChemDPSPerVolume)
+                                    if (shellUnderTesting.ChemDPSPerVolume > TopDps6000.ChemDPSPerVolume)
                                     {
-                                        TopDps8000 = ShellUnderTesting;
+                                        TopDps6000 = shellUnderTesting;
+                                    }
+                                }
+                                else if (shellUnderTesting.TotalLength <= 8000f)
+                                {
+                                    if (shellUnderTesting.ChemDPSPerVolume > TopDps8000.ChemDPSPerVolume)
+                                    {
+                                        TopDps8000 = shellUnderTesting;
                                     }
                                 }
                             }
                         }
                         else
                         {
-                            TestRejectVelocity++;
+                            testRejectVelocity++;
                         }
 
                     }
@@ -361,15 +361,15 @@ namespace ApsCalc
                 }
                 else
                 {
-                    TestRejectLength++;
+                    testRejectLength++;
                 }
 
             }
-            TestTotal = TestComparisons + TestRejectLength + TestRejectVelocity;
-            Console.WriteLine(TestComparisons + " shells compared.");
-            Console.WriteLine(TestRejectLength + " shells rejected due to length.");
-            Console.WriteLine(TestRejectVelocity + " shells rejected due to velocity.");
-            Console.WriteLine(TestTotal + " total.");
+            testTotal = testComparisons + testRejectLength + testRejectVelocity;
+            Console.WriteLine(testComparisons + " shells compared.");
+            Console.WriteLine(testRejectLength + " shells rejected due to length.");
+            Console.WriteLine(testRejectVelocity + " shells rejected due to velocity.");
+            Console.WriteLine(testTotal + " total.");
             Console.WriteLine("\n");
 
             GetTopShells();
