@@ -606,7 +606,7 @@ namespace ApsCalcTests
             Assert.AreEqual(expectedReloadTime18Belt, actualReloadTime18Belt);
         }
 
-        /*
+        
         /// <summary>
         /// Checks volume per intake math
         /// </summary>
@@ -616,8 +616,9 @@ namespace ApsCalcTests
             // A shell with a bit of everything
             float[] testBodyModuleCounts = { 1, 1, 1, 1, 1 };
 
-            float expectedVolume500 = 5f;
-            float expectedVolume18 = 2f;
+            float expectedVolume500 = 7.0529375f;
+            float expectedVolume18 = 4.0529375f;
+
 
             Shell TestShell = new Shell();
             TestShell.Gauge = 500;
@@ -633,16 +634,18 @@ namespace ApsCalcTests
             TestShell.CalculateReloadTime();
             TestShell.CalculateVolume();
             float actualVolume500 = TestShell.VolumePerIntake;
+            Console.WriteLine(actualVolume500);
 
             TestShell.Gauge = 18;
             TestShell.CalculateLengths();
             TestShell.CalculateVolume();
             float actualVolume18 = TestShell.VolumePerIntake;
+            Console.WriteLine(actualVolume18);
+
 
 
             Assert.AreEqual(expectedVolume500, actualVolume500);
             Assert.AreEqual(expectedVolume18, actualVolume18);
         }
-        */
     }
 }
