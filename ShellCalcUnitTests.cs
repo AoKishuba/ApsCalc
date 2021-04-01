@@ -16,7 +16,7 @@ namespace ApsCalcTests
         [TestMethod]
         public void TestEnumOutput()
         {
-            float[] testModCounts = new float[] { 16f, 0, 0, 0, 0 };
+            float[] testModCounts = new float[] { 0, 0, 0, 0, 0 };
             int[] testVarModIndices = new int[] { 1, 2 };
             List<int> testHeadList = new List<int> { 7 };
             List<ModuleCount> moduleCounts = new List<ModuleCount>();
@@ -68,7 +68,7 @@ namespace ApsCalcTests
             List<int> testHeadList = new List<int> { 7 };
             ShellCalc testCalc = new ShellCalc
                 (
-                18, 
+                18,
                 18, 
                 testHeadList, 
                 Module.BaseBleeder, 
@@ -84,12 +84,46 @@ namespace ApsCalcTests
                 0
                 );
 
-            foreach (KeyValuePair<string, Shell> entry in testCalc.TopDpsShells)
+            foreach (KeyValuePair<string, Shell> topShell in testCalc.TopDpsShells)
             {
-                Assert.IsNull(entry.Value.HeadModule);
-                Assert.IsNull(entry.Value.BaseModule);
-                Assert.AreEqual(entry.Value.Velocity, 0);
+                Assert.IsNull(topShell.Value.HeadModule);
+                Assert.IsNull(topShell.Value.BaseModule);
+                Assert.AreEqual(topShell.Value.Velocity, 0);
             }
+        }
+
+
+        /// <summary>
+        /// Verifies the ShellUnderTestingSetup and ShellUnderTesting shells have their modules assigned
+        /// </summary>
+        [TestMethod]
+        public void Shell_Stats_Assigned()
+        {
+            // Shell should have only one possible configuration - 20 fixed modules
+            float[] testModCounts = new float[] { 18f, 0, 0, 0, 0 };
+            int[] testVarModIndices = new int[] { 1, 2 };
+            List<int> testHeadList = new List<int> { 7 };
+            ShellCalc testCalc = new ShellCalc
+                (
+                18,
+                18,
+                testHeadList,
+                Module.BaseBleeder,
+                testModCounts,
+                20f,
+                testVarModIndices,
+                0,
+                0,
+                1000,
+                1,
+                0,
+                20,
+                0
+                );
+
+            testCalc.ShellTest();
+
+            Assert.AreEqual(Module.AllModules[testHeadList[0]], testCalc.TopDps1000.HeadModule);
         }
     }
 }
