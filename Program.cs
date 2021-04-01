@@ -168,7 +168,7 @@ namespace ApsCalc
             }
             TestShell.BaseModule = Base;
 
-            
+
             // Get fixed modules
             float[] FixedModuleCounts = { 0, 0, 0, 0, 0 };
             while (true)
@@ -334,14 +334,14 @@ namespace ApsCalc
                 MinShellLengthInput += Math.Min(MinGauge, Module.AllModules[modIndex].MaxLength) * modCount;
                 modIndex++;
             }
-            
+
 
             if (Base != null)
             {
                 MinShellLengthInput += Math.Min(MinGauge, Base.MaxLength);
             }
 
-            
+
             // Get maximum shell length
             float MaxShellLengthInput;
             Console.WriteLine("\nEnter maximum shell length in mm from " + MinShellLengthInput + " thru 8 000.");
@@ -444,6 +444,31 @@ namespace ApsCalc
                 Console.WriteLine("\nWill test chemical damage.\n");
             }
 
+            // Get user preference on whether labels should be included in the results
+            bool labels;
+            Console.WriteLine("\nInclude labels on results?  Labels are human-readable but inconvenient for copying to a spreadsheet.\nEnter 'y' or 'n'.");
+            while (true)
+            {
+                input = Console.ReadLine();
+                input.ToLower();
+                if (input == "y")
+                {
+                    labels = true;
+                    Console.WriteLine("\nData readout will have labels.\n");
+                    break;
+                }
+                else if (input == "n")
+                {
+                    labels = false;
+                    Console.WriteLine("\nData readout will NOT have labels.\n");
+                    break;
+                }
+                else
+                {
+                    Console.WriteLine("\nERROR: Enter 'y' to include labels on results, or 'n' to omit labels.\n");
+                }
+            }
+
 
 
             ShellCalc Calc1 = new ShellCalc(
@@ -464,6 +489,32 @@ namespace ApsCalc
                 );
 
             Calc1.ShellTest();
+
+
+            if (DamageTypeInput == 0) // Kinetic
+            {
+                foreach (KeyValuePair<string, Shell> topShell in Calc1.TopDpsShells)
+                {
+                    if (topShell.Value.KineticDPS > 0)
+                    {
+                        Console.WriteLine(topShell.Key);
+                        topShell.Value.GetShellInfoKinetic(labels);
+                        Console.WriteLine("\n");
+                    }
+                }
+            }
+            else if (DamageTypeInput == 1) // Chemical
+            {
+                foreach (KeyValuePair<string, Shell> topShell in Calc1.TopDpsShells)
+                {
+                    if (topShell.Value.ChemDPS > 0)
+                    {
+                        Console.WriteLine(topShell.Key);
+                        topShell.Value.GetShellInfoChem(labels);
+                        Console.WriteLine("\n");
+                    }
+                }
+            }
         }
     }
 }
