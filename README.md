@@ -1,5 +1,5 @@
 # ApsCalc
-From the Depths APS Shell calculator.  WORK IN PROGRESS
+From the Depths APS Shell calculator by Ao Kishuba.  WORK IN PROGRESS
 
 Limitations:
   - Does not calculate HE, frag, FlaK, or EMP damage directly; uses the multipier instead, because all those warheads scale the same way, so the most efficient HE configuration is also the most efficient configuration for FlaK, frag, and EMP
