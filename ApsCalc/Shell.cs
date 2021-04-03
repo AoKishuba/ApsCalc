@@ -262,20 +262,49 @@ namespace ApsCalc
         /// </summary>
         public void CalculateVelocity()
         {
-            // Head must be set before this can be called
-            if (HeadModule == null)
-            {
-                Console.WriteLine("\nERROR: Cannot calculate velocity.  Set Head Module first.\n");
-            }
-            else
-            {
-                TotalRecoil = GPRecoil + RailDraw;
+            TotalRecoil = GPRecoil + RailDraw;
 
-                Velocity = (float)Math.Sqrt((TotalRecoil * 85f * Gauge) / (GaugeCoefficient * ProjectileLength)) * OverallVelocityModifier;
-            }
+            Velocity = (float)Math.Sqrt((TotalRecoil * 85f * Gauge) / (GaugeCoefficient * ProjectileLength)) * OverallVelocityModifier;
         }
 
-        
+
+        /// <summary>
+        /// Calculates minimum rail draw needed to achieve the given velocity and effective range
+        /// </summary>
+        public float CalculateMinimumDrawForVelocityandRange(float minVelocityInput, float minRangeInput, float maxDraw)
+        {
+            // Calculate effective time
+            float gravityCompensatorCount = 0;
+            int modIndex = 0;
+            foreach (float modCount in BodyModuleCounts)
+            {
+                if (Module.AllModules[modIndex].Name == "Grav. Compensator")
+                {
+                    gravityCompensatorCount = BodyModuleCounts[modIndex];
+                    break;
+                }
+                else
+                {
+                    modIndex++;
+                }
+            }
+            float effectiveTime = 10f * OverallVelocityModifier * (ProjectileLength / 1000f) * (1f + gravityCompensatorCount);
+
+            // Determine whether range or velocity is the limiting factor
+            float minVelocity = Math.Max(minVelocityInput, minRangeInput / effectiveTime);
+
+            // Calculate draw required for either range or velocity
+            float minDrawVelocity = (float)(Math.Pow(minVelocity / OverallVelocityModifier, 2)
+                * (GaugeCoefficient * ProjectileLength)
+                / (Gauge * 85f)
+                - GPRecoil);
+
+            float minDraw = Math.Max(0, minDrawVelocity);
+
+            return minDraw;
+        }
+
+
         /// <summary>
         /// Calculates the effective range of the shell
         /// </summary>
