@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -49,7 +49,9 @@ namespace ApsCalc
             float minVelocityInput,
             float minEffectiveRangeInput,
             float targetAC,
-            float damageType)
+            float damageType,
+            bool labels
+            )
         {
             MinGauge = minGauge;
             MaxGauge = maxGauge;
@@ -66,6 +68,7 @@ namespace ApsCalc
             MinEffectiveRangeInput = minEffectiveRangeInput;
             TargetAC = targetAC;
             DamageType = damageType;
+            Labels = labels;
         }
 
         public float MinGauge { get; }
@@ -83,12 +86,14 @@ namespace ApsCalc
         public float MinEffectiveRangeInput { get; }
         public float TargetAC { get; }
         public float DamageType { get; }
+        public bool Labels { get; }
 
         // Testing data
-        public float testComparisons { get; set; } = 0;
-        public float testRejectLength { get; set; } = 0;
-        public float testRejectVelocity { get; set; } = 0;
-        public float testTotal { get; set; } = 0;
+        public float TestComparisons { get; set; } = 0;
+        public float TestRejectLength { get; set; } = 0;
+        public float TestRejectVelocity { get; set; } = 0;
+        public float TestRejectRange { get; set; } = 0;
+        public float TestTotal { get; set; } = 0;
 
         // Store top-DPS shells by loader length
         public Shell TopDps1000 { get; set; } = new Shell();
@@ -207,6 +212,137 @@ namespace ApsCalc
 
 
         /// <summary>
+        /// Write to the console the statistics of the top shells
+        /// </summary>
+        public void WriteTopShells()
+        {
+            Console.WriteLine("Test Parameters");
+            if (MinGauge == MaxGauge)
+            {
+                Console.WriteLine("Gauge: " + MinGauge);
+            }
+            else
+            {
+                Console.WriteLine("Gauge: " + MinGauge + " mm thru " + MaxGauge + " mm");
+            }
+
+
+            if (HeadList.Count == 1)
+            {
+                Console.WriteLine("Head: " + Module.AllModules[HeadList[0]].Name);
+            }
+            else
+            {
+                Console.WriteLine("Heads: ");
+                foreach (int headIndex in HeadList)
+                {
+                    Console.WriteLine(Module.AllModules[headIndex].Name);
+                }
+            }
+
+            Console.WriteLine("Base: " + BaseModule.Name);
+            Console.WriteLine("Fixed modules: ");
+
+            int modIndex = 0;
+            foreach (float modCount in FixedModuleCounts)
+            {
+                Console.WriteLine(Module.AllModules[modIndex].Name + ": " + modCount);
+                modIndex++;
+            }
+
+            if (VariableModuleIndices[0] == VariableModuleIndices[1])
+            {
+                Console.WriteLine("Variable module: " + Module.AllModules[VariableModuleIndices[0]].Name);
+            }
+            else
+            {
+                Console.WriteLine("Variable modules: ");
+                foreach (int varModIndex in VariableModuleIndices)
+                {
+                    Console.WriteLine(Module.AllModules[varModIndex].Name);
+                }
+            }
+
+            Console.WriteLine("Max GP casings: " + MaxGPInput);
+            Console.WriteLine("Max RG casings: " + MaxRGInput);
+            Console.WriteLine("Max draw: " + MaxDrawInput);
+            Console.WriteLine("Max length: " + MaxShellLength);
+            Console.WriteLine("Min velocity: " + MinVelocityInput);
+            Console.WriteLine("Min effective range: " + MinEffectiveRangeInput);
+
+            if (DamageType == 0)
+            {
+                Console.WriteLine("Damage type: kinetic");
+                Console.WriteLine("Target AC: " + TargetAC);
+            }
+            else if (DamageType == 1)
+            {
+                Console.WriteLine("Damage type: chemical");
+            }
+            Console.WriteLine("\n");
+
+
+            if (!Labels)
+            {
+                Console.WriteLine("\n");
+                Console.WriteLine("Row Headers:");
+                Console.WriteLine("Gauge (mm)");
+                Console.WriteLine("Total ength (mm)");
+                Console.WriteLine("Length without casings (mm)");
+                Console.WriteLine("Total modules");
+                Console.WriteLine("GP casings");
+                Console.WriteLine("RG casings");
+
+                for (int i = 0; i < FixedModuleCounts.Length; i++)
+                {
+                    Console.WriteLine(Module.AllModules[i].Name);
+                }
+
+                Console.WriteLine("Head");
+                Console.WriteLine("Draw");
+                Console.WriteLine("Recoil");
+                Console.WriteLine("Velocity (m/s)");
+                Console.WriteLine("Effective range (m)");
+
+                if (DamageType == 0)
+                {
+                    Console.WriteLine("Raw KD");
+                    Console.WriteLine("AP");
+                    Console.WriteLine("Eff. KD");
+                }
+                else if (DamageType == 1)
+                {
+                    Console.WriteLine("Chemical payload strength");
+                }
+
+                Console.WriteLine("Reload (s)");
+                Console.WriteLine("DPS");
+                Console.Write("DPS per volume");
+            }
+
+
+            if (DamageType == 0)
+            {
+                foreach (KeyValuePair<string, Shell> topShell in TopDpsShells)
+                {
+                    Console.WriteLine("\n");
+                    Console.WriteLine(topShell.Key);
+                    topShell.Value.GetShellInfoKinetic(Labels);
+                }
+            }
+            else if (DamageType == 1)
+            {
+                foreach (KeyValuePair<string, Shell> topShell in TopDpsShells)
+                {
+                    Console.WriteLine("\n");
+                    Console.WriteLine(topShell.Key);
+                    topShell.Value.GetShellInfoChem(Labels);
+                }
+            }
+        }
+
+
+        /// <summary>
         /// The main test body.  Iterates over the IEnumerables to compare every permutation within the given parameters, then stores the results
         /// </summary>
         public void ShellTest()
@@ -250,114 +386,123 @@ namespace ApsCalc
                         shellUnderTesting.BodyModuleCounts[VariableModuleIndices[1]] += counts.Var1Count;
                         shellUnderTesting.GPCasingCount = counts.GPCount;
                         shellUnderTesting.RGCasingCount = counts.RGCount;
+                        shellUnderTesting.GetModuleCounts();
                         shellUnderTesting.CalculateLengths();
                         shellUnderTesting.CalculateGPRecoil();
                         shellUnderTesting.CalculateModifiers();
 
                         shellUnderTesting.RailDraw = draw;
                         shellUnderTesting.CalculateVelocity();
+                        shellUnderTesting.CalculateEffectiveRange();
                         if (shellUnderTesting.Velocity >= MinVelocityInput)
                         {
-                            testComparisons++;
-                            shellUnderTesting.CalculateReloadTime();
-                            shellUnderTesting.CalculateVolume();
-
-                            if (DamageType == 0) // Kinetic
+                            if (shellUnderTesting.EffectiveRange >= MinEffectiveRangeInput)
                             {
-                                shellUnderTesting.CalculateKineticDamage();
-                                shellUnderTesting.CalculateAP();
-                                shellUnderTesting.CalculateKineticDPS(TargetAC);
+                                TestComparisons++;
+                                shellUnderTesting.CalculateReloadTime();
+                                shellUnderTesting.CalculateVolume();
 
-                                if (shellUnderTesting.TotalLength <= 1000f)
+                                if (DamageType == 0) // Kinetic
                                 {
-                                    if (shellUnderTesting.KineticDPSPerVolume > TopDps1000.KineticDPSPerVolume)
+                                    shellUnderTesting.CalculateKineticDamage();
+                                    shellUnderTesting.CalculateAP();
+                                    shellUnderTesting.CalculateKineticDPS(TargetAC);
+
+                                    if (shellUnderTesting.TotalLength <= 1000f)
                                     {
-                                        TopDps1000 = shellUnderTesting;
+                                        if (shellUnderTesting.KineticDPSPerVolume > TopDps1000.KineticDPSPerVolume)
+                                        {
+                                            TopDps1000 = shellUnderTesting;
+                                        }
+                                        if (shellUnderTesting.KineticDPSPerVolumeBelt > TopDpsBelt.KineticDPSPerVolumeBelt)
+                                        {
+                                            TopDpsBelt = shellUnderTesting;
+                                        }
                                     }
-                                    if (shellUnderTesting.KineticDPSPerVolumeBelt > TopDpsBelt.KineticDPSPerVolumeBelt)
+                                    else if (shellUnderTesting.TotalLength <= 2000f)
                                     {
-                                        TopDpsBelt = shellUnderTesting;
+                                        if (shellUnderTesting.KineticDPSPerVolume > TopDps2000.KineticDPSPerVolume)
+                                        {
+                                            TopDps2000 = shellUnderTesting;
+                                        }
+                                    }
+                                    else if (shellUnderTesting.TotalLength <= 4000f)
+                                    {
+                                        if (shellUnderTesting.KineticDPSPerVolume > TopDps4000.KineticDPSPerVolume)
+                                        {
+                                            TopDps4000 = shellUnderTesting;
+                                        }
+                                    }
+                                    else if (shellUnderTesting.TotalLength <= 6000f)
+                                    {
+                                        if (shellUnderTesting.KineticDPSPerVolume > TopDps6000.KineticDPSPerVolume)
+                                        {
+                                            TopDps6000 = shellUnderTesting;
+                                        }
+                                    }
+                                    else if (shellUnderTesting.TotalLength <= 8000f)
+                                    {
+                                        if (shellUnderTesting.KineticDPSPerVolume > TopDps8000.KineticDPSPerVolume)
+                                        {
+                                            TopDps8000 = shellUnderTesting;
+                                        }
                                     }
                                 }
-                                else if (shellUnderTesting.TotalLength <= 2000f)
+
+                                if (DamageType == 1) // Chem
                                 {
-                                    if (shellUnderTesting.KineticDPSPerVolume > TopDps2000.KineticDPSPerVolume)
+                                    shellUnderTesting.CalculateChemDamage();
+                                    shellUnderTesting.CalculateChemDPS();
+
+                                    if (shellUnderTesting.TotalLength <= 1000f)
                                     {
-                                        TopDps2000 = shellUnderTesting;
+                                        if (shellUnderTesting.ChemDPSPerVolume > TopDps1000.ChemDPSPerVolume)
+                                        {
+                                            TopDps1000 = shellUnderTesting;
+                                        }
+                                        if (shellUnderTesting.ChemDPSPerVolumeBelt > TopDpsBelt.ChemDPSPerVolumeBelt)
+                                        {
+                                            TopDpsBelt = shellUnderTesting;
+                                        }
                                     }
-                                }
-                                else if (shellUnderTesting.TotalLength <= 4000f)
-                                {
-                                    if (shellUnderTesting.KineticDPSPerVolume > TopDps4000.KineticDPSPerVolume)
+                                    else if (shellUnderTesting.TotalLength <= 2000f)
                                     {
-                                        TopDps4000 = shellUnderTesting;
+                                        if (shellUnderTesting.ChemDPSPerVolume > TopDps2000.ChemDPSPerVolume)
+                                        {
+                                            TopDps2000 = shellUnderTesting;
+                                        }
                                     }
-                                }
-                                else if (shellUnderTesting.TotalLength <= 6000f)
-                                {
-                                    if (shellUnderTesting.KineticDPSPerVolume > TopDps6000.KineticDPSPerVolume)
+                                    else if (shellUnderTesting.TotalLength <= 4000f)
                                     {
-                                        TopDps6000 = shellUnderTesting;
+                                        if (shellUnderTesting.ChemDPSPerVolume > TopDps4000.ChemDPSPerVolume)
+                                        {
+                                            TopDps4000 = shellUnderTesting;
+                                        }
                                     }
-                                }
-                                else if (shellUnderTesting.TotalLength <= 8000f)
-                                {
-                                    if (shellUnderTesting.KineticDPSPerVolume > TopDps8000.KineticDPSPerVolume)
+                                    else if (shellUnderTesting.TotalLength <= 6000f)
                                     {
-                                        TopDps8000 = shellUnderTesting;
+                                        if (shellUnderTesting.ChemDPSPerVolume > TopDps6000.ChemDPSPerVolume)
+                                        {
+                                            TopDps6000 = shellUnderTesting;
+                                        }
+                                    }
+                                    else if (shellUnderTesting.TotalLength <= 8000f)
+                                    {
+                                        if (shellUnderTesting.ChemDPSPerVolume > TopDps8000.ChemDPSPerVolume)
+                                        {
+                                            TopDps8000 = shellUnderTesting;
+                                        }
                                     }
                                 }
                             }
-
-                            if (DamageType == 1) // Chem
+                            else
                             {
-                                shellUnderTesting.CalculateChemDamage();
-                                shellUnderTesting.CalculateChemDPS();
-
-                                if (shellUnderTesting.TotalLength <= 1000f)
-                                {
-                                    if (shellUnderTesting.ChemDPSPerVolume > TopDps1000.ChemDPSPerVolume)
-                                    {
-                                        TopDps1000 = shellUnderTesting;
-                                    }
-                                    if (shellUnderTesting.ChemDPSPerVolumeBelt > TopDpsBelt.ChemDPSPerVolumeBelt)
-                                    {
-                                        TopDpsBelt = shellUnderTesting;
-                                    }
-                                }
-                                else if (shellUnderTesting.TotalLength <= 2000f)
-                                {
-                                    if (shellUnderTesting.ChemDPSPerVolume > TopDps2000.ChemDPSPerVolume)
-                                    {
-                                        TopDps2000 = shellUnderTesting;
-                                    }
-                                }
-                                else if (shellUnderTesting.TotalLength <= 4000f)
-                                {
-                                    if (shellUnderTesting.ChemDPSPerVolume > TopDps4000.ChemDPSPerVolume)
-                                    {
-                                        TopDps4000 = shellUnderTesting;
-                                    }
-                                }
-                                else if (shellUnderTesting.TotalLength <= 6000f)
-                                {
-                                    if (shellUnderTesting.ChemDPSPerVolume > TopDps6000.ChemDPSPerVolume)
-                                    {
-                                        TopDps6000 = shellUnderTesting;
-                                    }
-                                }
-                                else if (shellUnderTesting.TotalLength <= 8000f)
-                                {
-                                    if (shellUnderTesting.ChemDPSPerVolume > TopDps8000.ChemDPSPerVolume)
-                                    {
-                                        TopDps8000 = shellUnderTesting;
-                                    }
-                                }
+                                TestRejectRange++;
                             }
                         }
                         else
                         {
-                            testRejectVelocity++;
+                            TestRejectVelocity++;
                         }
 
                     }
@@ -365,18 +510,16 @@ namespace ApsCalc
                 }
                 else
                 {
-                    testRejectLength++;
+                    TestRejectLength++;
                 }
 
             }
-            testTotal = testComparisons + testRejectLength + testRejectVelocity;
-            Console.WriteLine(testComparisons + " shells compared.");
-            Console.WriteLine(testRejectLength + " shells rejected due to length.");
-            Console.WriteLine(testRejectVelocity + " shells rejected due to velocity.");
-            Console.WriteLine(testTotal + " total.");
+            TestTotal = TestComparisons + TestRejectLength + TestRejectVelocity;
+            Console.WriteLine(TestComparisons + " shells compared.");
+            Console.WriteLine(TestRejectLength + " shells rejected due to length.");
+            Console.WriteLine(TestRejectVelocity + " shells rejected due to velocity.");
+            Console.WriteLine(TestTotal + " total.");
             Console.WriteLine("\n");
-
-            GetTopShells();
         }
     }
 }
