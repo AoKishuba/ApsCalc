@@ -209,11 +209,12 @@ namespace ApsCalc
 
 
         /// <summary>
-        /// Efficiently tests railgun shells to find optimal draw without testing every integer value
+        /// Calculates damage output for shell configurations with nonzero rail draw
         /// </summary>
-        public void RailTest()
+        public void RGTest()
         {
             float lastGauge = MinGauge;
+            Console.WriteLine("Testing " + Module.AllModules[HeadList[0]].Name + " " + MinGauge + " mm.  Max " + MaxGauge + " mm.");
 
             foreach (ModuleCount counts in GetModuleCounts())
             {
@@ -237,331 +238,306 @@ namespace ApsCalc
 
                 if (shellUnderTesting.TotalLength <= MaxShellLength)
                 {
-                    shellUnderTesting.CalculateMaxDraw();
-                    float maxDraw = Math.Min(shellUnderTesting.MaxDraw, MaxDrawInput);
-
-                    // Test shell at max draw to see if it meets velocity and effective range requirements
-                    shellUnderTesting.RailDraw = maxDraw;
                     shellUnderTesting.CalculateModifiers();
                     shellUnderTesting.CalculateGPRecoil();
-                    shellUnderTesting.CalculateVelocity();
+                    shellUnderTesting.CalculateMaxDraw();
 
-                    if (shellUnderTesting.Velocity >= MinVelocityInput)
+                    float maxDraw = Math.Min(shellUnderTesting.MaxDraw, MaxDrawInput);
+                    float minDraw = shellUnderTesting.CalculateMinimumDrawForVelocityandRange(MinVelocityInput, MinEffectiveRangeInput, maxDraw);
+                    if (maxDraw > minDraw)
                     {
-                        shellUnderTesting.CalculateEffectiveRange();
+                        TestComparisons++;
+                        shellUnderTesting.CalculateReloadTime();
 
-                        if (shellUnderTesting.EffectiveRange >= MinEffectiveRangeInput)
+                        // Binary search to find optimal draw without testing every value
+                        float bottomOfRange = minDraw;
+                        float bottomScore = 0;
+                        float topOfRange = maxDraw;
+                        float topScore = 0;
+                        float midRangeLower = 0;
+                        float midRangeLowerScore = 0;
+                        float midRangeUpper = 0;
+                        float midRangeUpperScore = 0;
+                        float optimalDraw = 0;
+
+                        if (DamageType == 0) // kinetic
                         {
-                            shellUnderTesting.CalculateReloadTime();
-                            TestComparisons++;
+                            shellUnderTesting.RailDraw = minDraw;
+                            shellUnderTesting.CalculateVolume();
+                            shellUnderTesting.CalculateVelocity();
+                            shellUnderTesting.CalculateAP();
+                            shellUnderTesting.CalculateKineticDamage();
+                            shellUnderTesting.CalculateKineticDPS(TargetAC);
+                            bottomScore = shellUnderTesting.KineticDPSPerVolume;
 
-                            // Test rail draw at even intervals over entire range to bound peak of the curve
-                            float drawInterval = (float)Math.Min(1f, Math.Floor(maxDraw / 1000f));
-                            Shell bestShellInterval = new Shell();
-                            Shell bestShellIntervalBelt = new Shell();
-                            Shell secondBestShellInterval = new Shell();
-                            Shell secondBestShellIntervalBelt = new Shell();
+                            shellUnderTesting.RailDraw = maxDraw;
+                            shellUnderTesting.CalculateVolume();
+                            shellUnderTesting.CalculateVelocity();
+                            shellUnderTesting.CalculateAP();
+                            shellUnderTesting.CalculateKineticDamage();
+                            shellUnderTesting.CalculateKineticDPS(TargetAC);
+                            topScore = shellUnderTesting.KineticDPSPerVolume;
 
-                            foreach (float drawTest in DistributeRange(0, maxDraw, drawInterval))
+                            if (topScore > bottomScore)
                             {
-                                shellUnderTesting.RailDraw = drawTest;
-                                shellUnderTesting.CalculateVelocity();
+                                // Check if max draw is optimal
+                                shellUnderTesting.RailDraw = maxDraw - 1f;
                                 shellUnderTesting.CalculateVolume();
+                                shellUnderTesting.CalculateVelocity();
+                                shellUnderTesting.CalculateAP();
+                                shellUnderTesting.CalculateKineticDamage();
+                                shellUnderTesting.CalculateKineticDPS(TargetAC);
+                                bottomScore = shellUnderTesting.KineticDPSPerVolume;
 
-                                if (DamageType == 0) // kinetic
+                                if (topScore > bottomScore)
                                 {
-                                    shellUnderTesting.CalculateAP();
-                                    shellUnderTesting.CalculateKineticDamage();
-                                    shellUnderTesting.CalculateKineticDPS(TargetAC);
-
-                                    if (shellUnderTesting.KineticDPSPerVolume > bestShellInterval.KineticDPSPerVolume)
-                                    {
-                                        bestShellInterval = shellUnderTesting;
-                                    }
-
-                                    if (shellUnderTesting.KineticDPSPerVolume < bestShellInterval.KineticDPSPerVolume
-                                        && shellUnderTesting.KineticDPSPerVolume > secondBestShellInterval.KineticDPSPerVolume)
-                                    {
-                                        secondBestShellInterval = shellUnderTesting;
-                                    }
-
-                                    if (shellUnderTesting.TotalLength <= 1000f)
-                                    {
-                                        if (shellUnderTesting.KineticDPSPerVolumeBelt > bestShellIntervalBelt.KineticDPSPerVolumeBelt)
-                                        {
-                                            bestShellIntervalBelt = shellUnderTesting;
-                                        }
-
-                                        if (shellUnderTesting.KineticDPSPerVolumeBelt < bestShellIntervalBelt.KineticDPSPerVolumeBelt
-                                            && shellUnderTesting.KineticDPSPerVolumeBelt > secondBestShellIntervalBelt.KineticDPSPerVolumeBelt)
-                                        {
-                                            secondBestShellIntervalBelt = shellUnderTesting;
-                                        }
-                                    }
+                                    optimalDraw = maxDraw;
                                 }
-                                else if (DamageType == 1) // chem
+                            }
+                            else
+                            {
+                                // Check if min draw is optimal
+                                shellUnderTesting.RailDraw = minDraw + 1f;
+                                shellUnderTesting.CalculateVolume();
+                                shellUnderTesting.CalculateVelocity();
+                                shellUnderTesting.CalculateAP();
+                                shellUnderTesting.CalculateKineticDamage();
+                                shellUnderTesting.CalculateKineticDPS(TargetAC);
+                                topScore = shellUnderTesting.KineticDPSPerVolume;
+
+                                if (bottomScore > topScore)
                                 {
-                                    shellUnderTesting.CalculateChemDamage();
-                                    shellUnderTesting.CalculateChemDPS();
-
-                                    if (shellUnderTesting.ChemDPSPerVolume > bestShellInterval.ChemDPSPerVolume)
-                                    {
-                                        bestShellInterval = shellUnderTesting;
-                                    }
-
-                                    if (shellUnderTesting.ChemDPSPerVolumeBelt > bestShellIntervalBelt.ChemDPSPerVolumeBelt)
-                                    {
-                                        bestShellIntervalBelt = shellUnderTesting;
-                                    }
-
-                                    if (shellUnderTesting.ChemDPSPerVolume < bestShellInterval.ChemDPSPerVolume
-                                        && shellUnderTesting.ChemDPSPerVolume > secondBestShellInterval.ChemDPSPerVolume)
-                                    {
-                                        secondBestShellInterval = shellUnderTesting;
-                                    }
-
-                                    if (shellUnderTesting.ChemDPSPerVolumeBelt < bestShellIntervalBelt.ChemDPSPerVolumeBelt
-                                        && shellUnderTesting.ChemDPSPerVolumeBelt > secondBestShellIntervalBelt.ChemDPSPerVolumeBelt)
-                                    {
-                                        secondBestShellIntervalBelt = shellUnderTesting;
-                                    }
+                                    optimalDraw = minDraw;
                                 }
+                            }
 
-                                // Test from best towards second best until peak draw is found
-                                float bestDraw = bestShellInterval.RailDraw;
-                                float bestDrawBelt = bestShellIntervalBelt.RailDraw;
-                                float secondBestDraw = secondBestShellInterval.RailDraw;
-                                float secondBestDrawBelt = secondBestShellIntervalBelt.RailDraw;
+                            while (topOfRange - bottomOfRange > 1)
+                            {
+                                midRangeLower = (float)Math.Floor((topOfRange + bottomOfRange) / 2f);
+                                midRangeUpper = midRangeLower + 1f;
 
-                                Shell peakShell = new Shell();
-                                Shell peakShellBelt = new Shell();
+                                shellUnderTesting.RailDraw = midRangeLower;
+                                shellUnderTesting.CalculateVolume();
+                                shellUnderTesting.CalculateVelocity();
+                                shellUnderTesting.CalculateAP();
+                                shellUnderTesting.CalculateKineticDamage();
+                                shellUnderTesting.CalculateKineticDPS(TargetAC);
+                                midRangeLowerScore = shellUnderTesting.KineticDPSPerVolume;
 
-                                if (bestDraw > secondBestDraw)
+                                shellUnderTesting.RailDraw = midRangeUpper;
+                                shellUnderTesting.CalculateVolume();
+                                shellUnderTesting.CalculateVelocity();
+                                shellUnderTesting.CalculateAP();
+                                shellUnderTesting.CalculateKineticDamage();
+                                shellUnderTesting.CalculateKineticDPS(TargetAC);
+                                midRangeUpperScore = shellUnderTesting.KineticDPSPerVolume;
+
+                                // Determine which half of the range to continue testing
+                                if (midRangeLowerScore >= midRangeUpperScore)
                                 {
-                                    // Draw is decreasing
-                                    for (float draw = bestDraw; draw >= secondBestDraw; draw--)
-                                    {
-                                        shellUnderTesting.RailDraw = draw;
-                                        shellUnderTesting.CalculateVelocity();
-                                        shellUnderTesting.CalculateVolume();
-
-                                        if (DamageType == 0)
-                                        {
-                                            shellUnderTesting.CalculateAP();
-                                            shellUnderTesting.CalculateKineticDamage();
-                                            shellUnderTesting.CalculateKineticDPS(TargetAC);
-
-                                            // Keep reducing draw until just before effectiveness begins to decrease, to get minimum required draw
-                                            if (shellUnderTesting.KineticDPSPerVolume < peakShell.KineticDPSPerVolume)
-                                            {
-                                                break;
-                                            }
-                                            else
-                                            {
-                                                peakShell = shellUnderTesting;
-                                            }
-
-                                            if (shellUnderTesting.TotalLength <= 1000f)
-                                            {
-                                                if (shellUnderTesting.KineticDPSPerVolumeBelt < peakShellBelt.KineticDPSPerVolumeBelt)
-                                                {
-                                                    break;
-                                                }
-                                                else
-                                                {
-                                                    peakShellBelt = shellUnderTesting;
-                                                }
-                                            }                                            
-                                        }
-                                        else if (DamageType == 1)
-                                        {
-                                            // Keep reducing draw until just before effectiveness begins to decrease, to get minimum required draw
-                                            if (shellUnderTesting.ChemDPSPerVolume < peakShell.ChemDPSPerVolume)
-                                            {
-                                                break;
-                                            }
-                                            else
-                                            {
-                                                peakShell = shellUnderTesting;
-                                            }
-
-                                            if (shellUnderTesting.TotalLength <= 1000f)
-                                            {
-                                                if (shellUnderTesting.ChemDPSPerVolumeBelt < peakShellBelt.ChemDPSPerVolumeBelt)
-                                                {
-                                                    break;
-                                                }
-                                                else
-                                                {
-                                                    peakShellBelt = shellUnderTesting;
-                                                }
-                                            }
-                                        }
-                                    }
+                                    topOfRange = midRangeLower;
                                 }
-                                else if (bestDraw < secondBestDraw)
+                                else
                                 {
-                                    // Draw is increasing
-                                    for (float draw = bestDraw; draw <= secondBestDraw; draw--)
-                                    {
-                                        shellUnderTesting.RailDraw = draw;
-                                        shellUnderTesting.CalculateVelocity();
-                                        shellUnderTesting.CalculateVolume();
-                                        shellUnderTesting.GetModuleCounts();
-
-                                        if (DamageType == 0)
-                                        {
-                                            shellUnderTesting.CalculateAP();
-                                            shellUnderTesting.CalculateKineticDamage();
-                                            shellUnderTesting.CalculateKineticDPS(TargetAC);
-
-                                            // Keep increasing draw until just before effectiveness peaks, to get minimum required draw
-                                            if (shellUnderTesting.KineticDPSPerVolume <= peakShell.KineticDPSPerVolume)
-                                            {
-                                                break;
-                                            }
-                                            else
-                                            {
-                                                peakShell = shellUnderTesting;
-                                            }
-
-                                            if (shellUnderTesting.TotalLength <= 1000f)
-                                            {
-                                                if (shellUnderTesting.KineticDPSPerVolumeBelt <= peakShellBelt.KineticDPSPerVolumeBelt)
-                                                {
-                                                    break;
-                                                }
-                                                else
-                                                {
-                                                    peakShellBelt = shellUnderTesting;
-                                                }
-                                            }
-                                        }
-                                        else if (DamageType == 1)
-                                        {
-                                            shellUnderTesting.CalculateChemDPS();
-
-                                            // Keep increasing draw until just before effectiveness peaks, to get minimum required draw
-                                            if (shellUnderTesting.ChemDPSPerVolume <= peakShell.ChemDPSPerVolume)
-                                            {
-                                                break;
-                                            }
-                                            else
-                                            {
-                                                peakShell = shellUnderTesting;
-                                            }
-
-                                            if (shellUnderTesting.TotalLength <= 1000f)
-                                            {
-                                                if (shellUnderTesting.ChemDPSPerVolumeBelt <= peakShellBelt.ChemDPSPerVolumeBelt)
-                                                {
-                                                    break;
-                                                }
-                                                else
-                                                {
-                                                    peakShellBelt = shellUnderTesting;
-                                                }
-                                            }
-                                        }
-                                    }
+                                    bottomOfRange = midRangeUpper;
                                 }
+                            }
+                            // Take the better of the two remaining values
+                            if (midRangeLowerScore >= midRangeUpperScore)
+                            {
+                                optimalDraw = midRangeLower;
+                            }
+                            else
+                            {
+                                optimalDraw = midRangeUpper;
+                            }
 
-                                // Final damage comparison
-                                if (DamageType == 0) // Kinetic
+
+                            // Check performance against top shells
+                            shellUnderTesting.RailDraw = optimalDraw;
+                            shellUnderTesting.CalculateVolume();
+                            shellUnderTesting.CalculateVelocity();
+                            shellUnderTesting.CalculateEffectiveRange();
+                            shellUnderTesting.GetModuleCounts();
+                            shellUnderTesting.CalculateAP();
+                            shellUnderTesting.CalculateKineticDamage();
+                            shellUnderTesting.CalculateKineticDPS(TargetAC);
+
+                            if (shellUnderTesting.TotalLength <= 1000f)
+                            {
+                                if (shellUnderTesting.KineticDPSPerVolume > TopDps1000.KineticDPSPerVolume)
                                 {
-                                    if (peakShell.TotalLength <= 1000f)
-                                    {
-                                        if (peakShell.KineticDPSPerVolume > TopDps1000.KineticDPSPerVolume)
-                                        {
-                                            TopDps1000 = peakShell;
-                                        }
-                                        if (peakShellBelt.KineticDPSPerVolumeBelt > TopDpsBelt.KineticDPSPerVolumeBelt)
-                                        {
-                                            TopDpsBelt = peakShellBelt;
-                                        }
-                                    }
-                                    else if (peakShell.TotalLength <= 2000f)
-                                    {
-                                        if (peakShell.KineticDPSPerVolume > TopDps2000.KineticDPSPerVolume)
-                                        {
-                                            TopDps2000 = peakShell;
-                                        }
-                                    }
-                                    else if (peakShell.TotalLength <= 4000f)
-                                    {
-                                        if (peakShell.KineticDPSPerVolume > TopDps4000.KineticDPSPerVolume)
-                                        {
-                                            TopDps4000 = peakShell;
-                                        }
-                                    }
-                                    else if (peakShell.TotalLength <= 6000f)
-                                    {
-                                        if (peakShell.KineticDPSPerVolume > TopDps6000.KineticDPSPerVolume)
-                                        {
-                                            TopDps6000 = peakShell;
-                                        }
-                                    }
-                                    else if (peakShell.TotalLength <= 8000f)
-                                    {
-                                        if (peakShell.KineticDPSPerVolume > TopDps8000.KineticDPSPerVolume)
-                                        {
-                                            TopDps8000 = peakShell;
-                                        }
-                                    }
+                                    TopDps1000 = shellUnderTesting;
                                 }
-
-                                if (DamageType == 1) // Chem
+                                if (shellUnderTesting.KineticDPSPerVolumeBelt > TopDpsBelt.KineticDPSPerVolumeBelt)
                                 {
-                                    if (peakShell.TotalLength <= 1000f)
-                                    {
-                                        if (peakShell.ChemDPSPerVolume > TopDps1000.ChemDPSPerVolume)
-                                        {
-                                            TopDps1000 = peakShell;
-                                        }
-                                        if (peakShellBelt.ChemDPSPerVolumeBelt > TopDpsBelt.ChemDPSPerVolumeBelt)
-                                        {
-                                            TopDpsBelt = peakShellBelt;
-                                        }
-                                    }
-                                    else if (peakShell.TotalLength <= 2000f)
-                                    {
-                                        if (peakShell.ChemDPSPerVolume > TopDps2000.ChemDPSPerVolume)
-                                        {
-                                            TopDps2000 = peakShell;
-                                        }
-                                    }
-                                    else if (peakShell.TotalLength <= 4000f)
-                                    {
-                                        if (peakShell.ChemDPSPerVolume > TopDps4000.ChemDPSPerVolume)
-                                        {
-                                            TopDps4000 = peakShell;
-                                        }
-                                    }
-                                    else if (peakShell.TotalLength <= 6000f)
-                                    {
-                                        if (peakShell.ChemDPSPerVolume > TopDps6000.ChemDPSPerVolume)
-                                        {
-                                            TopDps6000 = peakShell;
-                                        }
-                                    }
-                                    else if (peakShell.TotalLength <= 8000f)
-                                    {
-                                        if (peakShell.ChemDPSPerVolume > TopDps8000.ChemDPSPerVolume)
-                                        {
-                                            TopDps8000 = peakShell;
-                                        }
-                                    }
+                                    TopDpsBelt = shellUnderTesting;
+                                }
+                            }
+                            else if (shellUnderTesting.TotalLength <= 2000f)
+                            {
+                                if (shellUnderTesting.KineticDPSPerVolume > TopDps2000.KineticDPSPerVolume)
+                                {
+                                    TopDps2000 = shellUnderTesting;
+                                }
+                            }
+                            else if (shellUnderTesting.TotalLength <= 4000f)
+                            {
+                                if (shellUnderTesting.KineticDPSPerVolume > TopDps4000.KineticDPSPerVolume)
+                                {
+                                    TopDps4000 = shellUnderTesting;
+                                }
+                            }
+                            else if (shellUnderTesting.TotalLength <= 6000f)
+                            {
+                                if (shellUnderTesting.KineticDPSPerVolume > TopDps6000.KineticDPSPerVolume)
+                                {
+                                    TopDps6000 = shellUnderTesting;
+                                }
+                            }
+                            else if (shellUnderTesting.TotalLength <= 8000f)
+                            {
+                                if (shellUnderTesting.KineticDPSPerVolume > TopDps8000.KineticDPSPerVolume)
+                                {
+                                    TopDps8000 = shellUnderTesting;
                                 }
                             }
                         }
-                        else
+                        if (DamageType == 1) // chem
                         {
-                            TestRejectRange++;
+                            shellUnderTesting.RailDraw = minDraw;
+                            shellUnderTesting.CalculateVolume();
+                            shellUnderTesting.CalculateVelocity();
+                            shellUnderTesting.CalculateChemDamage();
+                            shellUnderTesting.CalculateChemDPS();
+                            bottomScore = shellUnderTesting.ChemDPSPerVolume;
+
+                            shellUnderTesting.RailDraw = maxDraw;
+                            shellUnderTesting.CalculateVolume();
+                            shellUnderTesting.CalculateVelocity();
+                            shellUnderTesting.CalculateChemDamage();
+                            shellUnderTesting.CalculateChemDPS();
+                            topScore = shellUnderTesting.ChemDPSPerVolume;
+
+                            if (topScore > bottomScore)
+                            {
+                                // Check if max draw is optimal
+                                shellUnderTesting.RailDraw = maxDraw - 1f;
+                                shellUnderTesting.CalculateVolume();
+                                shellUnderTesting.CalculateVelocity();
+                                shellUnderTesting.CalculateChemDamage();
+                                shellUnderTesting.CalculateChemDPS();
+                                bottomScore = shellUnderTesting.ChemDPSPerVolume;
+
+                                if (topScore > bottomScore)
+                                {
+                                    optimalDraw = maxDraw;
+                                }
+                            }
+                            else
+                            {
+                                // Check if min draw is optimal
+                                shellUnderTesting.RailDraw = minDraw + 1f;
+                                shellUnderTesting.CalculateVolume();
+                                shellUnderTesting.CalculateVelocity();
+                                shellUnderTesting.CalculateChemDamage();
+                                shellUnderTesting.CalculateChemDPS();
+                                topScore = shellUnderTesting.ChemDPSPerVolume;
+
+                                if (bottomScore > topScore)
+                                {
+                                    optimalDraw = minDraw;
+                                }
+                            }
+
+                            while (topOfRange - bottomOfRange > 1)
+                            {
+                                midRangeLower = (float)Math.Floor((topOfRange + bottomOfRange) / 2f);
+                                midRangeUpper = midRangeLower + 1f;
+
+                                shellUnderTesting.RailDraw = midRangeLower;
+                                shellUnderTesting.CalculateVolume();
+                                shellUnderTesting.CalculateVelocity();
+                                shellUnderTesting.CalculateChemDamage();
+                                shellUnderTesting.CalculateChemDPS();
+                                midRangeLowerScore = shellUnderTesting.ChemDPSPerVolume;
+
+                                shellUnderTesting.RailDraw = midRangeUpper;
+                                shellUnderTesting.CalculateVolume();
+                                shellUnderTesting.CalculateVelocity();
+                                shellUnderTesting.CalculateChemDamage();
+                                shellUnderTesting.CalculateChemDPS();
+                                midRangeUpperScore = shellUnderTesting.ChemDPSPerVolume;
+
+                                // Determine which half of the range to continue testing
+                                if (midRangeLowerScore >= midRangeUpperScore)
+                                {
+                                    topOfRange = midRangeLower;
+                                }
+                                else
+                                {
+                                    bottomOfRange = midRangeUpper;
+                                }
+                            }
+                            // Take the better of the two remaining values
+                            if (midRangeLowerScore >= midRangeUpperScore)
+                            {
+                                optimalDraw = midRangeLower;
+                            }
+                            else
+                            {
+                                optimalDraw = midRangeUpper;
+                            }
+
+
+                            // Check performance against top shells
+                            shellUnderTesting.RailDraw = optimalDraw;
+                            shellUnderTesting.CalculateVolume();
+                            shellUnderTesting.CalculateVelocity();
+                            shellUnderTesting.CalculateEffectiveRange();
+                            shellUnderTesting.CalculateChemDamage();
+                            shellUnderTesting.CalculateChemDPS();
+
+                            if (shellUnderTesting.TotalLength <= 1000f)
+                            {
+                                if (shellUnderTesting.ChemDPSPerVolume > TopDps1000.ChemDPSPerVolume)
+                                {
+                                    TopDps1000 = shellUnderTesting;
+                                }
+                                if (shellUnderTesting.ChemDPSPerVolumeBelt > TopDpsBelt.ChemDPSPerVolumeBelt)
+                                {
+                                    TopDpsBelt = shellUnderTesting;
+                                }
+                            }
+                            else if (shellUnderTesting.TotalLength <= 2000f)
+                            {
+                                if (shellUnderTesting.ChemDPSPerVolume > TopDps2000.ChemDPSPerVolume)
+                                {
+                                    TopDps2000 = shellUnderTesting;
+                                }
+                            }
+                            else if (shellUnderTesting.TotalLength <= 4000f)
+                            {
+                                if (shellUnderTesting.ChemDPSPerVolume > TopDps4000.ChemDPSPerVolume)
+                                {
+                                    TopDps4000 = shellUnderTesting;
+                                }
+                            }
+                            else if (shellUnderTesting.TotalLength <= 6000f)
+                            {
+                                if (shellUnderTesting.ChemDPSPerVolume > TopDps6000.ChemDPSPerVolume)
+                                {
+                                    TopDps6000 = shellUnderTesting;
+                                }
+                            }
+                            else if (shellUnderTesting.TotalLength <= 8000f)
+                            {
+                                if (shellUnderTesting.ChemDPSPerVolume > TopDps8000.ChemDPSPerVolume)
+                                {
+                                    TopDps8000 = shellUnderTesting;
+                                }
+                            }
                         }
-                    }
-                    else
-                    {
-                        TestRejectVelocity++;
                     }
                 }
                 else
@@ -904,7 +880,7 @@ namespace ApsCalc
         {
             if (MaxDrawInput > 0)
             {
-                RailTest();
+               RGTest();
             }
             else
             {
