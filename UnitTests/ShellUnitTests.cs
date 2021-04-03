@@ -319,6 +319,41 @@ namespace ApsCalcTests
 
 
         /// <summary>
+        /// Checks modifier calculations
+        /// </summary>
+        [TestMethod]
+        public void Modifier_Math()
+        {
+            // A shell with a bit of everything
+            float[] testBodyModuleCounts = { 1, 1, 1, 1, 1, 0 };
+            float expectedVMod = 1.7950001f;
+            float expectedKDMod = 0.9625f;
+            float expectedAPMod = 1.4953125f;
+
+
+            Shell TestShell = new Shell();
+            TestShell.Gauge = 150;
+            TestShell.BodyModuleCounts = testBodyModuleCounts;
+            TestShell.GPCasingCount = 5;
+            TestShell.RGCasingCount = 5;
+            TestShell.HeadModule = Module.APHead;
+            TestShell.BaseModule = Module.BaseBleeder;
+            TestShell.RailDraw = 2000f;
+            TestShell.CalculateLengths();
+            TestShell.CalculateGPRecoil();
+            TestShell.CalculateModifiers();
+            TestShell.CalculateVelocity();
+            float actualVMod = TestShell.OverallVelocityModifier;
+            float actualKDMod = TestShell.OverallKineticDamageModifier;
+            float actualAPMod = TestShell.OverallArmorPierceModifier;
+
+            Assert.AreEqual(expectedVMod, actualVMod);
+            Assert.AreEqual(expectedKDMod, actualKDMod);
+            Assert.AreEqual(expectedAPMod, actualAPMod);
+        }
+
+
+        /// <summary>
         /// Checks shell velocity calculations
         /// </summary>
         [TestMethod]
@@ -344,7 +379,7 @@ namespace ApsCalcTests
             TestShell.CalculateVelocity();
             float actualVelocityWithRecoil = TestShell.Velocity;
 
-            TestShell.Gauge = 250;
+            TestShell.Gauge = 150;
             TestShell.BodyModuleCounts = testBodyModuleCounts;
             TestShell.GPCasingCount = 0;
             TestShell.RGCasingCount = 0;
