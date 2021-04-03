@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 namespace ApsCalc
 {
@@ -495,7 +495,7 @@ namespace ApsCalc
                 ModuleCountTotal += modCount;
             }
 
-            ModuleCountTotal = (float)(Math.Ceiling(GPCasingCount) + RGCasingCount);
+            ModuleCountTotal += (float)(Math.Ceiling(GPCasingCount) + RGCasingCount);
         }
 
 
@@ -510,6 +510,7 @@ namespace ApsCalc
                 Console.WriteLine("Gauge (mm): " + Gauge);
                 Console.WriteLine("Total length (mm): " + TotalLength);
                 Console.WriteLine("Length without casings: " + ProjectileLength);
+                Console.WriteLine("Total modules: " + ModuleCountTotal);
 
 
                 if (RGCasingCount > 0)
@@ -536,6 +537,7 @@ namespace ApsCalc
                 Console.WriteLine("Rail draw: " + RailDraw);
                 Console.WriteLine("Recoil: " + TotalRecoil);
                 Console.WriteLine("Velocity (m/s): " + Velocity);
+                Console.WriteLine("Effective range: " + EffectiveRange);
                 Console.WriteLine("Raw kinetic damage: " + KineticDamage);
                 Console.WriteLine("AP: " + ArmorPierce);
                 Console.WriteLine("Effective kinetic damage: " + EffectiveKineticDamage);
@@ -560,8 +562,9 @@ namespace ApsCalc
                 Console.WriteLine(Gauge);
                 Console.WriteLine(TotalLength);
                 Console.WriteLine(ProjectileLength);
-                Console.WriteLine(RGCasingCount);
+                Console.WriteLine(ModuleCountTotal);
                 Console.WriteLine(GPCasingCount);
+                Console.WriteLine(RGCasingCount);
 
                 foreach (float modCount in BodyModuleCounts)
                 {
@@ -573,6 +576,7 @@ namespace ApsCalc
                 Console.WriteLine(RailDraw);
                 Console.WriteLine(TotalRecoil);
                 Console.WriteLine(Velocity);
+                Console.WriteLine(EffectiveRange);
                 Console.WriteLine(KineticDamage);
                 Console.WriteLine(ArmorPierce);
                 Console.WriteLine(EffectiveKineticDamage);
@@ -599,6 +603,7 @@ namespace ApsCalc
                 Console.WriteLine("Gauge (mm): " + Gauge);
                 Console.WriteLine("Total length (mm): " + TotalLength);
                 Console.WriteLine("Length without casings: " + ProjectileLength);
+                Console.WriteLine("Total modules: " + ModuleCountTotal);
 
 
                 if (RGCasingCount > 0)
@@ -625,6 +630,7 @@ namespace ApsCalc
                 Console.WriteLine("Rail draw: " + RailDraw);
                 Console.WriteLine("Recoil: " + TotalRecoil);
                 Console.WriteLine("Velocity (m/s): " + Velocity);
+                Console.WriteLine("Effective range (m): " + EffectiveRange);
                 Console.WriteLine("Chemical payload strength: " + ChemDamage);
 
 
@@ -648,8 +654,9 @@ namespace ApsCalc
                 Console.WriteLine(Gauge);
                 Console.WriteLine(TotalLength);
                 Console.WriteLine(ProjectileLength);
-                Console.WriteLine(RGCasingCount);
+                Console.WriteLine(ModuleCountTotal);
                 Console.WriteLine(GPCasingCount);
+                Console.WriteLine(RGCasingCount);
 
                 foreach (float modCount in BodyModuleCounts)
                 {
@@ -660,6 +667,7 @@ namespace ApsCalc
                 Console.WriteLine(RailDraw);
                 Console.WriteLine(TotalRecoil);
                 Console.WriteLine(Velocity);
+                Console.WriteLine(EffectiveRange);
                 Console.WriteLine(ChemDamage);
 
                 if (IsBelt)
