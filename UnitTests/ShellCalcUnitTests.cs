@@ -104,9 +104,9 @@ namespace ApsCalcTests
         public void Shell_Stats_Assigned()
         {
             // Shell should have only one possible configuration - 20 fixed modules
-            float[] testModCounts = new float[] { 18f, 0, 0, 0, 0 };
-            int[] testVarModIndices = new int[] { 1, 2 };
-            List<int> testHeadList = new List<int> { 7 };
+            float[] testModCounts = new float[] { 17f, 0, 0, 0, 0, 0 };
+            int[] testVarModIndices = new int[] { 0, 0 };
+            List<int> testHeadList = new List<int> { 8 };
             ShellCalc testCalc = new ShellCalc
                 (
                 18,
@@ -114,12 +114,12 @@ namespace ApsCalcTests
                 testHeadList,
                 Module.BaseBleeder,
                 testModCounts,
-                20f,
+                19f,
                 testVarModIndices,
-                0,
-                0,
-                1000,
                 1,
+                0,
+                2000,
+                0,
                 0,
                 0,
                 20,
@@ -129,7 +129,13 @@ namespace ApsCalcTests
 
             testCalc.ShellTest();
 
+            foreach (float count in testCalc.TopDps1000.BodyModuleCounts)
+            {
+                Console.WriteLine(count);
+            }
+
             Assert.AreEqual(Module.AllModules[testHeadList[0]], testCalc.TopDps1000.HeadModule);
+            Assert.AreEqual(Module.BaseBleeder, testCalc.TopDps1000.BaseModule);
         }
     }
 }
