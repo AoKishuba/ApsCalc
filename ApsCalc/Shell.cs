@@ -21,15 +21,15 @@ namespace ApsCalc
         }
         public float GaugeCoefficient { get; set; } // Expensive to calculate and used in several formulae
 
-        // Keep counts of body modules.  0 thru 4 are indices for body module types: solid, sabot, chem, fuse, fin.
+        // Keep counts of body modules.
         public float[] BodyModuleCounts { get; set; } = { 0, 0, 0, 0, 0, 0 };
 
         public Module BaseModule { get; set; } // Optional; is 'null' if no base is chosen by user
         public Module HeadModule { get; set; } // There must always be a Head
 
         // Gunpowder and Railgun casing counts
-        public float GPCasingCount { get; set; }
-        public float RGCasingCount { get; set; }
+        public float GPCasingCount { get; set; } = 0;
+        public float RGCasingCount { get; set; } = 0;
 
         // Lengths
         public float CasingLength { get; set; }
@@ -91,13 +91,10 @@ namespace ApsCalc
         /// </summary>
         public void CalculateLengths()
         {
-            if (BaseModule == null)
+            BodyLength = 0;
+            if (BaseModule != null)
             {
-                BodyLength = 0;
-            }
-            else
-            {
-                BodyLength = Math.Min(Gauge, BaseModule.MaxLength);
+                BodyLength += Math.Min(Gauge, BaseModule.MaxLength);
             }
 
             int modIndex = 0;
@@ -136,7 +133,7 @@ namespace ApsCalc
         /// </summary>
         public void CalculateGPRecoil()
         {
-            GPRecoil = GaugeCoefficient * GPCasingCount * 2500;
+            GPRecoil = GaugeCoefficient * GPCasingCount * 2500f;
         }
 
         /// <summary>
@@ -177,7 +174,7 @@ namespace ApsCalc
             weightedVelocityMod /= EffectiveBodyLength;
 
             OverallVelocityModifier = weightedVelocityMod * HeadModule.VelocityMod;
-            if (BaseModule?.Name == "Base Bleeder")
+            if (BaseModule?.Name == "Base bleeder")
             {
                 OverallVelocityModifier += 0.15f;
             }
