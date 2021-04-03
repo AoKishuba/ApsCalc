@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace ApsCalc
@@ -577,7 +577,7 @@ namespace ApsCalc
             }
 
             // Get user preference on whether labels should be included in the results
-            bool labels;
+            bool Labels;
             Console.WriteLine("\nInclude labels on results?  Labels are human-readable but inconvenient for copying to a spreadsheet.\nEnter 'y' or 'n'.");
             while (true)
             {
@@ -585,13 +585,13 @@ namespace ApsCalc
                 input.ToLower();
                 if (input == "y")
                 {
-                    labels = true;
+                    Labels = true;
                     Console.WriteLine("\nData readout will have labels.\n");
                     break;
                 }
                 else if (input == "n")
                 {
-                    labels = false;
+                    Labels = false;
                     Console.WriteLine("\nData readout will NOT have labels.\n");
                     break;
                 }
@@ -618,36 +618,13 @@ namespace ApsCalc
                 MinShellVelocityInput,
                 MinEffectiveRangeInput,
                 TargetACInput,
-                DamageTypeInput
+                DamageTypeInput,
+                Labels
                 );
 
             Calc1.ShellTest();
-
-
-            if (DamageTypeInput == 0) // Kinetic
-            {
-                foreach (KeyValuePair<string, Shell> topShell in Calc1.TopDpsShells)
-                {
-                    if (topShell.Value.KineticDPS > 0)
-                    {
-                        Console.WriteLine(topShell.Key);
-                        topShell.Value.GetShellInfoKinetic(labels);
-                        Console.WriteLine("\n");
-                    }
-                }
-            }
-            else if (DamageTypeInput == 1) // Chemical
-            {
-                foreach (KeyValuePair<string, Shell> topShell in Calc1.TopDpsShells)
-                {
-                    if (topShell.Value.ChemDPS > 0)
-                    {
-                        Console.WriteLine(topShell.Key);
-                        topShell.Value.GetShellInfoChem(labels);
-                        Console.WriteLine("\n");
-                    }
-                }
-            }
+            Calc1.GetTopShells();
+            Calc1.WriteTopShells();
 
 
             // Keep window open until user presses Esc
