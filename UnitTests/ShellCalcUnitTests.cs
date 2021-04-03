@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using ApsCalc;
@@ -39,7 +39,8 @@ namespace ApsCalcTests
                 0,
                 0,
                 20,
-                0
+                0,
+                false
                 );
 
             foreach (ModuleCount counts in testCalc.GetModuleCounts())
@@ -83,7 +84,8 @@ namespace ApsCalcTests
                 0, 
                 0,
                 20, 
-                0
+                0,
+                false
                 );
 
             foreach (KeyValuePair<string, Shell> topShell in testCalc.TopDpsShells)
@@ -121,7 +123,8 @@ namespace ApsCalcTests
                 0,
                 0,
                 20,
-                0
+                0,
+                false
                 );
 
             testCalc.ShellTest();
