@@ -334,7 +334,7 @@ namespace ApsCalc
             int varModCount = 0;
             while (varModCount < 2)
             {
-                for (int i = 0; i < 5; i++) // Indices of all modules except bases and heads
+                for (int i = minBodyIndex; i < maxBodyIndex; i++)
                 {
                     Console.WriteLine(i + " : " + Module.AllModules[i].Name);
                 }
@@ -343,9 +343,13 @@ namespace ApsCalc
                 input = Console.ReadLine();
                 if (int.TryParse(input, out modIndex))
                 {
-                    if (modIndex < 0 || modIndex > 5) // Indices of all modules except bases and heads
+                    if (modIndex < minBodyIndex || maxBodyIndex > 5)
                     {
-                        Console.WriteLine("\nVARIABLEMOD INDEX RANGE ERROR: Enter an integer from 0 thru 4, or type 'done'.");
+                        Console.WriteLine("\nVARIABLEMOD INDEX RANGE ERROR: Enter an integer from "
+                            + minBodyIndex
+                            + " thru "
+                            + maxBodyIndex
+                            + ", or type 'done'.");
                     }
                     else
                     {
@@ -356,7 +360,11 @@ namespace ApsCalc
                 }
                 else
                 {
-                    Console.WriteLine("\nVARIABLEMOD INDEX PARSE ERROR: Enter an integer from 0 thru 4, or type 'done'.");
+                    Console.WriteLine("\nVARIABLEMOD INDEX PARSE ERROR: Enter an integer from "
+                        + minBodyIndex
+                        + " thru "
+                        + maxBodyIndex
+                        + ", or type 'done'.");
                 }
             }
 
