@@ -1,0 +1,93 @@
+
+
+        public void DoSomeShit()
+        {
+            foreach (var moduleCount in GetShellCompositionEnumerable())
+            {
+                Console.WriteLine($"Var0Count: {moduleCount.Var0Count}, Var1Count: {moduleCount.Var1Count}, GPCount: {moduleCount.GPCount}");
+            }
+        }
+
+
+        public struct ModuleCount
+        {
+            public float Var0Count;
+            public float Var1Count;
+            public float GPCount;
+        }
+
+
+        public ShellCompositionEnumerable GetShellCompositionEnumerable()
+        {
+            int fixedModuleCount = 0; // add some logic here
+
+            return new ShellCompositionEnumerable(fixedModuleCount);
+        }
+
+        public struct ShellCompositionEnumerable
+        {
+            int _fixedModuleCount;
+            public ShellCompositionEnumerable(int fixedModuleCount)
+            {
+                _fixedModuleCount = fixedModuleCount;
+            }
+
+            public ShellCompositionEnumerator GetEnumerator()
+            {
+                return new ShellCompositionEnumerator(_fixedModuleCount);
+            }
+        }
+
+
+        public struct ShellCompositionEnumerator
+        {
+            private float _fixedModuleCount;
+
+            private float _maxVar0Count;
+            private float _maxVar1Count;
+            private float _maxGPCount;
+
+            private float _var0Count;
+            private float _var1Count;
+            private float _gpCount;
+
+            private const float _gpStepSize = 0.01f;
+            private const float _maxTotalModuleCount = 20f;
+
+            public ShellCompositionEnumerator(int fixedModuleCount)
+            {
+                _fixedModuleCount = fixedModuleCount;
+
+                _maxVar0Count = _maxTotalModuleCount - _fixedModuleCount;
+                _maxVar1Count = _maxTotalModuleCount - _fixedModuleCount;
+                _maxGPCount = _maxTotalModuleCount - _fixedModuleCount;
+
+                _var0Count = 0f;
+                _var1Count = 0f;
+                _gpCount = -_gpStepSize;
+            }
+
+            public ModuleCount Current => new ModuleCount { Var0Count = _var0Count, Var1Count = _var1Count, GPCount = _gpCount };
+
+            public bool MoveNext()
+            {
+                _gpCount += _gpStepSize;
+                if (_gpCount > _maxGPCount)
+                {
+                    _var1Count++;
+                    if (_var1Count > _maxVar1Count)
+                    {
+                        _var0Count++;
+                        if (_var0Count > _maxVar0Count)
+                        {
+                            return false;
+                        }
+                        _maxVar1Count = _maxTotalModuleCount - (_fixedModuleCount + _var0Count);
+                        _var1Count = 0f;
+                    }
+                    _maxGPCount = _maxTotalModuleCount - (_fixedModuleCount + _var0Count + _var1Count);
+                    _gpCount = 0f;
+                }
+                return true;
+            }
+        }
