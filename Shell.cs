@@ -49,6 +49,9 @@ namespace ApsCalc
         public float OverallKineticDamageModifier { get; set; }
         public float OverallArmorPierceModifier { get; set; }
         public float OverallChemModifier { get; set; }
+        /*
+        public float OverallInaccuracyModifier { get; set; }
+        */
 
         // Power
         public float GPRecoil { get; set; }
@@ -60,25 +63,42 @@ namespace ApsCalc
         // Reload
         public float ReloadTime { get; set; }
         public float ReloadTimeBelt { get; set; } // Beltfed Loader
+        public float UptimeBelt { get; set; }
 
         // Effective range
         public float EffectiveRange { get; set; }
+
+        /*
+        // Inaccuracy
+        public bool MuzzleBrake { get; set; }
+        public float RequiredBarrelLength { get; set; } // for 0.3° inaccuracy
+        */
 
         // Damage
         public float KineticDamage { get; set; }
         public float ArmorPierce { get; set; }
         public float EffectiveKineticDamage { get; set; }
-        public float KineticDPS { get; set; }
-        public float KineticDPSPerVolume { get; set; }
-        public float KineticDPSBelt { get; set; }
-        public float KineticDPSPerVolumeBelt { get; set; }
+        public float KineticDps { get; set; }
+        public float KineticDpsPerVolume { get; set; }
+        public float KineticDpsBelt { get; set; }
+        public float KineticDpsBeltSustained { get; set; }
+        public float KineticDpsPerVolumeBelt { get; set; }
+        public float KineticDpsPerVolumeBeltSustained { get; set; }
         public bool IsBelt { get; set; } = false; // Whether the shell should use its beltfed for comparison
         public float ChemDamage { get; set; } // Frag, FlaK, HE, and EMP all scale the same
-        public float ChemDPS { get; set; } // Effective Warheads per Second
-        public float ChemDPSPerVolume { get; set; }
-        public float ChemDPSBelt { get; set; }
-        public float ChemDPSPerVolumeBelt { get; set; }
+        public float ChemDps { get; set; } // Effective Warheads per Second
+        public float ChemDpsPerVolume { get; set; }
+        public float ChemDpsBelt { get; set; }
+        public float ChemDpsBeltSustained { get; set; }
+        public float ChemDpsPerVolumeBelt { get; set; }
+        public float ChemDpsPerVolumeBeltSustained { get; set; }
         public float ShieldReduction { get; set; }
+        public float ShieldRps { get; set; }
+        public float ShieldRpsPerVolume { get; set; }
+        public float ShieldRpsBelt { get; set; }
+        public float ShieldRpsBeltSustained { get; set; }
+        public float ShieldRpsPerVolumeBelt { get; set; }
+        public float ShieldRpsPerVolumeBeltSustained { get; set; }
 
         public float ModuleCountTotal { get; set; }
 
@@ -87,6 +107,7 @@ namespace ApsCalc
         public int BarrelCount { get; set; }
         public float CooldownTime { get; set; }
         public float LoaderVolume { get; set; }
+        public float LoaderVolumeBelt { get; } = 4f; // loader, clip, 2 intakes
         public float RecoilVolume { get; set; }
         public float RecoilVolumeBelt { get; set; }
         public float ChargerVolume { get; set; }
@@ -279,6 +300,55 @@ namespace ApsCalc
             }
         }
 
+
+        /*
+        /// <summary>
+        /// Calculates inaccuracy modifier
+        /// </summary>
+        public void CalculateInaccuracyModifier()
+        {
+            // Calculate weighted inaccuracy modifier of body
+            float weightedInaccuracyModifier = 0f;
+            if (BaseModule != null)
+            {
+                weightedInaccuracyModifier += BaseModule.AccuracyMod * Math.Min(Gauge, BaseModule.MaxLength);
+            }
+
+            int modIndex = 0;
+            foreach (float modCount in BodyModuleCounts)
+            {
+                float modLength = Math.Min(Gauge, Module.AllModules[modIndex].MaxLength);
+                weightedInaccuracyModifier += (modLength * Module.AllModules[modIndex].AccuracyMod * modCount);
+                modIndex++;
+            }
+
+            if (LengthDifferential > 0f) // Add 'ghost' module for penalizing short shells; has no effect if body length >= 2 * gauge
+            {
+                weightedInaccuracyModifier += LengthDifferential;
+            }
+
+            weightedInaccuracyModifier /= EffectiveBodyLength;
+
+            OverallInaccuracyModifier = weightedInaccuracyModifier * HeadModule.AccuracyMod;
+
+            if (BaseModule == Module.BaseBleeder)
+            {
+                OverallInaccuracyModifier *= 1.35f;
+            }
+        }
+
+
+        /// <summary>
+        /// Calculates required barrel length for 0.3° inaccuracy
+        /// </summary>
+        public void CalculateRequiredBarrelLength()
+        {
+            if (MuzzleBrake)
+            {
+
+            }
+        }
+        */
 
         /// <summary>
         /// Calculates shell velocity
@@ -516,7 +586,7 @@ namespace ApsCalc
 
             if (TotalLength <= 1000f)
             {
-                VolumePerIntakeBelt = LoaderVolume + RecoilVolumeBelt + CoolerVolumeBelt + ChargerVolumeBelt;
+                VolumePerIntakeBelt = LoaderVolumeBelt + RecoilVolumeBelt + CoolerVolumeBelt + ChargerVolumeBelt;           
             }
         }
 
@@ -526,12 +596,23 @@ namespace ApsCalc
         /// </summary>
         public void CalculateKineticDamage()
         {
-            KineticDamage = (float)Math.Pow(500 / Math.Max(Gauge, 100f), 0.15)
-                * GaugeCoefficient
-                * EffectiveProjectileModuleCount
-                * Velocity
-                * OverallKineticDamageModifier
-                * 3.5f;
+            if (HeadModule == Module.HollowPoint)
+            {
+                KineticDamage = GaugeCoefficient
+                    * EffectiveProjectileModuleCount
+                    * Velocity
+                    * OverallKineticDamageModifier
+                    * 3.5f;
+            }
+            else
+            {
+                KineticDamage = (float)Math.Pow(500 / Math.Max(Gauge, 100f), 0.15)
+                    * GaugeCoefficient
+                    * EffectiveProjectileModuleCount
+                    * Velocity
+                    * OverallKineticDamageModifier
+                    * 3.5f;
+            }
         }
 
 
@@ -552,10 +633,30 @@ namespace ApsCalc
             ReloadTime = (float)(Math.Pow(Gauge * Gauge * Gauge / 125000000f, 0.45)
                 * (2f + EffectiveProjectileModuleCount + 0.25f * (RGCasingCount + GPCasingCount))
                 * 17.5f);
+        }
 
+
+        /// <summary>
+        /// Calculates beltfed loader reload time and uptime
+        /// </summary>
+        public void CalculateBeltfedReload()
+        {
             if (TotalLength <= 1000f)
             {
                 ReloadTimeBelt = (ReloadTime * 0.75f * (float)Math.Pow(Gauge / 1000f, 0.45));
+                float gaugeModifier;
+                if (Gauge <= 250f)
+                {
+                    gaugeModifier = 2;
+                }
+                else
+                {
+                    gaugeModifier = 1f;
+                }
+                float shellCapacity = (float)(1f * Math.Min(64, Math.Floor(1000 / Gauge) * gaugeModifier) + 1f);
+                float firingCycleLength = (shellCapacity - 1f) * ReloadTimeBelt;
+                float loadingCycleLength = (shellCapacity - 2f) * ReloadTimeBelt / 2f; // 2 intakes
+                UptimeBelt = firingCycleLength / (firingCycleLength + loadingCycleLength);
             }
             else
             {
@@ -582,10 +683,19 @@ namespace ApsCalc
             }
 
             ChemDamage = GaugeCoefficient * chemBodies * OverallChemModifier;
+        }
 
+
+        /// <summary>
+        /// Calculates planar shield reduction for shells with disruptor head
+        /// </summary>
+        public void CalculateShieldReduction()
+        {
+            CalculateChemDamage();
             if (HeadModule == Module.Disruptor)
             {
-                CalculateShieldReduction();
+                float reductionDecimal = ChemDamage / 1.3333334f;
+                ShieldReduction = Math.Min(reductionDecimal, 1f);
             }
             else
             {
@@ -595,12 +705,27 @@ namespace ApsCalc
 
 
         /// <summary>
-        /// Calculates planar shield reduction for shells with disruptor head
+        /// Calculates shield disruption, in % reduction per second per volume
         /// </summary>
-        public void CalculateShieldReduction()
+        public void CalculateShieldRps()
         {
-            float reductionDecimal = ChemDamage / 1.3333334f;
-            ShieldReduction = Math.Min(reductionDecimal, 1f);
+            ShieldRps = ShieldReduction / ReloadTime;
+            ShieldRpsPerVolume = ShieldRps / VolumePerIntake;
+
+            if (TotalLength <= 1000f)
+            {
+                ShieldRpsBelt = ShieldReduction / ReloadTimeBelt;
+                ShieldRpsBeltSustained = ShieldRpsBelt * UptimeBelt;
+                ShieldRpsPerVolumeBelt = ShieldRpsBelt / VolumePerIntakeBelt;
+                ShieldRpsPerVolumeBeltSustained = ShieldRpsBeltSustained / VolumePerIntakeBelt;
+            }
+            else
+            {
+                ShieldRpsBelt = 0;
+                ShieldRpsBeltSustained = 0;
+                ShieldRpsPerVolumeBelt = 0;
+                ShieldRpsPerVolumeBeltSustained = 0;
+            }
         }
 
 
@@ -623,10 +748,12 @@ namespace ApsCalc
             }
             else
             {
-                ChemDPS = 0;
-                ChemDPSBelt = 0;
-                ChemDPSPerVolume = 0;
-                ChemDPSPerVolumeBelt = 0;
+                ChemDps = 0;
+                ChemDpsBelt = 0;
+                ChemDpsPerVolume = 0;
+                ChemDpsBeltSustained = 0;
+                ChemDpsPerVolumeBelt = 0;
+                ChemDpsPerVolumeBeltSustained = 0;
             }
         }
 
@@ -637,19 +764,21 @@ namespace ApsCalc
         /// <param name="targetAC"></param>
         public void CalculateKineticDps(float targetAC)
         {
-            KineticDPS = 0;
-            KineticDPSPerVolume = 0;
-            KineticDPSBelt = 0;
-            KineticDPSPerVolumeBelt = 0;
+            KineticDps = 0;
+            KineticDpsPerVolume = 0;
+            KineticDpsBelt = 0;
+            KineticDpsPerVolumeBelt = 0;
 
             EffectiveKineticDamage = KineticDamage * Math.Min(1, ArmorPierce / targetAC);
-            KineticDPS = EffectiveKineticDamage / ReloadTime;
-            KineticDPSPerVolume = KineticDPS / VolumePerIntake;
+            KineticDps = EffectiveKineticDamage / ReloadTime;
+            KineticDpsPerVolume = KineticDps / VolumePerIntake;
 
             if (TotalLength <= 1000f)
             {
-                KineticDPSBelt = EffectiveKineticDamage / ReloadTimeBelt;
-                KineticDPSPerVolumeBelt = KineticDPSBelt / VolumePerIntakeBelt;
+                KineticDpsBelt = EffectiveKineticDamage / ReloadTimeBelt;
+                KineticDpsBeltSustained = KineticDpsBelt * UptimeBelt;
+                KineticDpsPerVolumeBelt = KineticDpsBelt / VolumePerIntakeBelt;
+                KineticDpsPerVolumeBeltSustained = KineticDpsBeltSustained / VolumePerIntakeBelt;
             }
         }
 
@@ -659,18 +788,20 @@ namespace ApsCalc
         /// </summary>
         public void CalculateChemDps()
         {
-            ChemDPS = 0;
-            ChemDPSPerVolume = 0;
-            ChemDPSBelt = 0;
-            ChemDPSPerVolumeBelt = 0;
+            ChemDps = 0;
+            ChemDpsPerVolume = 0;
+            ChemDpsBelt = 0;
+            ChemDpsPerVolumeBelt = 0;
 
-            ChemDPS = ChemDamage / ReloadTime;
-            ChemDPSPerVolume = ChemDPS / VolumePerIntake;
+            ChemDps = ChemDamage / ReloadTime;
+            ChemDpsPerVolume = ChemDps / VolumePerIntake;
 
             if (TotalLength <= 1000f)
             {
-                ChemDPSBelt = ChemDamage / ReloadTimeBelt;
-                ChemDPSPerVolumeBelt = ChemDPSBelt / VolumePerIntakeBelt;
+                ChemDpsBelt = ChemDamage / ReloadTimeBelt;
+                ChemDpsBeltSustained = ChemDpsBelt * UptimeBelt;
+                ChemDpsPerVolumeBelt = ChemDpsBelt / VolumePerIntakeBelt;
+                ChemDpsPerVolumeBeltSustained = ChemDpsBeltSustained / VolumePerIntakeBelt;
             }
         }
 
@@ -742,14 +873,17 @@ namespace ApsCalc
                 if (IsBelt)
                 {
                     Console.WriteLine("Reload time (belt): " + ReloadTimeBelt);
-                    Console.WriteLine("Effective kinetic DPS (belt): " + KineticDPSBelt);
-                    Console.WriteLine("Effective kinetic DPS per volume (belt): " + KineticDPSPerVolumeBelt);
+                    Console.WriteLine("Effective kinetic DPS (belt): " + KineticDpsBelt);
+                    Console.WriteLine("Effective kinetic DPS per volume (belt): " + KineticDpsPerVolumeBelt);
+                    Console.WriteLine("Uptime: " + UptimeBelt);
+                    Console.WriteLine("Effective kinetic DPS (belt, sustained): " + KineticDpsBeltSustained);
+                    Console.WriteLine("Effective kinetic DPS per volume (sustained): " + KineticDpsPerVolumeBeltSustained);
                 }
                 else
                 {
                     Console.WriteLine("Reload time: " + ReloadTime);
-                    Console.WriteLine("Effective kinetic DPS: " + KineticDPS);
-                    Console.WriteLine("Effective kinetic DPS per volume: " + KineticDPSPerVolume);
+                    Console.WriteLine("Effective kinetic DPS: " + KineticDps);
+                    Console.WriteLine("Effective kinetic DPS per volume: " + KineticDpsPerVolume);
                 }
             }
 
@@ -781,20 +915,33 @@ namespace ApsCalc
                 if (IsBelt)
                 {
                     Console.WriteLine(ReloadTimeBelt);
-                    Console.WriteLine(KineticDPSBelt);
-                    Console.WriteLine(KineticDPSPerVolumeBelt);
+                    Console.WriteLine(KineticDpsBelt);
+                    Console.WriteLine(KineticDpsPerVolumeBelt);
+                    Console.WriteLine(UptimeBelt);
+                    Console.WriteLine(KineticDpsBeltSustained);
+                    Console.WriteLine(KineticDpsPerVolumeBeltSustained);
                 }
                 else
                 {
                     Console.WriteLine(ReloadTime);
-                    Console.WriteLine(KineticDPS);
-                    Console.WriteLine(KineticDPSPerVolume);
+                    Console.WriteLine(KineticDps);
+                    Console.WriteLine(KineticDpsPerVolume);
                 }
             }
         }
 
         public void GetShellInfoChem(bool labels)
         {
+            // Determine if disruptor
+            bool disruptor;
+            if (HeadModule == Module.Disruptor)
+            {
+                disruptor = true;
+            }
+            else
+            {
+                disruptor = false;
+            }
             if (labels)
             {
                 Console.WriteLine("Gauge (mm): " + Gauge);
@@ -829,7 +976,7 @@ namespace ApsCalc
                 Console.WriteLine("Velocity (m/s): " + Velocity);
                 Console.WriteLine("Effective range (m): " + EffectiveRange);
                 Console.WriteLine("Chemical payload strength: " + ChemDamage);
-                if (HeadModule == Module.Disruptor)
+                if (disruptor)
                 {
                     Console.WriteLine("Shield reduction (decimal): " + ShieldReduction);
                 }
@@ -838,14 +985,32 @@ namespace ApsCalc
                 if (IsBelt)
                 {
                     Console.WriteLine("Reload time (belt): " + ReloadTimeBelt);
-                    Console.WriteLine("Chemical DPS (belt): " + ChemDPSBelt);
-                    Console.WriteLine("Chemical DPS per volume (belt): " + ChemDPSPerVolumeBelt);
+                    Console.WriteLine("Chemical DPS (belt): " + ChemDpsBelt);
+                    Console.WriteLine("Chemical DPS per volume (belt): " + ChemDpsPerVolumeBelt);
+                    if (disruptor)
+                    {
+                        Console.WriteLine("Shield RPS (belt): " + ShieldRpsBelt);
+                        Console.WriteLine("Shield RPS per Volume (belt): " + ShieldRpsPerVolumeBelt);
+                    }
+                    Console.WriteLine("Uptime: " + UptimeBelt);
+                    Console.WriteLine("Chemical DPS (belt, sustained): " + ChemDpsBeltSustained);
+                    Console.WriteLine("Chemical DPS per volume (sustained): " + ChemDpsPerVolumeBeltSustained);
+                    if (disruptor)
+                    {
+                        Console.WriteLine("Shield RPS (belt, sustained): " + ShieldRpsBeltSustained);
+                        Console.WriteLine("Shield RPS per volume (sustained): " + ShieldRpsPerVolumeBeltSustained);
+                    }
                 }
                 else
                 {
                     Console.WriteLine("Reload time: " + ReloadTime);
-                    Console.WriteLine("Chemical DPS: " + ChemDPS);
-                    Console.WriteLine("Chemical DPS per volume: " + ChemDPSPerVolume);
+                    Console.WriteLine("Chemical DPS: " + ChemDps);
+                    Console.WriteLine("Chemical DPS per volume: " + ChemDpsPerVolume);
+                    if (disruptor)
+                    {
+                        Console.WriteLine("Shield RPS: " + ShieldRps);
+                        Console.WriteLine("Shield RPS per Volume: " + ShieldRpsPerVolume);
+                    }
                 }
             }
 
@@ -869,7 +1034,7 @@ namespace ApsCalc
                 Console.WriteLine(Velocity);
                 Console.WriteLine(EffectiveRange);
                 Console.WriteLine(ChemDamage);
-                if (HeadModule == Module.Disruptor)
+                if (disruptor)
                 {
                     Console.WriteLine(ShieldReduction);
                 }
@@ -877,14 +1042,32 @@ namespace ApsCalc
                 if (IsBelt)
                 {
                     Console.WriteLine(ReloadTimeBelt);
-                    Console.WriteLine(ChemDPSBelt);
-                    Console.WriteLine(ChemDPSPerVolumeBelt);
+                    Console.WriteLine(ChemDpsBelt);
+                    Console.WriteLine(ChemDpsPerVolumeBelt);
+                    if (disruptor)
+                    {
+                        Console.WriteLine(ShieldRpsBelt);
+                        Console.WriteLine(ShieldRpsPerVolumeBelt);
+                    }
+                    Console.WriteLine(UptimeBelt);
+                    Console.WriteLine(ChemDpsBeltSustained);
+                    Console.WriteLine(ChemDpsPerVolumeBeltSustained);
+                    if (disruptor)
+                    {
+                        Console.WriteLine(ShieldRpsBeltSustained);
+                        Console.WriteLine(ShieldRpsPerVolumeBeltSustained);
+                    }
                 }
                 else
                 {
                     Console.WriteLine(ReloadTime);
-                    Console.WriteLine(ChemDPS);
-                    Console.WriteLine(ChemDPSPerVolume);
+                    Console.WriteLine(ChemDps);
+                    Console.WriteLine(ChemDpsPerVolume);
+                    if (disruptor)
+                    {
+                        Console.WriteLine(ShieldRps);
+                        Console.WriteLine(ShieldRpsPerVolume);
+                    }
                 }
             }
         }

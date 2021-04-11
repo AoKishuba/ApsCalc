@@ -1,5 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
+using System.Collections.Concurrent;
+using System.Diagnostics;
 using PenCalc;
 
 namespace ApsCalc
@@ -161,7 +164,6 @@ namespace ApsCalc
                 else
                 {
                     Console.WriteLine("\nEnter a number to select a head.");
-
                 }
                 input = Console.ReadLine();
                 if (input == "done")
@@ -375,9 +377,9 @@ namespace ApsCalc
 
             // Get variable modules
             Console.WriteLine("\n\n");
-            int[] variableModuleIndices = { 0, 0 };
+            int[] variableModuleIndices = { 0, 0, 0 };
             int varModCount = 0;
-            while (varModCount < 2)
+            while (varModCount < 3)
             {
                 for (int i = minBodyIndex; i <= maxBodyIndex; i++)
                 {
@@ -385,12 +387,11 @@ namespace ApsCalc
                 }
                 Console.WriteLine("\nEnter a number to add a variable module.  Variable modules will be tested at every combination from 0 thru "
                     + maxOtherCount
-                    + " modules."
-                    + "\nIf only one variable module is desired, enter the same number for both.");
+                    + " modules.\nThree modules must be added in total, but duplicates will be tested only once.");
                 input = Console.ReadLine();
                 if (int.TryParse(input, out modIndex))
                 {
-                    if (modIndex < minBodyIndex || maxBodyIndex > 5)
+                    if (modIndex < minBodyIndex || modIndex > maxBodyIndex)
                     {
                         Console.WriteLine("\nVARIABLEMOD INDEX RANGE ERROR: Enter an integer from "
                             + minBodyIndex
@@ -617,15 +618,16 @@ namespace ApsCalc
             int damageType = 0;
             Scheme armorScheme = new Scheme();
             float targetAC = default(float);
-            Console.WriteLine("\nEnter 0 to measure kinetic damage\nEnter 1 to measure chemical damage (HE, Frag, FlaK, EMP).\nEnter 2 for pendepth.");
+            Console.WriteLine("\nEnter 0 to measure kinetic damage\nEnter 1 to measure chemical damage (HE, Frag, FlaK, EMP).\nEnter 2 for pendepth." +
+                "\nEnter 3 for shield disruptor.");
             while (true)
             {
                 input = Console.ReadLine();
                 if (int.TryParse(input, out damageType))
                 {
-                    if (damageType < 0 || damageType > 2)
+                    if (damageType < 0 || damageType > 3)
                     {
-                        Console.WriteLine("\nDAMAGE TYPE RANGE ERROR: Enter 0 for kinetic, 1 for chemical, or 2 for pendepth.");
+                        Console.WriteLine("\nDAMAGE TYPE RANGE ERROR: Enter 0 for kinetic, 1 for chemical, 2 for pendepth, or 3 for disruptor.");
                     }
                     else
                     {
@@ -635,7 +637,7 @@ namespace ApsCalc
                 }
                 else
                 {
-                    Console.WriteLine("\nDAMAGE TYPE PARSE ERROR: Enter 0 for kinetic, 1 for chemical, or 2 for pendepth.");
+                    Console.WriteLine("\nDAMAGE TYPE PARSE ERROR: Enter 0 for kinetic, 1 for chemical, 2 for pendepth, or 3 for disruptor.");
                 }
             }
             if (damageType == 0)
@@ -673,6 +675,22 @@ namespace ApsCalc
                 armorScheme.GetLayerList();
                 armorScheme.CalculateLayerAC();
             }
+            else if (damageType == 3)
+            {
+                // Overwrite head list with disruptor conduit
+                HeadIndices.Clear();
+                modIndex = 0;
+                foreach (Module head in Module.AllModules)
+                {
+                    if (head == Module.Disruptor)
+                    {
+                        HeadIndices.Add(modIndex);
+                        break;
+                    }
+                    modIndex++;
+                }
+                Console.WriteLine("Head set to Disruptor conduit.  Will test shield reduction strength.");
+            }
 
 
             // Get user preference on whether labels should be included in the results
@@ -700,10 +718,46 @@ namespace ApsCalc
                 }
             }
 
+            // For tracking progress
+            float totalCombinations = HeadIndices.Count * Math.Min(maxGaugeInput - minGaugeInput, 1);
+            Stopwatch stopWatchParallel = Stopwatch.StartNew();
 
+            ConcurrentBag<Shell> shellBag = new ConcurrentBag<Shell>();
+            Parallel.For(minGaugeInput, maxGaugeInput + 1, gauge =>
+            {
+                float gaugeFloat = (float)gauge;
+                ShellCalc calcLocal = new ShellCalc(
+                    barrelCount,
+                    gauge,
+                    gauge,
+                    HeadIndices,
+                    Base,
+                    fixedModulecounts,
+                    minModulecount,
+                    variableModuleIndices,
+                    maxGPCasingCount,
+                    evacuator,
+                    maxRGCasingCount,
+                    maxLength,
+                    maxDraw,
+                    minVelocity,
+                    minEffectiverangeInput,
+                    targetAC,
+                    damageType,
+                    armorScheme,
+                    labels
+                    );
+                
+                calcLocal.ShellTest();
+                calcLocal.AddTopShellsToLocalList();
 
+                foreach(Shell topShellLocal in calcLocal.TopDpsShellsLocal)
+                {
+                    shellBag.Add(topShellLocal);
+                }
+            });
 
-            ShellCalc Calc1 = new ShellCalc(
+            ShellCalc calcFinal = new ShellCalc(
                 barrelCount,
                 minGauge,
                 maxGauge,
@@ -725,10 +779,13 @@ namespace ApsCalc
                 labels
                 );
 
-            Calc1.ShellTest();
-            Calc1.GetTopShells();
-            Calc1.WriteTopShells();
+            calcFinal.FindTopShellsInList(shellBag);
+            calcFinal.AddTopShellsToDictionary();
+            calcFinal.WriteTopShells();
+            TimeSpan parallelDuration = stopWatchParallel.Elapsed;
+            stopWatchParallel.Stop();
 
+            Console.WriteLine("Time elapsed: " + parallelDuration);
 
             // Keep window open until user presses Esc
             ConsoleKeyInfo cki;
