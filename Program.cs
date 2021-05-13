@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using PenCalc;
+using System.Linq;
 
 namespace ApsCalc
 {
@@ -166,7 +167,7 @@ namespace ApsCalc
                     Console.WriteLine("\nEnter a number to select a head.");
                 }
                 input = Console.ReadLine();
-                if (input == "done")
+                if (input.ToLower() == "done")
                 {
                     if (headCount > 0)
                     {
@@ -181,11 +182,21 @@ namespace ApsCalc
                 {
                     if (modIndex < minHeadIndex || modIndex > maxHeadIndex) // Indices of all modules which can be used as heads
                     {
-                        Console.WriteLine("\nHEAD INDEX RANGE ERROR: Enter an integer from "
-                            + minHeadIndex
-                            + " thru "
-                            + maxHeadIndex
-                            + ", or type 'done'.");
+                        if (headCount > 0)
+                        {
+                            Console.WriteLine("\nHEAD INDEX RANGE ERROR: Enter an integer from "
+                                + minHeadIndex
+                                + " thru "
+                                + maxHeadIndex
+                                + ", or type 'done'.");
+                        }
+                        else
+                        {
+                            Console.WriteLine("\nHEAD INDEX RANGE ERROR: Enter an integer from "
+                                + minHeadIndex
+                                + " thru "
+                                + maxHeadIndex);
+                        }
                     }
                     else
                     {
@@ -203,11 +214,21 @@ namespace ApsCalc
                 }
                 else
                 {
-                    Console.WriteLine("\nHEAD INDEX PARSE ERROR: Enter an integer from "
-                        + minHeadIndex
-                        + " thru "
-                        + maxHeadIndex
-                        + ", or type 'done'.");
+                    if (headCount > 0)
+                    {
+                        Console.WriteLine("\nHEAD INDEX PARSE ERROR: Enter an integer from "
+                            + minHeadIndex
+                            + " thru "
+                            + maxHeadIndex
+                            + ", or type 'done'.");
+                    }
+                    else
+                    {
+                        Console.WriteLine("\nHEAD INDEX PARSE ERROR: Enter an integer from "
+                            + minHeadIndex
+                            + " thru "
+                            + maxHeadIndex);
+                    }
                 }
             }
 
@@ -248,7 +269,7 @@ namespace ApsCalc
             while (true)
             {
                 input = Console.ReadLine();
-                if (input == "done")
+                if (input.ToLower() == "done")
                 {
                     break;
                 }
@@ -323,7 +344,7 @@ namespace ApsCalc
                 }
                 Console.WriteLine("\nEnter a number to add a fixed module, or type 'done'.  Fixed modules will be included in every shell.");
                 input = Console.ReadLine();
-                if (input == "done")
+                if (input.ToLower() == "done")
                 {
                     break;
                 }
@@ -377,7 +398,7 @@ namespace ApsCalc
 
             // Get variable modules
             Console.WriteLine("\n\n");
-            int[] variableModuleIndices = { 0, 0, 0 };
+            int[] variableModuleIndices = { 100, 100, 100 };
             int varModCount = 0;
             while (varModCount < 3)
             {
@@ -385,15 +406,78 @@ namespace ApsCalc
                 {
                     Console.WriteLine(i + " : " + Module.AllModules[i].Name);
                 }
-                Console.WriteLine("\nEnter a number to add a variable module.  Variable modules will be tested at every combination from 0 thru "
-                    + maxOtherCount
-                    + " modules.\nThree modules must be added in total, but duplicates will be tested only once.");
+                if (varModCount > 0)
+                {
+                    Console.WriteLine("\nEnter a number to select an additional variable module "
+                        + (varModCount + 1) // Compensate for 0 indexing for display
+                        + " of "
+                        + variableModuleIndices.Length
+                        + ", or type 'done' if finished.");
+                }
+                else
+                {
+                    Console.WriteLine("\nEnter a number to select a variable module.\nVariable modules will be tested at every combination from 0 thru "
+                        + maxOtherCount
+                        + " each.");
+                }
                 input = Console.ReadLine();
+                if (input.ToLower() == "done")
+                {
+                    if (varModCount > 0)
+                    {
+                        // Set remaining indices to the first intex entered by the user to overwrite default values
+                        for (int i = varModCount; i < variableModuleIndices.Length; i++)
+                        {
+                            variableModuleIndices[i] = variableModuleIndices[0];
+                        }
+                        varModCount = 3;
+                        break;
+                    }
+                    else
+                    {
+                        Console.WriteLine("\n ERROR: At least one variable module must be selected.");
+                    }
+                }
+
                 if (int.TryParse(input, out modIndex))
                 {
                     if (modIndex < minBodyIndex || modIndex > maxBodyIndex)
                     {
-                        Console.WriteLine("\nVARIABLEMOD INDEX RANGE ERROR: Enter an integer from "
+                        if (varModCount > 0)
+                        {
+                            Console.WriteLine("\nVARIABLEMOD INDEX RANGE ERROR: Enter an integer from "
+                                + minBodyIndex
+                                + " thru "
+                                + maxBodyIndex
+                                + ", or type 'done'.");
+                        }
+                        else
+                        {
+                            Console.WriteLine("\nVARIABLEMOD INDEX RANGE ERROR: Enter an integer from "
+                                + minBodyIndex
+                                + " thru "
+                                + maxBodyIndex);
+                        }
+                    }
+                    else
+                    {
+                        if (variableModuleIndices.Contains(modIndex))
+                        {
+                            Console.WriteLine("\nERROR: Duplicate variable module index.");
+                        }
+                        else
+                        {
+                            variableModuleIndices[varModCount] = modIndex;
+                            Console.WriteLine("\n" + Module.AllModules[modIndex].Name + " added to variable module list.\n");
+                            varModCount++;
+                        }
+                    }
+                }
+                else
+                {
+                    if (varModCount > 0)
+                    {
+                        Console.WriteLine("\nVARIABLEMOD INDEX PARSE ERROR: Enter an integer from "
                             + minBodyIndex
                             + " thru "
                             + maxBodyIndex
@@ -401,18 +485,11 @@ namespace ApsCalc
                     }
                     else
                     {
-                        variableModuleIndices[varModCount] = modIndex;
-                        Console.WriteLine("\n" + Module.AllModules[modIndex].Name + " added to variable module list.\n");
-                        varModCount++;
+                        Console.WriteLine("\nVARIABLEMOD INDEX PARSE ERROR: Enter an integer from "
+                            + minBodyIndex
+                            + " thru "
+                            + maxBodyIndex);
                     }
-                }
-                else
-                {
-                    Console.WriteLine("\nVARIABLEMOD INDEX PARSE ERROR: Enter an integer from "
-                        + minBodyIndex
-                        + " thru "
-                        + maxBodyIndex
-                        + ", or type 'done'.");
                 }
             }
 
@@ -450,14 +527,13 @@ namespace ApsCalc
                 while (true)
                 {
                     input = Console.ReadLine();
-                    input.ToLower();
-                    if (input == "y")
+                    if (input.ToLower() == "y")
                     {
                         evacuator = true;
                         Console.WriteLine("\nUsing bore evacuator.\n");
                         break;
                     }
-                    else if (input == "n")
+                    else if (input.ToLower() == "n")
                     {
                         evacuator = false;
                         Console.WriteLine("\nNo evacuator.\n");
@@ -699,14 +775,13 @@ namespace ApsCalc
             while (true)
             {
                 input = Console.ReadLine();
-                input.ToLower();
-                if (input == "y")
+                if (input.ToLower() == "y")
                 {
                     labels = true;
                     Console.WriteLine("\nData readout will have labels.\n");
                     break;
                 }
-                else if (input == "n")
+                else if (input.ToLower() == "n")
                 {
                     labels = false;
                     Console.WriteLine("\nData readout will NOT have labels.\n");

@@ -126,6 +126,7 @@ namespace ApsCalc
         public Shell TopDps1000 { get; set; } = new Shell();
         public Shell TopDpsBelt { get; set; } = new Shell();
         public Shell TopDps2000 { get; set; } = new Shell();
+        public Shell TopDps3000 { get; set; } = new Shell();
         public Shell TopDps4000 { get; set; } = new Shell();
         public Shell TopDps6000 { get; set; } = new Shell();
         public Shell TopDps8000 { get; set; } = new Shell();
@@ -393,6 +394,13 @@ namespace ApsCalc
                                 if (shellUnderTesting.ChemDpsPerVolume > TopDps2000.ChemDpsPerVolume)
                                 {
                                     TopDps2000 = shellUnderTesting;
+                                }
+                            }
+                            else if (shellUnderTesting.TotalLength <= 3000f)
+                            {
+                                if (shellUnderTesting.ChemDpsPerVolume > TopDps3000.ChemDpsPerVolume)
+                                {
+                                    TopDps3000 = shellUnderTesting;
                                 }
                             }
                             else if (shellUnderTesting.TotalLength <= 4000f)
@@ -728,6 +736,13 @@ namespace ApsCalc
                             if (shellUnderTesting.KineticDpsPerVolume > TopDps2000.KineticDpsPerVolume)
                             {
                                 TopDps2000 = shellUnderTesting;
+                            }
+                        }
+                        else if (shellUnderTesting.TotalLength <= 3000f)
+                        {
+                            if (shellUnderTesting.KineticDpsPerVolume > TopDps3000.KineticDpsPerVolume)
+                            {
+                                TopDps3000 = shellUnderTesting;
                             }
                         }
                         else if (shellUnderTesting.TotalLength <= 4000f)
@@ -1091,6 +1106,13 @@ namespace ApsCalc
                                 TopDps2000 = shellUnderTesting;
                             }
                         }
+                        else if (shellUnderTesting.TotalLength <= 3000f)
+                        {
+                            if (shellUnderTesting.ChemDpsPerVolume > TopDps3000.ChemDpsPerVolume)
+                            {
+                                TopDps3000 = shellUnderTesting;
+                            }
+                        }
                         else if (shellUnderTesting.TotalLength <= 4000f)
                         {
                             if (shellUnderTesting.ChemDpsPerVolume > TopDps4000.ChemDpsPerVolume)
@@ -1434,6 +1456,13 @@ namespace ApsCalc
                                 TopDps2000 = shellUnderTesting;
                             }
                         }
+                        else if (shellUnderTesting.TotalLength <= 3000f)
+                        {
+                            if (shellUnderTesting.ShieldRpsPerVolume > TopDps3000.ShieldRpsPerVolume)
+                            {
+                                TopDps3000 = shellUnderTesting;
+                            }
+                        }
                         else if (shellUnderTesting.TotalLength <= 4000f)
                         {
                             if (shellUnderTesting.ShieldRpsPerVolume > TopDps4000.ShieldRpsPerVolume)
@@ -1628,6 +1657,11 @@ namespace ApsCalc
                 TopDpsShellsLocal.Add(TopDps2000);
             }
 
+            if (TopDps3000.KineticDps > 0 || TopDps3000.ChemDps > 0 || TopDps3000.ShieldRps > 0)
+            {
+                TopDpsShellsLocal.Add(TopDps3000);
+            }
+
             if (TopDps4000.KineticDps > 0 || TopDps4000.ChemDps > 0 || TopDps4000.ShieldRps > 0)
             {
                 TopDpsShellsLocal.Add(TopDps4000);
@@ -1663,6 +1697,11 @@ namespace ApsCalc
             if (TopDps2000.KineticDps > 0 || TopDps2000.ChemDps > 0 || TopDps2000.ShieldRps > 0)
             {
                 TopDpsShells.Add("2 m", TopDps2000);
+            }
+
+            if (TopDps3000.KineticDps > 0 || TopDps3000.ChemDps > 0 || TopDps3000.ShieldRps > 0)
+            {
+                TopDpsShells.Add("3 m", TopDps3000);
             }
 
             if (TopDps4000.KineticDps > 0 || TopDps4000.ChemDps > 0 || TopDps4000.ShieldRps > 0)
@@ -1713,6 +1752,13 @@ namespace ApsCalc
                             TopDps2000 = rawShell;
                         }
                     }
+                    else if (rawShell.TotalLength <= 3000f)
+                    {
+                        if (rawShell.KineticDpsPerVolume > TopDps3000.KineticDpsPerVolume)
+                        {
+                            TopDps3000 = rawShell;
+                        }
+                    }
                     else if (rawShell.TotalLength <= 4000f)
                     {
                         if (rawShell.KineticDpsPerVolume > TopDps4000.KineticDpsPerVolume)
@@ -1761,6 +1807,13 @@ namespace ApsCalc
                             TopDps2000 = rawShell;
                         }
                     }
+                    else if (rawShell.TotalLength <= 3000f)
+                    {
+                        if (rawShell.ChemDpsPerVolume > TopDps3000.ChemDpsPerVolume)
+                        {
+                            TopDps3000 = rawShell;
+                        }
+                    }
                     else if (rawShell.TotalLength <= 4000f)
                     {
                         if (rawShell.ChemDpsPerVolume > TopDps4000.ChemDpsPerVolume)
@@ -1807,6 +1860,13 @@ namespace ApsCalc
                         if (rawShell.ShieldRpsPerVolume > TopDps2000.ShieldRpsPerVolume)
                         {
                             TopDps2000 = rawShell;
+                        }
+                    }
+                    else if (rawShell.TotalLength <= 3000f)
+                    {
+                        if (rawShell.ChemDpsPerVolume > TopDps3000.ChemDpsPerVolume)
+                        {
+                            TopDps3000 = rawShell;
                         }
                     }
                     else if (rawShell.TotalLength <= 4000f)
@@ -1876,7 +1936,11 @@ namespace ApsCalc
                 }
             }
 
-            Console.WriteLine("Base: " + BaseModule.Name);
+            if (BaseModule != null)
+            {
+                Console.WriteLine("Base: " + BaseModule.Name);
+            }
+
             Console.WriteLine("Fixed modules: ");
 
             int modIndex = 0;

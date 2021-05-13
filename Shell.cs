@@ -435,6 +435,10 @@ namespace ApsCalc
             {
                 LoaderVolume = 2f;
             }
+            else if (TotalLength <= 3000f)
+            {
+                LoaderVolume = 3f;
+            }
             else if (TotalLength <= 4000f)
             {
                 LoaderVolume = 4f;
