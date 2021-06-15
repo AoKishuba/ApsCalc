@@ -17,6 +17,7 @@ namespace ApsCalc
         public float RGCount;
     }
 
+
     public class ShellCalc
     {
         /// <summary>
@@ -25,11 +26,11 @@ namespace ApsCalc
         /// <param name="barrelCount">Number of barrels</param>
         /// <param name="minGauge">Min desired gauge in mm</param>
         /// <param name="maxGauge">Max desired gauge in mm</param>
-        /// <param name="headList">List of module indices for every module to be used as the head</param>
+        /// <param name="headList">List of module indices for every module to be used as head</param>
         /// <param name="baseModule">The special base module, if any</param>
-        /// <param name="fixedModuleCounts">An array of integers representing the number of shells at that index in the module list</param>
+        /// <param name="fixedModuleCounts">An array of integers representing number of shells at that index in module list</param>
         /// <param name="fixedModuleTotal">Minimum number of modules on every shell</param>
-        /// <param name="variableModuleIndices">Module indices of the modules to be used in varying numbers in testing</param>
+        /// <param name="variableModuleIndices">Module indices of modules to be used in varying numbers in testing</param>
         /// <param name="maxGPInput">Max desired number of gunpowder casings</param>
         /// <param name="boreEvacuator">True if bore evacuator is used</param>
         /// <param name="maxRGInput">Max desired number of railgun casings</param>
@@ -37,9 +38,10 @@ namespace ApsCalc
         /// <param name="maxDrawInput">Max desired rail draw</param>
         /// <param name="minVelocityInput">Min desired velocity</param>
         /// <param name="minEffectiveRangeInput">Min desired effective range</param>
-        /// <param name="targetAC">Armor class of the target for kinetic damage calculations</param>
-        /// <param name="damageType">0 for kinetic, 1 for chemical</param>
-        /// <param name="targetArmorScheme">Target armor scheme, from the Pencalc namespace</param>
+        /// <param name="targetAC">Armor class of target for kinetic damage calculations</param>
+        /// <param name="damageType">0 for kinetic, 1 for chemical, 2 for pendepth, 3 for disruptor</param>
+        /// <param name="targetArmorScheme">Target armor scheme, from Pencalc namespace</param>
+        /// <param name="testType">0 for DPS per volume, 1 for DPS per cost</param>
         /// <param name="labels">True if row headers should be printed on every line</param>
         public ShellCalc(
             int barrelCount,
@@ -60,6 +62,7 @@ namespace ApsCalc
             float targetAC,
             float damageType,
             Scheme targetArmorScheme,
+            int testType,
             bool labels
             )
         {
@@ -81,17 +84,10 @@ namespace ApsCalc
             TargetAC = targetAC;
             DamageType = damageType;
             TargetArmorScheme = targetArmorScheme;
+            TestType = testType;
             Labels = labels;
         }
 
-        /// <summary>
-        /// Creates an instance of ShellCalc for multithreading
-        /// </summary>
-        /// <param name="damageType">0 for kinetic, 1 for chem, 2 for pendepth, 3 for shield disruption</param>
-        public ShellCalc(int damageType)
-        {
-            DamageType = damageType;
-        }
 
         public int BarrelCount { get; }
         public float MinGauge { get; }
@@ -111,6 +107,7 @@ namespace ApsCalc
         public float TargetAC { get; }
         public float DamageType { get; }
         public Scheme TargetArmorScheme { get; }
+        public int TestType { get; }
         public bool Labels { get; }
 
         // Testing data
@@ -123,20 +120,20 @@ namespace ApsCalc
 
 
         // Store top-DPS shells by loader length
-        public Shell TopDps1000 { get; set; } = new Shell();
-        public Shell TopDpsBelt { get; set; } = new Shell();
-        public Shell TopDps2000 { get; set; } = new Shell();
-        public Shell TopDps3000 { get; set; } = new Shell();
-        public Shell TopDps4000 { get; set; } = new Shell();
-        public Shell TopDps6000 { get; set; } = new Shell();
-        public Shell TopDps8000 { get; set; } = new Shell();
+        public Shell Top1000 { get; set; } = new Shell();
+        public Shell TopBelt { get; set; } = new Shell();
+        public Shell Top2000 { get; set; } = new Shell();
+        public Shell Top3000 { get; set; } = new Shell();
+        public Shell Top4000 { get; set; } = new Shell();
+        public Shell Top6000 { get; set; } = new Shell();
+        public Shell Top8000 { get; set; } = new Shell();
 
         public Dictionary<string, Shell> TopDpsShells { get; set; } = new Dictionary<string, Shell>();
-        public List<Shell> TopDpsShellsLocal { get; set; } = new List<Shell>();
+        public List<Shell> TopShellsLocal { get; set; } = new List<Shell>();
 
 
         /// <summary>
-        /// The iterable generator for shells.  Generates all shell possible permutations of shell within the given parameters.
+        /// The iterable generator for shells.  Generates all shell possible permutations of shell within given parameters.
         /// </summary>
         /// <returns></returns>
         public IEnumerable<ModuleCount> GenerateModuleCounts()
@@ -203,11 +200,11 @@ namespace ApsCalc
 
 
         /// <summary>
-        /// Divides a range of integers into even groups.  Used by the railgun testing method.
+        /// Divides a range of integers into even groups.  Used by railgun testing method.
         /// </summary>
-        /// <param name="start">Beginning of the range to be divided</param>
-        /// <param name="end">End of the range to be divided</param>
-        /// <param name="numGroups">Number of groups into which the range is divided</param>
+        /// <param name="start">Beginning of range to be divided</param>
+        /// <param name="end">End of range to be divided</param>
+        /// <param name="numGroups">Number of groups into which range is divided</param>
         /// <returns></returns>
         public static IEnumerable<float> DistributeRange(float start, float end, float numGroups)
         {
@@ -240,7 +237,7 @@ namespace ApsCalc
         {
             foreach (ModuleCount counts in GenerateModuleCounts())
             {
-                Shell shellUnderTesting = new Shell();
+                Shell shellUnderTesting = new();
                 shellUnderTesting.BarrelCount = BarrelCount;
                 shellUnderTesting.BoreEvacuator = BoreEvacuator;
                 shellUnderTesting.HeadModule = Module.AllModules[counts.HeadIndex];
@@ -258,13 +255,13 @@ namespace ApsCalc
 
                 if (shellUnderTesting.TotalLength <= MaxShellLength)
                 {
-                    shellUnderTesting.CalculateLoaderVolume();
+                    shellUnderTesting.CalculateLoaderVolumeAndCost();
                     shellUnderTesting.CalculateVelocityModifier();
                     shellUnderTesting.CalculateRecoil();
                     shellUnderTesting.CalculateMaxDraw();
 
                     float maxDraw = Math.Min(shellUnderTesting.MaxDraw, MaxDrawInput);
-                    float minDraw = shellUnderTesting.CalculateMinimumDrawForVelocityandRange(MinVelocityInput, MinEffectiveRangeInput, maxDraw);
+                    float minDraw = shellUnderTesting.CalculateMinimumDrawForVelocityandRange(MinVelocityInput, MinEffectiveRangeInput);
 
                     if (maxDraw >= minDraw)
                     {
@@ -287,10 +284,7 @@ namespace ApsCalc
                             float optimalDraw = 0;
                             if (maxDraw > 0)
                             {
-                                // Binary search to find optimal draw without testing every value
-                                float bottomOfRange = minDraw;
                                 float bottomScore = 0;
-                                float topOfRange = maxDraw;
                                 float topScore = 0;
                                 float midRangeLower = 0;
                                 float midRangeLowerScore = 0;
@@ -300,18 +294,39 @@ namespace ApsCalc
 
                                 shellUnderTesting.RailDraw = minDraw;
                                 shellUnderTesting.CalculatePendepthDps(TargetArmorScheme);
-                                bottomScore = shellUnderTesting.ChemDpsPerVolume;
+                                if (TestType == 0)
+                                {
+                                    bottomScore = shellUnderTesting.ChemDpsPerVolume;
+                                }
+                                else if (TestType == 1)
+                                {
+                                    bottomScore = shellUnderTesting.ChemDpsPerCost;
+                                }
 
                                 shellUnderTesting.RailDraw = maxDraw;
                                 shellUnderTesting.CalculatePendepthDps(TargetArmorScheme);
-                                topScore = shellUnderTesting.ChemDpsPerVolume;
+                                if (TestType == 0)
+                                {
+                                    topScore = shellUnderTesting.ChemDpsPerVolume;
+                                }
+                                else if (TestType == 1)
+                                {
+                                    topScore = shellUnderTesting.ChemDpsPerCost;
+                                }
 
                                 if (topScore > bottomScore)
                                 {
                                     // Check if max draw is optimal
                                     shellUnderTesting.RailDraw = maxDraw - 1f;
                                     shellUnderTesting.CalculatePendepthDps(TargetArmorScheme);
-                                    bottomScore = shellUnderTesting.ChemDpsPerVolume;
+                                    if (TestType == 0)
+                                    {
+                                        bottomScore = shellUnderTesting.ChemDpsPerVolume;
+                                    }
+                                    else if (TestType == 1)
+                                    {
+                                        bottomScore = shellUnderTesting.ChemDpsPerCost;
+                                    }
 
                                     if (topScore > bottomScore)
                                     {
@@ -323,7 +338,14 @@ namespace ApsCalc
                                     // Check if min draw is optimal
                                     shellUnderTesting.RailDraw = minDraw + 1f;
                                     shellUnderTesting.CalculatePendepthDps(TargetArmorScheme);
-                                    topScore = shellUnderTesting.ChemDpsPerVolume;
+                                    if (TestType == 0)
+                                    {
+                                        topScore = shellUnderTesting.ChemDpsPerVolume;
+                                    }
+                                    else if (TestType == 1)
+                                    {
+                                        topScore = shellUnderTesting.ChemDpsPerCost;
+                                    }
 
                                     if (bottomScore > topScore)
                                     {
@@ -333,8 +355,9 @@ namespace ApsCalc
 
                                 if (optimalDraw == 0)
                                 {
-                                    topOfRange = maxDraw;
-                                    bottomOfRange = 0;
+                                    float topOfRange = maxDraw;
+                                    // Binary search to find optimal draw without testing every value
+                                    float bottomOfRange = 0;
                                     while (topOfRange - bottomOfRange > 1)
                                     {
 
@@ -343,14 +366,28 @@ namespace ApsCalc
 
                                         shellUnderTesting.RailDraw = midRangeLower;
                                         shellUnderTesting.CalculatePendepthDps(TargetArmorScheme);
-                                        midRangeLowerScore = shellUnderTesting.ChemDpsPerVolume;
+                                        if (TestType == 0)
+                                        {
+                                            midRangeLowerScore = shellUnderTesting.ChemDpsPerVolume;
+                                        }
+                                        else if (TestType == 1)
+                                        {
+                                            midRangeLowerScore = shellUnderTesting.ChemDpsPerCost;
+                                        }
 
                                         shellUnderTesting.RailDraw = midRangeUpper;
                                         shellUnderTesting.CalculatePendepthDps(TargetArmorScheme);
-                                        midRangeUpperScore = shellUnderTesting.ChemDpsPerVolume;
+                                        if (TestType == 0)
+                                        {
+                                            midRangeUpperScore = shellUnderTesting.ChemDpsPerVolume;
+                                        }
+                                        else if (TestType == 1)
+                                        {
+                                            midRangeUpperScore = shellUnderTesting.ChemDpsPerCost;
+                                        }
 
-                                        // Determine which half of the range to continue testing
-                                        // Midrange upper will equal a lot of the time for pendepth
+                                        // Determine which half of range to continue testing
+                                        // Midrange upper will equal a lot of time for pendepth
                                         if (midRangeUpperScore == 0)
                                         {
                                             bottomOfRange = midRangeUpper;
@@ -364,7 +401,7 @@ namespace ApsCalc
                                             bottomOfRange = midRangeUpper;
                                         }
                                     }
-                                    // Take the better of the two remaining values
+                                    // Take better of two remaining values
                                     if (midRangeLowerScore >= midRangeUpperScore)
                                     {
                                         optimalDraw = midRangeLower;
@@ -381,58 +418,108 @@ namespace ApsCalc
                             shellUnderTesting.CalculatePendepthDps(TargetArmorScheme);
                             shellUnderTesting.CalculateEffectiveRange();
 
+                            if (TestType == 0)
+                            {
+                                if (shellUnderTesting.TotalLength <= 1000f)
+                                {
+                                    if (shellUnderTesting.ChemDpsPerVolume > Top1000.ChemDpsPerVolume)
+                                    {
+                                        Top1000 = shellUnderTesting;
+                                    }
+                                }
+                                else if (shellUnderTesting.TotalLength <= 2000f)
+                                {
+                                    if (shellUnderTesting.ChemDpsPerVolume > Top2000.ChemDpsPerVolume)
+                                    {
+                                        Top2000 = shellUnderTesting;
+                                    }
+                                }
+                                else if (shellUnderTesting.TotalLength <= 3000f)
+                                {
+                                    if (shellUnderTesting.ChemDpsPerVolume > Top3000.ChemDpsPerVolume)
+                                    {
+                                        Top3000 = shellUnderTesting;
+                                    }
+                                }
+                                else if (shellUnderTesting.TotalLength <= 4000f)
+                                {
+                                    if (shellUnderTesting.ChemDpsPerVolume > Top4000.ChemDpsPerVolume)
+                                    {
+                                        Top4000 = shellUnderTesting;
+                                    }
+                                }
+                                else if (shellUnderTesting.TotalLength <= 6000f)
+                                {
+                                    if (shellUnderTesting.ChemDpsPerVolume > Top6000.ChemDpsPerVolume)
+                                    {
+                                        Top6000 = shellUnderTesting;
+                                    }
+                                }
+                                else if (shellUnderTesting.TotalLength <= 8000f)
+                                {
+                                    if (shellUnderTesting.ChemDpsPerVolume > Top8000.ChemDpsPerVolume)
+                                    {
+                                        Top8000 = shellUnderTesting;
+                                    }
+                                }
+                            }
+                            else if (TestType == 1)
+                            {
+                                if (shellUnderTesting.TotalLength <= 1000f)
+                                {
+                                    if (shellUnderTesting.ChemDpsPerCost > Top1000.ChemDpsPerCost)
+                                    {
+                                        Top1000 = shellUnderTesting;
+                                    }
+                                }
+                                else if (shellUnderTesting.TotalLength <= 2000f)
+                                {
+                                    if (shellUnderTesting.ChemDpsPerCost > Top2000.ChemDpsPerCost)
+                                    {
+                                        Top2000 = shellUnderTesting;
+                                    }
+                                }
+                                else if (shellUnderTesting.TotalLength <= 3000f)
+                                {
+                                    if (shellUnderTesting.ChemDpsPerCost > Top3000.ChemDpsPerCost)
+                                    {
+                                        Top3000 = shellUnderTesting;
+                                    }
+                                }
+                                else if (shellUnderTesting.TotalLength <= 4000f)
+                                {
+                                    if (shellUnderTesting.ChemDpsPerCost > Top4000.ChemDpsPerCost)
+                                    {
+                                        Top4000 = shellUnderTesting;
+                                    }
+                                }
+                                else if (shellUnderTesting.TotalLength <= 6000f)
+                                {
+                                    if (shellUnderTesting.ChemDpsPerCost > Top6000.ChemDpsPerCost)
+                                    {
+                                        Top6000 = shellUnderTesting;
+                                    }
+                                }
+                                else if (shellUnderTesting.TotalLength <= 8000f)
+                                {
+                                    if (shellUnderTesting.ChemDpsPerCost > Top8000.ChemDpsPerCost)
+                                    {
+                                        Top8000 = shellUnderTesting;
+                                    }
+                                }
+                            }
 
-                            if (shellUnderTesting.TotalLength <= 1000f)
-                            {
-                                if (shellUnderTesting.ChemDpsPerVolume > TopDps1000.ChemDpsPerVolume)
-                                {
-                                    TopDps1000 = shellUnderTesting;
-                                }
-                            }
-                            else if (shellUnderTesting.TotalLength <= 2000f)
-                            {
-                                if (shellUnderTesting.ChemDpsPerVolume > TopDps2000.ChemDpsPerVolume)
-                                {
-                                    TopDps2000 = shellUnderTesting;
-                                }
-                            }
-                            else if (shellUnderTesting.TotalLength <= 3000f)
-                            {
-                                if (shellUnderTesting.ChemDpsPerVolume > TopDps3000.ChemDpsPerVolume)
-                                {
-                                    TopDps3000 = shellUnderTesting;
-                                }
-                            }
-                            else if (shellUnderTesting.TotalLength <= 4000f)
-                            {
-                                if (shellUnderTesting.ChemDpsPerVolume > TopDps4000.ChemDpsPerVolume)
-                                {
-                                    TopDps4000 = shellUnderTesting;
-                                }
-                            }
-                            else if (shellUnderTesting.TotalLength <= 6000f)
-                            {
-                                if (shellUnderTesting.ChemDpsPerVolume > TopDps6000.ChemDpsPerVolume)
-                                {
-                                    TopDps6000 = shellUnderTesting;
-                                }
-                            }
-                            else if (shellUnderTesting.TotalLength <= 8000f)
-                            {
-                                if (shellUnderTesting.ChemDpsPerVolume > TopDps8000.ChemDpsPerVolume)
-                                {
-                                    TopDps8000 = shellUnderTesting;
-                                }
-                            }
 
                             // Beltfed testing
                             if (shellUnderTesting.TotalLength <= 1000f)
                             {
-                                Shell shellUnderTestingBelt = new Shell();
-                                shellUnderTestingBelt.BarrelCount = BarrelCount;
-                                shellUnderTestingBelt.BoreEvacuator = BoreEvacuator;
-                                shellUnderTestingBelt.HeadModule = Module.AllModules[counts.HeadIndex];
-                                shellUnderTestingBelt.BaseModule = BaseModule;
+                                Shell shellUnderTestingBelt = new()
+                                {
+                                    BarrelCount = BarrelCount,
+                                    BoreEvacuator = BoreEvacuator,
+                                    HeadModule = Module.AllModules[counts.HeadIndex],
+                                    BaseModule = BaseModule
+                                };
                                 FixedModuleCounts.CopyTo(shellUnderTestingBelt.BodyModuleCounts, 0);
                                 shellUnderTestingBelt.Gauge = counts.Gauge;
                                 shellUnderTestingBelt.BodyModuleCounts[VariableModuleIndices[0]] += counts.Var0Count;
@@ -441,7 +528,7 @@ namespace ApsCalc
                                 shellUnderTestingBelt.GPCasingCount = counts.GPCount;
                                 shellUnderTestingBelt.RGCasingCount = counts.RGCount;
                                 shellUnderTestingBelt.CalculateLengths();
-                                shellUnderTestingBelt.CalculateLoaderVolume();
+                                shellUnderTestingBelt.CalculateLoaderVolumeAndCost();
                                 shellUnderTestingBelt.CalculateVelocityModifier();
                                 shellUnderTestingBelt.CalculateReloadTime();
                                 shellUnderTestingBelt.CalculateBeltfedReload();
@@ -454,10 +541,10 @@ namespace ApsCalc
                                 if (maxDraw > 0)
                                 {
                                     // Binary search to find optimal draw without testing every value
-                                    float bottomOfRange = minDraw;
                                     float bottomScore = 0;
-                                    float topOfRange = maxDraw;
                                     float topScore = 0;
+                                    float bottomOfRange = minDraw;
+                                    float topOfRange = maxDraw;
                                     float midRangeLower = 0;
                                     float midRangeLowerScore = 0;
                                     float midRangeUpper = 0;
@@ -465,18 +552,39 @@ namespace ApsCalc
 
                                     shellUnderTestingBelt.RailDraw = minDraw;
                                     shellUnderTestingBelt.CalculatePendepthDps(TargetArmorScheme);
-                                    bottomScore = shellUnderTestingBelt.ChemDpsPerVolumeBeltSustained;
+                                    if (TestType == 0)
+                                    {
+                                        bottomScore = shellUnderTestingBelt.ChemDpsPerVolumeBeltSustained;
+                                    }
+                                    else if (TestType == 1)
+                                    {
+                                        bottomScore = shellUnderTestingBelt.ChemDpsPerCostBeltSustained;
+                                    }
 
                                     shellUnderTestingBelt.RailDraw = maxDraw;
                                     shellUnderTestingBelt.CalculatePendepthDps(TargetArmorScheme);
-                                    topScore = shellUnderTestingBelt.ChemDpsPerVolumeBeltSustained;
+                                    if (TestType == 0)
+                                    {
+                                        topScore = shellUnderTestingBelt.ChemDpsPerVolumeBeltSustained;
+                                    }
+                                    else if (TestType == 1)
+                                    {
+                                        topScore = shellUnderTestingBelt.ChemDpsPerCostBeltSustained;
+                                    }
 
                                     if (topScore > bottomScore)
                                     {
                                         // Check if max draw is optimal
                                         shellUnderTestingBelt.RailDraw = maxDraw - 1f;
                                         shellUnderTestingBelt.CalculatePendepthDps(TargetArmorScheme);
-                                        bottomScore = shellUnderTestingBelt.ChemDpsPerVolumeBeltSustained;
+                                        if (TestType == 0)
+                                        {
+                                            bottomScore = shellUnderTestingBelt.ChemDpsPerVolumeBeltSustained;
+                                        }
+                                        else if (TestType == 1)
+                                        {
+                                            bottomScore = shellUnderTestingBelt.ChemDpsPerCostBeltSustained;
+                                        }
 
                                         if (topScore > bottomScore)
                                         {
@@ -488,7 +596,14 @@ namespace ApsCalc
                                         // Check if min draw is optimal
                                         shellUnderTestingBelt.RailDraw = minDraw + 1f;
                                         shellUnderTestingBelt.CalculatePendepthDps(TargetArmorScheme);
-                                        topScore = shellUnderTestingBelt.ChemDpsPerVolumeBeltSustained;
+                                        if (TestType == 0)
+                                        {
+                                            topScore = shellUnderTestingBelt.ChemDpsPerVolumeBeltSustained;
+                                        }
+                                        else if (TestType == 1)
+                                        {
+                                            topScore = shellUnderTestingBelt.ChemDpsPerCostBeltSustained;
+                                        }
 
                                         if (bottomScore > topScore)
                                         {
@@ -503,13 +618,27 @@ namespace ApsCalc
 
                                         shellUnderTestingBelt.RailDraw = midRangeLower;
                                         shellUnderTestingBelt.CalculatePendepthDps(TargetArmorScheme);
-                                        midRangeLowerScore = shellUnderTestingBelt.ChemDpsPerVolumeBeltSustained;
+                                        if (TestType == 0)
+                                        {
+                                            midRangeLowerScore = shellUnderTestingBelt.ChemDpsPerVolumeBeltSustained;
+                                        }
+                                        else if (TestType == 1)
+                                        {
+                                            midRangeLowerScore = shellUnderTestingBelt.ChemDpsPerCostBeltSustained;
+                                        }
 
                                         shellUnderTestingBelt.RailDraw = midRangeUpper;
                                         shellUnderTestingBelt.CalculatePendepthDps(TargetArmorScheme);
-                                        midRangeUpperScore = shellUnderTestingBelt.ChemDpsPerVolumeBeltSustained;
+                                        if (TestType == 0)
+                                        {
+                                            midRangeUpperScore = shellUnderTestingBelt.ChemDpsPerVolumeBeltSustained;
+                                        }
+                                        else if (TestType == 1)
+                                        {
+                                            midRangeUpperScore = shellUnderTestingBelt.ChemDpsPerCostBeltSustained;
+                                        }
 
-                                        // Determine which half of the range to continue testing
+                                        // Determine which half of range to continue testing
                                         if (midRangeLowerScore >= midRangeUpperScore)
                                         {
                                             topOfRange = midRangeLower;
@@ -519,7 +648,7 @@ namespace ApsCalc
                                             bottomOfRange = midRangeUpper;
                                         }
                                     }
-                                    // Take the better of the two remaining values
+                                    // Take better of two remaining values
                                     if (midRangeLowerScore >= midRangeUpperScore)
                                     {
                                         optimalDraw = midRangeLower;
@@ -535,10 +664,21 @@ namespace ApsCalc
                                 shellUnderTestingBelt.CalculateEffectiveRange();
                                 shellUnderTestingBelt.CalculatePendepthDps(TargetArmorScheme);
 
-                                if (shellUnderTestingBelt.ChemDpsPerVolumeBeltSustained > TopDpsBelt.ChemDpsPerVolumeBeltSustained)
+                                if (TestType == 0)
                                 {
-                                    shellUnderTestingBelt.IsBelt = true;
-                                    TopDpsBelt = shellUnderTestingBelt;
+                                    if (shellUnderTestingBelt.ChemDpsPerVolumeBeltSustained > TopBelt.ChemDpsPerVolumeBeltSustained)
+                                    {
+                                        shellUnderTestingBelt.IsBelt = true;
+                                        TopBelt = shellUnderTestingBelt;
+                                    }
+                                }
+                                else if (TestType == 1)
+                                {
+                                    if (shellUnderTestingBelt.ChemDpsPerCostBeltSustained > TopBelt.ChemDpsPerCostBeltSustained)
+                                    {
+                                        shellUnderTestingBelt.IsBelt = true;
+                                        TopBelt = shellUnderTestingBelt;
+                                    }
                                 }
                             }
                         }
@@ -556,11 +696,13 @@ namespace ApsCalc
         {
             foreach (ModuleCount counts in GenerateModuleCounts())
             {
-                Shell shellUnderTesting = new Shell();
-                shellUnderTesting.BarrelCount = BarrelCount;
-                shellUnderTesting.BoreEvacuator = BoreEvacuator;
-                shellUnderTesting.HeadModule = Module.AllModules[counts.HeadIndex];
-                shellUnderTesting.BaseModule = BaseModule;
+                Shell shellUnderTesting = new()
+                {
+                    BarrelCount = BarrelCount,
+                    BoreEvacuator = BoreEvacuator,
+                    HeadModule = Module.AllModules[counts.HeadIndex],
+                    BaseModule = BaseModule
+                };
                 FixedModuleCounts.CopyTo(shellUnderTesting.BodyModuleCounts, 0);
 
                 shellUnderTesting.Gauge = counts.Gauge;
@@ -574,13 +716,13 @@ namespace ApsCalc
 
                 if (shellUnderTesting.TotalLength <= MaxShellLength)
                 {
-                    shellUnderTesting.CalculateLoaderVolume();
+                    shellUnderTesting.CalculateLoaderVolumeAndCost();
                     shellUnderTesting.CalculateRecoil();
                     shellUnderTesting.CalculateMaxDraw();
                     shellUnderTesting.CalculateVelocityModifier();
 
                     float maxDraw = Math.Min(shellUnderTesting.MaxDraw, MaxDrawInput);
-                    float minDraw = shellUnderTesting.CalculateMinimumDrawForVelocityandRange(MinVelocityInput, MinEffectiveRangeInput, maxDraw);
+                    float minDraw = shellUnderTesting.CalculateMinimumDrawForVelocityandRange(MinVelocityInput, MinEffectiveRangeInput);
                     if (maxDraw >= minDraw)
                     {
                         shellUnderTesting.CalculateReloadTime();
@@ -594,10 +736,10 @@ namespace ApsCalc
                         if (maxDraw > 0)
                         {
                             // Binary search to find optimal draw without testing every value
-                            float bottomOfRange = minDraw;
                             float bottomScore = 0;
-                            float topOfRange = maxDraw;
                             float topScore = 0;
+                            float bottomOfRange = minDraw;
+                            float topOfRange = maxDraw;
                             float midRangeLower = 0;
                             float midRangeLowerScore = 0;
                             float midRangeUpper = 0;
@@ -605,39 +747,60 @@ namespace ApsCalc
 
                             shellUnderTesting.RailDraw = minDraw;
                             shellUnderTesting.CalculateRecoil();
-                            shellUnderTesting.CalculateRecoilVolume();
-                            shellUnderTesting.CalculateChargerVolume();
-                            shellUnderTesting.CalculateVolumePerIntake();
+                            shellUnderTesting.CalculateRecoilVolumeAndCost();
+                            shellUnderTesting.CalculateChargerVolumeAndCost();
+                            shellUnderTesting.CalculateVolumeAndCostPerIntake();
                             shellUnderTesting.CalculateVelocity();
                             shellUnderTesting.CalculateAP();
                             shellUnderTesting.CalculateKineticDamage();
                             shellUnderTesting.CalculateKineticDps(TargetAC);
-                            bottomScore = shellUnderTesting.KineticDpsPerVolume;
+                            if (TestType == 0)
+                            {
+                                bottomScore = shellUnderTesting.KineticDpsPerVolume;
+                            }
+                            else if (TestType == 1)
+                            {
+                                bottomScore = shellUnderTesting.KineticDpsPerCost;
+                            }
 
                             shellUnderTesting.RailDraw = maxDraw;
                             shellUnderTesting.CalculateRecoil();
-                            shellUnderTesting.CalculateRecoilVolume();
-                            shellUnderTesting.CalculateChargerVolume();
-                            shellUnderTesting.CalculateVolumePerIntake();
+                            shellUnderTesting.CalculateRecoilVolumeAndCost();
+                            shellUnderTesting.CalculateChargerVolumeAndCost();
+                            shellUnderTesting.CalculateVolumeAndCostPerIntake();
                             shellUnderTesting.CalculateVelocity();
                             shellUnderTesting.CalculateAP();
                             shellUnderTesting.CalculateKineticDamage();
                             shellUnderTesting.CalculateKineticDps(TargetAC);
-                            topScore = shellUnderTesting.KineticDpsPerVolume;
+                            if (TestType == 0)
+                            {
+                                topScore = shellUnderTesting.KineticDpsPerVolume;
+                            }
+                            else if (TestType == 1)
+                            {
+                                topScore = shellUnderTesting.KineticDpsPerCost;
+                            }
 
                             if (topScore > bottomScore)
                             {
                                 // Check if max draw is optimal
                                 shellUnderTesting.RailDraw = maxDraw - 1f;
                                 shellUnderTesting.CalculateRecoil();
-                                shellUnderTesting.CalculateRecoilVolume();
-                                shellUnderTesting.CalculateChargerVolume();
-                                shellUnderTesting.CalculateVolumePerIntake();
+                                shellUnderTesting.CalculateRecoilVolumeAndCost();
+                                shellUnderTesting.CalculateChargerVolumeAndCost();
+                                shellUnderTesting.CalculateVolumeAndCostPerIntake();
                                 shellUnderTesting.CalculateVelocity();
                                 shellUnderTesting.CalculateAP();
                                 shellUnderTesting.CalculateKineticDamage();
                                 shellUnderTesting.CalculateKineticDps(TargetAC);
-                                bottomScore = shellUnderTesting.KineticDpsPerVolume;
+                                if (TestType == 0)
+                                {
+                                    bottomScore = shellUnderTesting.KineticDpsPerVolume;
+                                }
+                                else if (TestType == 1)
+                                {
+                                    bottomScore = shellUnderTesting.KineticDpsPerCost;
+                                }
 
                                 if (topScore > bottomScore)
                                 {
@@ -649,14 +812,21 @@ namespace ApsCalc
                                 // Check if min draw is optimal
                                 shellUnderTesting.RailDraw = minDraw + 1f;
                                 shellUnderTesting.CalculateRecoil();
-                                shellUnderTesting.CalculateRecoilVolume();
-                                shellUnderTesting.CalculateChargerVolume();
-                                shellUnderTesting.CalculateVolumePerIntake();
+                                shellUnderTesting.CalculateRecoilVolumeAndCost();
+                                shellUnderTesting.CalculateChargerVolumeAndCost();
+                                shellUnderTesting.CalculateVolumeAndCostPerIntake();
                                 shellUnderTesting.CalculateVelocity();
                                 shellUnderTesting.CalculateAP();
                                 shellUnderTesting.CalculateKineticDamage();
                                 shellUnderTesting.CalculateKineticDps(TargetAC);
-                                topScore = shellUnderTesting.KineticDpsPerVolume;
+                                if (TestType == 0)
+                                {
+                                    topScore = shellUnderTesting.KineticDpsPerVolume;
+                                }
+                                else if (TestType == 1)
+                                {
+                                    topScore = shellUnderTesting.KineticDpsPerCost;
+                                }
 
                                 if (bottomScore > topScore)
                                 {
@@ -671,27 +841,41 @@ namespace ApsCalc
 
                                 shellUnderTesting.RailDraw = midRangeLower;
                                 shellUnderTesting.CalculateRecoil();
-                                shellUnderTesting.CalculateRecoilVolume();
-                                shellUnderTesting.CalculateChargerVolume();
-                                shellUnderTesting.CalculateVolumePerIntake();
+                                shellUnderTesting.CalculateRecoilVolumeAndCost();
+                                shellUnderTesting.CalculateChargerVolumeAndCost();
+                                shellUnderTesting.CalculateVolumeAndCostPerIntake();
                                 shellUnderTesting.CalculateVelocity();
                                 shellUnderTesting.CalculateAP();
                                 shellUnderTesting.CalculateKineticDamage();
                                 shellUnderTesting.CalculateKineticDps(TargetAC);
-                                midRangeLowerScore = shellUnderTesting.KineticDpsPerVolume;
+                                if (TestType == 0)
+                                {
+                                    midRangeLowerScore = shellUnderTesting.KineticDpsPerVolume;
+                                }
+                                else if (TestType == 1)
+                                {
+                                    midRangeLowerScore = shellUnderTesting.KineticDpsPerCost;
+                                }
 
                                 shellUnderTesting.RailDraw = midRangeUpper;
                                 shellUnderTesting.CalculateRecoil();
-                                shellUnderTesting.CalculateRecoilVolume();
-                                shellUnderTesting.CalculateChargerVolume();
-                                shellUnderTesting.CalculateVolumePerIntake();
+                                shellUnderTesting.CalculateRecoilVolumeAndCost();
+                                shellUnderTesting.CalculateChargerVolumeAndCost();
+                                shellUnderTesting.CalculateVolumeAndCostPerIntake();
                                 shellUnderTesting.CalculateVelocity();
                                 shellUnderTesting.CalculateAP();
                                 shellUnderTesting.CalculateKineticDamage();
                                 shellUnderTesting.CalculateKineticDps(TargetAC);
-                                midRangeUpperScore = shellUnderTesting.KineticDpsPerVolume;
+                                if (TestType == 0)
+                                {
+                                    midRangeUpperScore = shellUnderTesting.KineticDpsPerVolume;
+                                }
+                                else if (TestType == 1)
+                                {
+                                    midRangeUpperScore = shellUnderTesting.KineticDpsPerCost;
+                                }
 
-                                // Determine which half of the range to continue testing
+                                // Determine which half of range to continue testing
                                 if (midRangeLowerScore >= midRangeUpperScore)
                                 {
                                     topOfRange = midRangeLower;
@@ -701,7 +885,7 @@ namespace ApsCalc
                                     bottomOfRange = midRangeUpper;
                                 }
                             }
-                            // Take the better of the two remaining values
+                            // Take better of two remaining values
                             if (midRangeLowerScore >= midRangeUpperScore)
                             {
                                 optimalDraw = midRangeLower;
@@ -715,66 +899,117 @@ namespace ApsCalc
                         // Check performance against top shells
                         shellUnderTesting.RailDraw = optimalDraw;
                         shellUnderTesting.CalculateRecoil();
-                        shellUnderTesting.CalculateRecoilVolume();
-                        shellUnderTesting.CalculateChargerVolume();
-                        shellUnderTesting.CalculateVolumePerIntake();
+                        shellUnderTesting.CalculateRecoilVolumeAndCost();
+                        shellUnderTesting.CalculateChargerVolumeAndCost();
+                        shellUnderTesting.CalculateVolumeAndCostPerIntake();
                         shellUnderTesting.CalculateVelocity();
                         shellUnderTesting.CalculateEffectiveRange();
                         shellUnderTesting.CalculateAP();
                         shellUnderTesting.CalculateKineticDamage();
                         shellUnderTesting.CalculateKineticDps(TargetAC);
 
-                        if (shellUnderTesting.TotalLength <= 1000f)
+                        if (TestType == 0)
                         {
-                            if (shellUnderTesting.KineticDpsPerVolume > TopDps1000.KineticDpsPerVolume)
+                            if (shellUnderTesting.TotalLength <= 1000f)
                             {
-                                TopDps1000 = shellUnderTesting;
+                                if (shellUnderTesting.KineticDpsPerVolume > Top1000.KineticDpsPerVolume)
+                                {
+                                    Top1000 = shellUnderTesting;
+                                }
+                            }
+                            else if (shellUnderTesting.TotalLength <= 2000f)
+                            {
+                                if (shellUnderTesting.KineticDpsPerVolume > Top2000.KineticDpsPerVolume)
+                                {
+                                    Top2000 = shellUnderTesting;
+                                }
+                            }
+                            else if (shellUnderTesting.TotalLength <= 3000f)
+                            {
+                                if (shellUnderTesting.KineticDpsPerVolume > Top3000.KineticDpsPerVolume)
+                                {
+                                    Top3000 = shellUnderTesting;
+                                }
+                            }
+                            else if (shellUnderTesting.TotalLength <= 4000f)
+                            {
+                                if (shellUnderTesting.KineticDpsPerVolume > Top4000.KineticDpsPerVolume)
+                                {
+                                    Top4000 = shellUnderTesting;
+                                }
+                            }
+                            else if (shellUnderTesting.TotalLength <= 6000f)
+                            {
+                                if (shellUnderTesting.KineticDpsPerVolume > Top6000.KineticDpsPerVolume)
+                                {
+                                    Top6000 = shellUnderTesting;
+                                }
+                            }
+                            else if (shellUnderTesting.TotalLength <= 8000f)
+                            {
+                                if (shellUnderTesting.KineticDpsPerVolume > Top8000.KineticDpsPerVolume)
+                                {
+                                    Top8000 = shellUnderTesting;
+                                }
                             }
                         }
-                        else if (shellUnderTesting.TotalLength <= 2000f)
+                        else if (TestType == 1)
                         {
-                            if (shellUnderTesting.KineticDpsPerVolume > TopDps2000.KineticDpsPerVolume)
+                            if (shellUnderTesting.TotalLength <= 1000f)
                             {
-                                TopDps2000 = shellUnderTesting;
+                                if (shellUnderTesting.KineticDpsPerCost > Top1000.KineticDpsPerCost)
+                                {
+                                    Top1000 = shellUnderTesting;
+                                }
+                            }
+                            else if (shellUnderTesting.TotalLength <= 2000f)
+                            {
+                                if (shellUnderTesting.KineticDpsPerCost > Top2000.KineticDpsPerCost)
+                                {
+                                    Top2000 = shellUnderTesting;
+                                }
+                            }
+                            else if (shellUnderTesting.TotalLength <= 3000f)
+                            {
+                                if (shellUnderTesting.KineticDpsPerCost > Top3000.KineticDpsPerCost)
+                                {
+                                    Top3000 = shellUnderTesting;
+                                }
+                            }
+                            else if (shellUnderTesting.TotalLength <= 4000f)
+                            {
+                                if (shellUnderTesting.KineticDpsPerCost > Top4000.KineticDpsPerCost)
+                                {
+                                    Top4000 = shellUnderTesting;
+                                }
+                            }
+                            else if (shellUnderTesting.TotalLength <= 6000f)
+                            {
+                                if (shellUnderTesting.KineticDpsPerCost > Top6000.KineticDpsPerCost)
+                                {
+                                    Top6000 = shellUnderTesting;
+                                }
+                            }
+                            else if (shellUnderTesting.TotalLength <= 8000f)
+                            {
+                                if (shellUnderTesting.KineticDpsPerCost > Top8000.KineticDpsPerCost)
+                                {
+                                    Top8000 = shellUnderTesting;
+                                }
                             }
                         }
-                        else if (shellUnderTesting.TotalLength <= 3000f)
-                        {
-                            if (shellUnderTesting.KineticDpsPerVolume > TopDps3000.KineticDpsPerVolume)
-                            {
-                                TopDps3000 = shellUnderTesting;
-                            }
-                        }
-                        else if (shellUnderTesting.TotalLength <= 4000f)
-                        {
-                            if (shellUnderTesting.KineticDpsPerVolume > TopDps4000.KineticDpsPerVolume)
-                            {
-                                TopDps4000 = shellUnderTesting;
-                            }
-                        }
-                        else if (shellUnderTesting.TotalLength <= 6000f)
-                        {
-                            if (shellUnderTesting.KineticDpsPerVolume > TopDps6000.KineticDpsPerVolume)
-                            {
-                                TopDps6000 = shellUnderTesting;
-                            }
-                        }
-                        else if (shellUnderTesting.TotalLength <= 8000f)
-                        {
-                            if (shellUnderTesting.KineticDpsPerVolume > TopDps8000.KineticDpsPerVolume)
-                            {
-                                TopDps8000 = shellUnderTesting;
-                            }
-                        }
+
 
                         // Beltfed testing
                         if (shellUnderTesting.TotalLength <= 1000f)
                         {
-                            Shell shellUnderTestingBelt = new Shell();
-                            shellUnderTestingBelt.BarrelCount = BarrelCount;
-                            shellUnderTestingBelt.BoreEvacuator = BoreEvacuator;
-                            shellUnderTestingBelt.HeadModule = Module.AllModules[counts.HeadIndex];
-                            shellUnderTestingBelt.BaseModule = BaseModule;
+                            Shell shellUnderTestingBelt = new()
+                            {
+                                BarrelCount = BarrelCount,
+                                BoreEvacuator = BoreEvacuator,
+                                HeadModule = Module.AllModules[counts.HeadIndex],
+                                BaseModule = BaseModule
+                            };
                             FixedModuleCounts.CopyTo(shellUnderTestingBelt.BodyModuleCounts, 0);
                             shellUnderTestingBelt.Gauge = counts.Gauge;
                             shellUnderTestingBelt.BodyModuleCounts[VariableModuleIndices[0]] += counts.Var0Count;
@@ -783,7 +1018,7 @@ namespace ApsCalc
                             shellUnderTestingBelt.GPCasingCount = counts.GPCount;
                             shellUnderTestingBelt.RGCasingCount = counts.RGCount;
                             shellUnderTestingBelt.CalculateLengths();
-                            shellUnderTestingBelt.CalculateLoaderVolume();
+                            shellUnderTestingBelt.CalculateLoaderVolumeAndCost();
                             shellUnderTestingBelt.CalculateVelocityModifier();
                             shellUnderTestingBelt.CalculateReloadTime();
                             shellUnderTestingBelt.CalculateBeltfedReload();
@@ -794,51 +1029,71 @@ namespace ApsCalc
                             if (maxDraw > 0)
                             {
                                 // Binary search to find optimal draw without testing every value
-                                float bottomOfRange = minDraw;
                                 float bottomScore = 0;
-                                float topOfRange = maxDraw;
                                 float topScore = 0;
+                                float bottomOfRange = minDraw;
+                                float topOfRange = maxDraw;
                                 float midRangeLower = 0;
                                 float midRangeLowerScore = 0;
                                 float midRangeUpper = 0;
                                 float midRangeUpperScore = 0;
-                                optimalDraw = 0;
 
                                 shellUnderTestingBelt.RailDraw = minDraw;
                                 shellUnderTestingBelt.CalculateRecoil();
-                                shellUnderTestingBelt.CalculateRecoilVolume();
-                                shellUnderTestingBelt.CalculateChargerVolume();
-                                shellUnderTestingBelt.CalculateVolumePerIntake();
+                                shellUnderTestingBelt.CalculateRecoilVolumeAndCost();
+                                shellUnderTestingBelt.CalculateChargerVolumeAndCost();
+                                shellUnderTestingBelt.CalculateVolumeAndCostPerIntake();
                                 shellUnderTestingBelt.CalculateVelocity();
                                 shellUnderTestingBelt.CalculateAP();
                                 shellUnderTestingBelt.CalculateKineticDamage();
                                 shellUnderTestingBelt.CalculateKineticDps(TargetAC);
-                                bottomScore = shellUnderTestingBelt.KineticDpsPerVolumeBeltSustained;
+                                if (TestType == 0)
+                                {
+                                    bottomScore = shellUnderTestingBelt.KineticDpsPerVolumeBeltSustained;
+                                }
+                                else if (TestType == 1)
+                                {
+                                    bottomScore = shellUnderTestingBelt.KineticDpsPerCostBeltSustained;
+                                }
 
                                 shellUnderTestingBelt.RailDraw = maxDraw;
                                 shellUnderTestingBelt.CalculateRecoil();
-                                shellUnderTestingBelt.CalculateRecoilVolume();
-                                shellUnderTestingBelt.CalculateChargerVolume();
-                                shellUnderTestingBelt.CalculateVolumePerIntake();
+                                shellUnderTestingBelt.CalculateRecoilVolumeAndCost();
+                                shellUnderTestingBelt.CalculateChargerVolumeAndCost();
+                                shellUnderTestingBelt.CalculateVolumeAndCostPerIntake();
                                 shellUnderTestingBelt.CalculateVelocity();
                                 shellUnderTestingBelt.CalculateAP();
                                 shellUnderTestingBelt.CalculateKineticDamage();
                                 shellUnderTestingBelt.CalculateKineticDps(TargetAC);
-                                topScore = shellUnderTestingBelt.KineticDpsPerVolumeBeltSustained;
+                                if (TestType == 0)
+                                {
+                                    topScore = shellUnderTestingBelt.KineticDpsPerVolumeBeltSustained;
+                                }
+                                else if (TestType == 1)
+                                {
+                                    topScore = shellUnderTestingBelt.KineticDpsPerCostBeltSustained;
+                                }
 
                                 if (topScore > bottomScore)
                                 {
                                     // Check if max draw is optimal
                                     shellUnderTestingBelt.RailDraw = maxDraw - 1f;
                                     shellUnderTestingBelt.CalculateRecoil();
-                                    shellUnderTestingBelt.CalculateRecoilVolume();
-                                    shellUnderTestingBelt.CalculateChargerVolume();
-                                    shellUnderTestingBelt.CalculateVolumePerIntake();
+                                    shellUnderTestingBelt.CalculateRecoilVolumeAndCost();
+                                    shellUnderTestingBelt.CalculateChargerVolumeAndCost();
+                                    shellUnderTestingBelt.CalculateVolumeAndCostPerIntake();
                                     shellUnderTestingBelt.CalculateVelocity();
                                     shellUnderTestingBelt.CalculateAP();
                                     shellUnderTestingBelt.CalculateKineticDamage();
                                     shellUnderTestingBelt.CalculateKineticDps(TargetAC);
-                                    bottomScore = shellUnderTestingBelt.KineticDpsPerVolumeBeltSustained;
+                                    if (TestType == 0)
+                                    {
+                                        bottomScore = shellUnderTestingBelt.KineticDpsPerVolumeBeltSustained;
+                                    }
+                                    else if (TestType == 1)
+                                    {
+                                        bottomScore = shellUnderTestingBelt.KineticDpsPerCostBeltSustained;
+                                    }
 
                                     if (topScore > bottomScore)
                                     {
@@ -850,14 +1105,21 @@ namespace ApsCalc
                                     // Check if min draw is optimal
                                     shellUnderTestingBelt.RailDraw = minDraw + 1f;
                                     shellUnderTestingBelt.CalculateRecoil();
-                                    shellUnderTestingBelt.CalculateRecoilVolume();
-                                    shellUnderTestingBelt.CalculateChargerVolume();
-                                    shellUnderTestingBelt.CalculateVolumePerIntake();
+                                    shellUnderTestingBelt.CalculateRecoilVolumeAndCost();
+                                    shellUnderTestingBelt.CalculateChargerVolumeAndCost();
+                                    shellUnderTestingBelt.CalculateVolumeAndCostPerIntake();
                                     shellUnderTestingBelt.CalculateVelocity();
                                     shellUnderTestingBelt.CalculateAP();
                                     shellUnderTestingBelt.CalculateKineticDamage();
                                     shellUnderTestingBelt.CalculateKineticDps(TargetAC);
-                                    topScore = shellUnderTestingBelt.KineticDpsPerVolumeBeltSustained;
+                                    if (TestType == 0)
+                                    {
+                                        topScore = shellUnderTestingBelt.KineticDpsPerVolumeBeltSustained;
+                                    }
+                                    else if (TestType == 1)
+                                    {
+                                        topScore = shellUnderTestingBelt.KineticDpsPerCostBeltSustained;
+                                    }
 
                                     if (bottomScore > topScore)
                                     {
@@ -872,27 +1134,41 @@ namespace ApsCalc
 
                                     shellUnderTestingBelt.RailDraw = midRangeLower;
                                     shellUnderTestingBelt.CalculateRecoil();
-                                    shellUnderTestingBelt.CalculateRecoilVolume();
-                                    shellUnderTestingBelt.CalculateChargerVolume();
-                                    shellUnderTestingBelt.CalculateVolumePerIntake();
+                                    shellUnderTestingBelt.CalculateRecoilVolumeAndCost();
+                                    shellUnderTestingBelt.CalculateChargerVolumeAndCost();
+                                    shellUnderTestingBelt.CalculateVolumeAndCostPerIntake();
                                     shellUnderTestingBelt.CalculateVelocity();
                                     shellUnderTestingBelt.CalculateAP();
                                     shellUnderTestingBelt.CalculateKineticDamage();
                                     shellUnderTestingBelt.CalculateKineticDps(TargetAC);
-                                    midRangeLowerScore = shellUnderTestingBelt.KineticDpsPerVolumeBeltSustained;
+                                    if (TestType == 0)
+                                    {
+                                        midRangeLowerScore = shellUnderTestingBelt.KineticDpsPerVolumeBeltSustained;
+                                    }
+                                    else if (TestType == 1)
+                                    {
+                                        midRangeLowerScore = shellUnderTestingBelt.KineticDpsPerCostBeltSustained;
+                                    }
 
                                     shellUnderTestingBelt.RailDraw = midRangeUpper;
                                     shellUnderTestingBelt.CalculateRecoil();
-                                    shellUnderTestingBelt.CalculateRecoilVolume();
-                                    shellUnderTestingBelt.CalculateChargerVolume();
-                                    shellUnderTestingBelt.CalculateVolumePerIntake();
+                                    shellUnderTestingBelt.CalculateRecoilVolumeAndCost();
+                                    shellUnderTestingBelt.CalculateChargerVolumeAndCost();
+                                    shellUnderTestingBelt.CalculateVolumeAndCostPerIntake();
                                     shellUnderTestingBelt.CalculateVelocity();
                                     shellUnderTestingBelt.CalculateAP();
                                     shellUnderTestingBelt.CalculateKineticDamage();
                                     shellUnderTestingBelt.CalculateKineticDps(TargetAC);
-                                    midRangeUpperScore = shellUnderTestingBelt.KineticDpsPerVolumeBeltSustained;
+                                    if (TestType == 0)
+                                    {
+                                        midRangeUpperScore = shellUnderTestingBelt.KineticDpsPerVolumeBeltSustained;
+                                    }
+                                    else if (TestType == 1)
+                                    {
+                                        midRangeUpperScore = shellUnderTestingBelt.KineticDpsPerCostBeltSustained;
+                                    }
 
-                                    // Determine which half of the range to continue testing
+                                    // Determine which half of range to continue testing
                                     if (midRangeLowerScore >= midRangeUpperScore)
                                     {
                                         topOfRange = midRangeLower;
@@ -902,7 +1178,7 @@ namespace ApsCalc
                                         bottomOfRange = midRangeUpper;
                                     }
                                 }
-                                // Take the better of the two remaining values
+                                // Take better of two remaining values
                                 if (midRangeLowerScore >= midRangeUpperScore)
                                 {
                                     optimalDraw = midRangeLower;
@@ -916,19 +1192,30 @@ namespace ApsCalc
                             // Check performance against top shells
                             shellUnderTestingBelt.RailDraw = optimalDraw;
                             shellUnderTestingBelt.CalculateRecoil();
-                            shellUnderTestingBelt.CalculateRecoilVolume();
-                            shellUnderTestingBelt.CalculateChargerVolume();
-                            shellUnderTestingBelt.CalculateVolumePerIntake();
+                            shellUnderTestingBelt.CalculateRecoilVolumeAndCost();
+                            shellUnderTestingBelt.CalculateChargerVolumeAndCost();
+                            shellUnderTestingBelt.CalculateVolumeAndCostPerIntake();
                             shellUnderTestingBelt.CalculateVelocity();
                             shellUnderTestingBelt.CalculateEffectiveRange();
                             shellUnderTestingBelt.CalculateAP();
                             shellUnderTestingBelt.CalculateKineticDamage();
                             shellUnderTestingBelt.CalculateKineticDps(TargetAC);
 
-                            if (shellUnderTestingBelt.KineticDpsPerVolumeBeltSustained > TopDpsBelt.KineticDpsPerVolumeBeltSustained)
+                            if (TestType == 0)
                             {
-                                shellUnderTestingBelt.IsBelt = true;
-                                TopDpsBelt = shellUnderTestingBelt;
+                                if (shellUnderTestingBelt.KineticDpsPerVolumeBeltSustained > TopBelt.KineticDpsPerVolumeBeltSustained)
+                                {
+                                    shellUnderTestingBelt.IsBelt = true;
+                                    TopBelt = shellUnderTestingBelt;
+                                }
+                            }
+                            else if (TestType == 1)
+                            {
+                                if (shellUnderTestingBelt.KineticDpsPerCostBeltSustained > TopBelt.KineticDpsPerCostBeltSustained)
+                                {
+                                    shellUnderTestingBelt.IsBelt = true;
+                                    TopBelt = shellUnderTestingBelt;
+                                }
                             }
                         }                        
                     }
@@ -944,12 +1231,14 @@ namespace ApsCalc
         {
             foreach (ModuleCount counts in GenerateModuleCounts())
             {
-                Shell shellUnderTesting = new Shell();
-                shellUnderTesting.BarrelCount = BarrelCount;
-                shellUnderTesting.BoreEvacuator = BoreEvacuator;
-                shellUnderTesting.HeadModule = Module.AllModules[counts.HeadIndex];
+                Shell shellUnderTesting = new()
+                {
+                    BarrelCount = BarrelCount,
+                    BoreEvacuator = BoreEvacuator,
+                    HeadModule = Module.AllModules[counts.HeadIndex],
 
-                shellUnderTesting.BaseModule = BaseModule;
+                    BaseModule = BaseModule
+                };
                 FixedModuleCounts.CopyTo(shellUnderTesting.BodyModuleCounts, 0);
 
                 shellUnderTesting.Gauge = counts.Gauge;
@@ -963,13 +1252,13 @@ namespace ApsCalc
 
                 if (shellUnderTesting.TotalLength <= MaxShellLength)
                 {
-                    shellUnderTesting.CalculateLoaderVolume();
+                    shellUnderTesting.CalculateLoaderVolumeAndCost();
                     shellUnderTesting.CalculateRecoil();
                     shellUnderTesting.CalculateMaxDraw();
                     shellUnderTesting.CalculateVelocityModifier();
 
                     float maxDraw = Math.Min(shellUnderTesting.MaxDraw, MaxDrawInput);
-                    float minDraw = shellUnderTesting.CalculateMinimumDrawForVelocityandRange(MinVelocityInput, MinEffectiveRangeInput, maxDraw);
+                    float minDraw = shellUnderTesting.CalculateMinimumDrawForVelocityandRange(MinVelocityInput, MinEffectiveRangeInput);
                     if (maxDraw >= minDraw)
                     {
                         shellUnderTesting.CalculateReloadTime();
@@ -983,10 +1272,10 @@ namespace ApsCalc
                         if (maxDraw > 0)
                         {
                             // Binary search to find optimal draw without testing every value
-                            float bottomOfRange = minDraw;
                             float bottomScore = 0;
-                            float topOfRange = maxDraw;
                             float topScore = 0;
+                            float bottomOfRange = minDraw;
+                            float topOfRange = maxDraw;
                             float midRangeLower = 0;
                             float midRangeLowerScore = 0;
                             float midRangeUpper = 0;
@@ -994,30 +1283,51 @@ namespace ApsCalc
 
                             shellUnderTesting.RailDraw = minDraw;
                             shellUnderTesting.CalculateRecoil();
-                            shellUnderTesting.CalculateRecoilVolume();
-                            shellUnderTesting.CalculateChargerVolume();
-                            shellUnderTesting.CalculateVolumePerIntake();
+                            shellUnderTesting.CalculateRecoilVolumeAndCost();
+                            shellUnderTesting.CalculateChargerVolumeAndCost();
+                            shellUnderTesting.CalculateVolumeAndCostPerIntake();
                             shellUnderTesting.CalculateChemDps();
-                            bottomScore = shellUnderTesting.ChemDpsPerVolume;
+                            if (TestType == 0)
+                            {
+                                bottomScore = shellUnderTesting.ChemDpsPerVolume;
+                            }
+                            else if (TestType == 1)
+                            {
+                                bottomScore = shellUnderTesting.ChemDpsPerCost;
+                            }
 
                             shellUnderTesting.RailDraw = maxDraw;
                             shellUnderTesting.CalculateRecoil();
-                            shellUnderTesting.CalculateRecoilVolume();
-                            shellUnderTesting.CalculateChargerVolume();
-                            shellUnderTesting.CalculateVolumePerIntake();
+                            shellUnderTesting.CalculateRecoilVolumeAndCost();
+                            shellUnderTesting.CalculateChargerVolumeAndCost();
+                            shellUnderTesting.CalculateVolumeAndCostPerIntake();
                             shellUnderTesting.CalculateChemDps();
-                            topScore = shellUnderTesting.ChemDpsPerVolume;
+                            if (TestType == 0)
+                            {
+                                topScore = shellUnderTesting.ChemDpsPerVolume;
+                            }
+                            else if (TestType == 1)
+                            {
+                                topScore = shellUnderTesting.ChemDpsPerCost;
+                            }
 
                             if (topScore > bottomScore)
                             {
                                 // Check if max draw is optimal
                                 shellUnderTesting.RailDraw = maxDraw - 1f;
                                 shellUnderTesting.CalculateRecoil();
-                                shellUnderTesting.CalculateRecoilVolume();
-                                shellUnderTesting.CalculateChargerVolume();
-                                shellUnderTesting.CalculateVolumePerIntake();
+                                shellUnderTesting.CalculateRecoilVolumeAndCost();
+                                shellUnderTesting.CalculateChargerVolumeAndCost();
+                                shellUnderTesting.CalculateVolumeAndCostPerIntake();
                                 shellUnderTesting.CalculateChemDps();
-                                bottomScore = shellUnderTesting.ChemDpsPerVolume;
+                                if (TestType == 0)
+                                {
+                                    bottomScore = shellUnderTesting.ChemDpsPerVolume;
+                                }
+                                else if (TestType == 1)
+                                {
+                                    bottomScore = shellUnderTesting.ChemDpsPerCost;
+                                }
 
                                 if (topScore > bottomScore)
                                 {
@@ -1029,11 +1339,18 @@ namespace ApsCalc
                                 // Check if min draw is optimal
                                 shellUnderTesting.RailDraw = minDraw + 1f;
                                 shellUnderTesting.CalculateRecoil();
-                                shellUnderTesting.CalculateRecoilVolume();
-                                shellUnderTesting.CalculateChargerVolume();
-                                shellUnderTesting.CalculateVolumePerIntake();
+                                shellUnderTesting.CalculateRecoilVolumeAndCost();
+                                shellUnderTesting.CalculateChargerVolumeAndCost();
+                                shellUnderTesting.CalculateVolumeAndCostPerIntake();
                                 shellUnderTesting.CalculateChemDps();
-                                topScore = shellUnderTesting.ChemDpsPerVolume;
+                                if (TestType == 0)
+                                {
+                                    topScore = shellUnderTesting.ChemDpsPerVolume;
+                                }
+                                else if (TestType == 1)
+                                {
+                                    topScore = shellUnderTesting.ChemDpsPerCost;
+                                }
 
                                 if (bottomScore > topScore)
                                 {
@@ -1048,21 +1365,35 @@ namespace ApsCalc
 
                                 shellUnderTesting.RailDraw = midRangeLower;
                                 shellUnderTesting.CalculateRecoil();
-                                shellUnderTesting.CalculateRecoilVolume();
-                                shellUnderTesting.CalculateChargerVolume();
-                                shellUnderTesting.CalculateVolumePerIntake();
+                                shellUnderTesting.CalculateRecoilVolumeAndCost();
+                                shellUnderTesting.CalculateChargerVolumeAndCost();
+                                shellUnderTesting.CalculateVolumeAndCostPerIntake();
                                 shellUnderTesting.CalculateChemDps();
-                                midRangeLowerScore = shellUnderTesting.ChemDpsPerVolume;
+                                if (TestType == 0)
+                                {
+                                    midRangeLowerScore = shellUnderTesting.ChemDpsPerVolume;
+                                }
+                                else if (TestType == 1)
+                                {
+                                    midRangeLowerScore = shellUnderTesting.ChemDpsPerCost;
+                                }
 
                                 shellUnderTesting.RailDraw = midRangeUpper;
                                 shellUnderTesting.CalculateRecoil();
-                                shellUnderTesting.CalculateRecoilVolume();
-                                shellUnderTesting.CalculateChargerVolume();
-                                shellUnderTesting.CalculateVolumePerIntake();
+                                shellUnderTesting.CalculateRecoilVolumeAndCost();
+                                shellUnderTesting.CalculateChargerVolumeAndCost();
+                                shellUnderTesting.CalculateVolumeAndCostPerIntake();
                                 shellUnderTesting.CalculateChemDps();
-                                midRangeUpperScore = shellUnderTesting.ChemDpsPerVolume;
+                                if (TestType == 0)
+                                {
+                                    midRangeUpperScore = shellUnderTesting.ChemDpsPerVolume;
+                                }
+                                else if (TestType == 1)
+                                {
+                                    midRangeUpperScore = shellUnderTesting.ChemDpsPerCost;
+                                }
 
-                                // Determine which half of the range to continue testing
+                                // Determine which half of range to continue testing
                                 if (midRangeLowerScore >= midRangeUpperScore)
                                 {
                                     topOfRange = midRangeLower;
@@ -1072,7 +1403,7 @@ namespace ApsCalc
                                     bottomOfRange = midRangeUpper;
                                 }
                             }
-                            // Take the better of the two remaining values
+                            // Take better of two remaining values
                             if (midRangeLowerScore >= midRangeUpperScore)
                             {
                                 optimalDraw = midRangeLower;
@@ -1086,63 +1417,114 @@ namespace ApsCalc
                         // Check performance against top shells
                         shellUnderTesting.RailDraw = optimalDraw;
                         shellUnderTesting.CalculateRecoil();
-                        shellUnderTesting.CalculateRecoilVolume();
-                        shellUnderTesting.CalculateChargerVolume();
-                        shellUnderTesting.CalculateVolumePerIntake();
+                        shellUnderTesting.CalculateRecoilVolumeAndCost();
+                        shellUnderTesting.CalculateChargerVolumeAndCost();
+                        shellUnderTesting.CalculateVolumeAndCostPerIntake();
                         shellUnderTesting.CalculateVelocity();
                         shellUnderTesting.CalculateEffectiveRange();
                         shellUnderTesting.CalculateChemDps();
-                        if (shellUnderTesting.TotalLength <= 1000f)
+
+                        if (TestType == 0)
                         {
-                            if (shellUnderTesting.ChemDpsPerVolume > TopDps1000.ChemDpsPerVolume)
+                            if (shellUnderTesting.TotalLength <= 1000f)
                             {
-                                TopDps1000 = shellUnderTesting;
+                                if (shellUnderTesting.ChemDpsPerVolume > Top1000.ChemDpsPerVolume)
+                                {
+                                    Top1000 = shellUnderTesting;
+                                }
+                            }
+                            else if (shellUnderTesting.TotalLength <= 2000f)
+                            {
+                                if (shellUnderTesting.ChemDpsPerVolume > Top2000.ChemDpsPerVolume)
+                                {
+                                    Top2000 = shellUnderTesting;
+                                }
+                            }
+                            else if (shellUnderTesting.TotalLength <= 3000f)
+                            {
+                                if (shellUnderTesting.ChemDpsPerVolume > Top3000.ChemDpsPerVolume)
+                                {
+                                    Top3000 = shellUnderTesting;
+                                }
+                            }
+                            else if (shellUnderTesting.TotalLength <= 4000f)
+                            {
+                                if (shellUnderTesting.ChemDpsPerVolume > Top4000.ChemDpsPerVolume)
+                                {
+                                    Top4000 = shellUnderTesting;
+                                }
+                            }
+                            else if (shellUnderTesting.TotalLength <= 6000f)
+                            {
+                                if (shellUnderTesting.ChemDpsPerVolume > Top6000.ChemDpsPerVolume)
+                                {
+                                    Top6000 = shellUnderTesting;
+                                }
+                            }
+                            else if (shellUnderTesting.TotalLength <= 8000f)
+                            {
+                                if (shellUnderTesting.ChemDpsPerVolume > Top8000.ChemDpsPerVolume)
+                                {
+                                    Top8000 = shellUnderTesting;
+                                }
                             }
                         }
-                        else if (shellUnderTesting.TotalLength <= 2000f)
+                        else if (TestType == 1)
                         {
-                            if (shellUnderTesting.ChemDpsPerVolume > TopDps2000.ChemDpsPerVolume)
+                            if (shellUnderTesting.TotalLength <= 1000f)
                             {
-                                TopDps2000 = shellUnderTesting;
+                                if (shellUnderTesting.ChemDpsPerCost > Top1000.ChemDpsPerCost)
+                                {
+                                    Top1000 = shellUnderTesting;
+                                }
                             }
-                        }
-                        else if (shellUnderTesting.TotalLength <= 3000f)
-                        {
-                            if (shellUnderTesting.ChemDpsPerVolume > TopDps3000.ChemDpsPerVolume)
+                            else if (shellUnderTesting.TotalLength <= 2000f)
                             {
-                                TopDps3000 = shellUnderTesting;
+                                if (shellUnderTesting.ChemDpsPerCost > Top2000.ChemDpsPerCost)
+                                {
+                                    Top2000 = shellUnderTesting;
+                                }
                             }
-                        }
-                        else if (shellUnderTesting.TotalLength <= 4000f)
-                        {
-                            if (shellUnderTesting.ChemDpsPerVolume > TopDps4000.ChemDpsPerVolume)
+                            else if (shellUnderTesting.TotalLength <= 3000f)
                             {
-                                TopDps4000 = shellUnderTesting;
+                                if (shellUnderTesting.ChemDpsPerCost > Top3000.ChemDpsPerCost)
+                                {
+                                    Top3000 = shellUnderTesting;
+                                }
                             }
-                        }
-                        else if (shellUnderTesting.TotalLength <= 6000f)
-                        {
-                            if (shellUnderTesting.ChemDpsPerVolume > TopDps6000.ChemDpsPerVolume)
+                            else if (shellUnderTesting.TotalLength <= 4000f)
                             {
-                                TopDps6000 = shellUnderTesting;
+                                if (shellUnderTesting.ChemDpsPerCost > Top4000.ChemDpsPerCost)
+                                {
+                                    Top4000 = shellUnderTesting;
+                                }
                             }
-                        }
-                        else if (shellUnderTesting.TotalLength <= 8000f)
-                        {
-                            if (shellUnderTesting.ChemDpsPerVolume > TopDps8000.ChemDpsPerVolume)
+                            else if (shellUnderTesting.TotalLength <= 6000f)
                             {
-                                TopDps8000 = shellUnderTesting;
+                                if (shellUnderTesting.ChemDpsPerCost > Top6000.ChemDpsPerCost)
+                                {
+                                    Top6000 = shellUnderTesting;
+                                }
+                            }
+                            else if (shellUnderTesting.TotalLength <= 8000f)
+                            {
+                                if (shellUnderTesting.ChemDpsPerCost > Top8000.ChemDpsPerCost)
+                                {
+                                    Top8000 = shellUnderTesting;
+                                }
                             }
                         }
 
                         // Beltfed testing
                         if (shellUnderTesting.TotalLength <= 1000f)
                         {
-                            Shell shellUnderTestingBelt = new Shell();
-                            shellUnderTestingBelt.BarrelCount = BarrelCount;
-                            shellUnderTestingBelt.BoreEvacuator = BoreEvacuator;
-                            shellUnderTestingBelt.HeadModule = Module.AllModules[counts.HeadIndex];
-                            shellUnderTestingBelt.BaseModule = BaseModule;
+                            Shell shellUnderTestingBelt = new()
+                            {
+                                BarrelCount = BarrelCount,
+                                BoreEvacuator = BoreEvacuator,
+                                HeadModule = Module.AllModules[counts.HeadIndex],
+                                BaseModule = BaseModule
+                            };
                             FixedModuleCounts.CopyTo(shellUnderTestingBelt.BodyModuleCounts, 0);
                             shellUnderTestingBelt.Gauge = counts.Gauge;
                             shellUnderTestingBelt.BodyModuleCounts[VariableModuleIndices[0]] += counts.Var0Count;
@@ -1151,7 +1533,7 @@ namespace ApsCalc
                             shellUnderTestingBelt.GPCasingCount = counts.GPCount;
                             shellUnderTestingBelt.RGCasingCount = counts.RGCount;
                             shellUnderTestingBelt.CalculateLengths();
-                            shellUnderTestingBelt.CalculateLoaderVolume();
+                            shellUnderTestingBelt.CalculateLoaderVolumeAndCost();
                             shellUnderTestingBelt.CalculateVelocityModifier();
                             shellUnderTestingBelt.CalculateReloadTime();
                             shellUnderTestingBelt.CalculateBeltfedReload();
@@ -1163,10 +1545,10 @@ namespace ApsCalc
                             if (maxDraw > 0)
                             {
                                 // Binary search to find optimal draw without testing every value
-                                float bottomOfRange = minDraw;
                                 float bottomScore = 0;
-                                float topOfRange = maxDraw;
                                 float topScore = 0;
+                                float bottomOfRange = minDraw;
+                                float topOfRange = maxDraw;
                                 float midRangeLower = 0;
                                 float midRangeLowerScore = 0;
                                 float midRangeUpper = 0;
@@ -1174,30 +1556,51 @@ namespace ApsCalc
 
                                 shellUnderTestingBelt.RailDraw = minDraw;
                                 shellUnderTestingBelt.CalculateRecoil();
-                                shellUnderTestingBelt.CalculateRecoilVolume();
-                                shellUnderTestingBelt.CalculateChargerVolume();
-                                shellUnderTestingBelt.CalculateVolumePerIntake();
+                                shellUnderTestingBelt.CalculateRecoilVolumeAndCost();
+                                shellUnderTestingBelt.CalculateChargerVolumeAndCost();
+                                shellUnderTestingBelt.CalculateVolumeAndCostPerIntake();
                                 shellUnderTestingBelt.CalculateChemDps();
-                                bottomScore = shellUnderTestingBelt.ChemDpsPerVolumeBeltSustained;
+                                if (TestType == 0)
+                                {
+                                    bottomScore = shellUnderTestingBelt.ChemDpsPerVolumeBeltSustained;
+                                }
+                                else if (TestType == 1)
+                                {
+                                    bottomScore = shellUnderTestingBelt.ChemDpsPerCostBeltSustained;
+                                }
 
                                 shellUnderTestingBelt.RailDraw = maxDraw;
                                 shellUnderTestingBelt.CalculateRecoil();
-                                shellUnderTestingBelt.CalculateRecoilVolume();
-                                shellUnderTestingBelt.CalculateChargerVolume();
-                                shellUnderTestingBelt.CalculateVolumePerIntake();
+                                shellUnderTestingBelt.CalculateRecoilVolumeAndCost();
+                                shellUnderTestingBelt.CalculateChargerVolumeAndCost();
+                                shellUnderTestingBelt.CalculateVolumeAndCostPerIntake();
                                 shellUnderTestingBelt.CalculateChemDps();
-                                topScore = shellUnderTestingBelt.ChemDpsPerVolumeBeltSustained;
+                                if (TestType == 0)
+                                {
+                                    topScore = shellUnderTestingBelt.ChemDpsPerVolumeBeltSustained;
+                                }
+                                else if (TestType == 1)
+                                {
+                                    topScore = shellUnderTestingBelt.ChemDpsPerCostBeltSustained;
+                                }
 
                                 if (topScore > bottomScore)
                                 {
                                     // Check if max draw is optimal
                                     shellUnderTestingBelt.RailDraw = maxDraw - 1f;
                                     shellUnderTestingBelt.CalculateRecoil();
-                                    shellUnderTestingBelt.CalculateRecoilVolume();
-                                    shellUnderTestingBelt.CalculateChargerVolume();
-                                    shellUnderTestingBelt.CalculateVolumePerIntake();
+                                    shellUnderTestingBelt.CalculateRecoilVolumeAndCost();
+                                    shellUnderTestingBelt.CalculateChargerVolumeAndCost();
+                                    shellUnderTestingBelt.CalculateVolumeAndCostPerIntake();
                                     shellUnderTestingBelt.CalculateChemDps();
-                                    bottomScore = shellUnderTestingBelt.ChemDpsPerVolumeBeltSustained;
+                                    if (TestType == 0)
+                                    {
+                                        bottomScore = shellUnderTestingBelt.ChemDpsPerVolumeBeltSustained;
+                                    }
+                                    else if (TestType == 1)
+                                    {
+                                        bottomScore = shellUnderTestingBelt.ChemDpsPerCostBeltSustained;
+                                    }
 
                                     if (topScore > bottomScore)
                                     {
@@ -1209,11 +1612,18 @@ namespace ApsCalc
                                     // Check if min draw is optimal
                                     shellUnderTestingBelt.RailDraw = minDraw + 1f;
                                     shellUnderTestingBelt.CalculateRecoil();
-                                    shellUnderTestingBelt.CalculateRecoilVolume();
-                                    shellUnderTestingBelt.CalculateChargerVolume();
-                                    shellUnderTestingBelt.CalculateVolumePerIntake();
+                                    shellUnderTestingBelt.CalculateRecoilVolumeAndCost();
+                                    shellUnderTestingBelt.CalculateChargerVolumeAndCost();
+                                    shellUnderTestingBelt.CalculateVolumeAndCostPerIntake();
                                     shellUnderTestingBelt.CalculateChemDps();
-                                    topScore = shellUnderTestingBelt.ChemDpsPerVolumeBeltSustained;
+                                    if (TestType == 0)
+                                    {
+                                        bottomScore = shellUnderTestingBelt.ChemDpsPerVolumeBeltSustained;
+                                    }
+                                    else if (TestType == 1)
+                                    {
+                                        bottomScore = shellUnderTestingBelt.ChemDpsPerCostBeltSustained;
+                                    }
 
                                     if (bottomScore > topScore)
                                     {
@@ -1228,21 +1638,35 @@ namespace ApsCalc
 
                                     shellUnderTestingBelt.RailDraw = midRangeLower;
                                     shellUnderTestingBelt.CalculateRecoil();
-                                    shellUnderTestingBelt.CalculateRecoilVolume();
-                                    shellUnderTestingBelt.CalculateChargerVolume();
-                                    shellUnderTestingBelt.CalculateVolumePerIntake();
+                                    shellUnderTestingBelt.CalculateRecoilVolumeAndCost();
+                                    shellUnderTestingBelt.CalculateChargerVolumeAndCost();
+                                    shellUnderTestingBelt.CalculateVolumeAndCostPerIntake();
                                     shellUnderTestingBelt.CalculateChemDps();
-                                    midRangeLowerScore = shellUnderTestingBelt.ChemDpsPerVolumeBeltSustained;
+                                    if (TestType == 0)
+                                    {
+                                        midRangeLowerScore = shellUnderTestingBelt.ChemDpsPerVolumeBeltSustained;
+                                    }
+                                    else if (TestType == 1)
+                                    {
+                                        midRangeLowerScore = shellUnderTestingBelt.ChemDpsPerCostBeltSustained;
+                                    }
 
                                     shellUnderTestingBelt.RailDraw = midRangeUpper;
                                     shellUnderTestingBelt.CalculateRecoil();
-                                    shellUnderTestingBelt.CalculateRecoilVolume();
-                                    shellUnderTestingBelt.CalculateChargerVolume();
-                                    shellUnderTestingBelt.CalculateVolumePerIntake();
+                                    shellUnderTestingBelt.CalculateRecoilVolumeAndCost();
+                                    shellUnderTestingBelt.CalculateChargerVolumeAndCost();
+                                    shellUnderTestingBelt.CalculateVolumeAndCostPerIntake();
                                     shellUnderTestingBelt.CalculateChemDps();
-                                    midRangeUpperScore = shellUnderTestingBelt.ChemDpsPerVolumeBeltSustained;
+                                    if (TestType == 0)
+                                    {
+                                        midRangeUpperScore = shellUnderTestingBelt.ChemDpsPerVolumeBeltSustained;
+                                    }
+                                    else if (TestType == 1)
+                                    {
+                                        midRangeUpperScore = shellUnderTestingBelt.ChemDpsPerCostBeltSustained;
+                                    }
 
-                                    // Determine which half of the range to continue testing
+                                    // Determine which half of range to continue testing
                                     if (midRangeLowerScore >= midRangeUpperScore)
                                     {
                                         topOfRange = midRangeLower;
@@ -1252,7 +1676,7 @@ namespace ApsCalc
                                         bottomOfRange = midRangeUpper;
                                     }
                                 }
-                                // Take the better of the two remaining values
+                                // Take better of two remaining values
                                 if (midRangeLowerScore >= midRangeUpperScore)
                                 {
                                     optimalDraw = midRangeLower;
@@ -1266,17 +1690,28 @@ namespace ApsCalc
                             // Check performance against top shells
                             shellUnderTestingBelt.RailDraw = optimalDraw;
                             shellUnderTestingBelt.CalculateRecoil();
-                            shellUnderTestingBelt.CalculateRecoilVolume();
-                            shellUnderTestingBelt.CalculateChargerVolume();
-                            shellUnderTestingBelt.CalculateVolumePerIntake();
+                            shellUnderTestingBelt.CalculateRecoilVolumeAndCost();
+                            shellUnderTestingBelt.CalculateChargerVolumeAndCost();
+                            shellUnderTestingBelt.CalculateVolumeAndCostPerIntake();
                             shellUnderTestingBelt.CalculateVelocity();
                             shellUnderTestingBelt.CalculateEffectiveRange();
                             shellUnderTestingBelt.CalculateChemDps();
 
-                            if (shellUnderTestingBelt.ChemDpsPerVolumeBeltSustained > TopDpsBelt.ChemDpsPerVolumeBeltSustained)
+                            if (TestType == 0)
                             {
-                                shellUnderTestingBelt.IsBelt = true;
-                                TopDpsBelt = shellUnderTestingBelt;
+                                if (shellUnderTestingBelt.ChemDpsPerVolumeBeltSustained > TopBelt.ChemDpsPerVolumeBeltSustained)
+                                {
+                                    shellUnderTestingBelt.IsBelt = true;
+                                    TopBelt = shellUnderTestingBelt;
+                                }
+                            }
+                            else if (TestType == 1)
+                            {
+                                if (shellUnderTestingBelt.ChemDpsPerCostBeltSustained > TopBelt.ChemDpsPerCostBeltSustained)
+                                {
+                                    shellUnderTestingBelt.IsBelt = true;
+                                    TopBelt = shellUnderTestingBelt;
+                                }
                             }
                         }
                     }
@@ -1292,12 +1727,14 @@ namespace ApsCalc
         {
             foreach (ModuleCount counts in GenerateModuleCounts())
             {
-                Shell shellUnderTesting = new Shell();
-                shellUnderTesting.BarrelCount = BarrelCount;
-                shellUnderTesting.BoreEvacuator = BoreEvacuator;
-                shellUnderTesting.HeadModule = Module.AllModules[counts.HeadIndex];
+                Shell shellUnderTesting = new()
+                {
+                    BarrelCount = BarrelCount,
+                    BoreEvacuator = BoreEvacuator,
+                    HeadModule = Module.AllModules[counts.HeadIndex],
 
-                shellUnderTesting.BaseModule = BaseModule;
+                    BaseModule = BaseModule
+                };
                 FixedModuleCounts.CopyTo(shellUnderTesting.BodyModuleCounts, 0);
 
                 shellUnderTesting.Gauge = counts.Gauge;
@@ -1311,13 +1748,13 @@ namespace ApsCalc
 
                 if (shellUnderTesting.TotalLength <= MaxShellLength)
                 {
-                    shellUnderTesting.CalculateLoaderVolume();
+                    shellUnderTesting.CalculateLoaderVolumeAndCost();
                     shellUnderTesting.CalculateRecoil();
                     shellUnderTesting.CalculateMaxDraw();
                     shellUnderTesting.CalculateVelocityModifier();
 
                     float maxDraw = Math.Min(shellUnderTesting.MaxDraw, MaxDrawInput);
-                    float minDraw = shellUnderTesting.CalculateMinimumDrawForVelocityandRange(MinVelocityInput, MinEffectiveRangeInput, maxDraw);
+                    float minDraw = shellUnderTesting.CalculateMinimumDrawForVelocityandRange(MinVelocityInput, MinEffectiveRangeInput);
                     if (maxDraw >= minDraw)
                     {
                         shellUnderTesting.CalculateReloadTime();
@@ -1332,10 +1769,10 @@ namespace ApsCalc
                         if (maxDraw > 0)
                         {
                             // Binary search to find optimal draw without testing every value
-                            float bottomOfRange = minDraw;
                             float bottomScore = 0;
-                            float topOfRange = maxDraw;
                             float topScore = 0;
+                            float bottomOfRange = minDraw;
+                            float topOfRange = maxDraw;
                             float midRangeLower = 0;
                             float midRangeLowerScore = 0;
                             float midRangeUpper = 0;
@@ -1343,30 +1780,51 @@ namespace ApsCalc
 
                             shellUnderTesting.RailDraw = minDraw;
                             shellUnderTesting.CalculateRecoil();
-                            shellUnderTesting.CalculateRecoilVolume();
-                            shellUnderTesting.CalculateChargerVolume();
-                            shellUnderTesting.CalculateVolumePerIntake();
+                            shellUnderTesting.CalculateRecoilVolumeAndCost();
+                            shellUnderTesting.CalculateChargerVolumeAndCost();
+                            shellUnderTesting.CalculateVolumeAndCostPerIntake();
                             shellUnderTesting.CalculateShieldRps();
-                            bottomScore = shellUnderTesting.ShieldRpsPerVolume;
+                            if (TestType == 0)
+                            {
+                                bottomScore = shellUnderTesting.ShieldRpsPerVolume;
+                            }
+                            else if (TestType == 1)
+                            {
+                                bottomScore = shellUnderTesting.ShieldRpsPerCost;
+                            }
 
                             shellUnderTesting.RailDraw = maxDraw;
                             shellUnderTesting.CalculateRecoil();
-                            shellUnderTesting.CalculateRecoilVolume();
-                            shellUnderTesting.CalculateChargerVolume();
-                            shellUnderTesting.CalculateVolumePerIntake();
+                            shellUnderTesting.CalculateRecoilVolumeAndCost();
+                            shellUnderTesting.CalculateChargerVolumeAndCost();
+                            shellUnderTesting.CalculateVolumeAndCostPerIntake();
                             shellUnderTesting.CalculateShieldRps();
-                            topScore = shellUnderTesting.ShieldRpsPerVolume;
+                            if (TestType == 0)
+                            {
+                                topScore = shellUnderTesting.ShieldRpsPerVolume;
+                            }
+                            else if (TestType == 1)
+                            {
+                                topScore = shellUnderTesting.ShieldRpsPerCost;
+                            }
 
                             if (topScore > bottomScore)
                             {
                                 // Check if max draw is optimal
                                 shellUnderTesting.RailDraw = maxDraw - 1f;
                                 shellUnderTesting.CalculateRecoil();
-                                shellUnderTesting.CalculateRecoilVolume();
-                                shellUnderTesting.CalculateChargerVolume();
-                                shellUnderTesting.CalculateVolumePerIntake();
+                                shellUnderTesting.CalculateRecoilVolumeAndCost();
+                                shellUnderTesting.CalculateChargerVolumeAndCost();
+                                shellUnderTesting.CalculateVolumeAndCostPerIntake();
                                 shellUnderTesting.CalculateShieldRps();
-                                bottomScore = shellUnderTesting.ShieldRpsPerVolume;
+                                if (TestType == 0)
+                                {
+                                    bottomScore = shellUnderTesting.ShieldRpsPerVolume;
+                                }
+                                else if (TestType == 1)
+                                {
+                                    bottomScore = shellUnderTesting.ShieldRpsPerCost;
+                                }
 
                                 if (topScore > bottomScore)
                                 {
@@ -1378,11 +1836,18 @@ namespace ApsCalc
                                 // Check if min draw is optimal
                                 shellUnderTesting.RailDraw = minDraw + 1f;
                                 shellUnderTesting.CalculateRecoil();
-                                shellUnderTesting.CalculateRecoilVolume();
-                                shellUnderTesting.CalculateChargerVolume();
-                                shellUnderTesting.CalculateVolumePerIntake();
+                                shellUnderTesting.CalculateRecoilVolumeAndCost();
+                                shellUnderTesting.CalculateChargerVolumeAndCost();
+                                shellUnderTesting.CalculateVolumeAndCostPerIntake();
                                 shellUnderTesting.CalculateShieldRps();
-                                topScore = shellUnderTesting.ShieldRpsPerVolume;
+                                if (TestType == 0)
+                                {
+                                    topScore = shellUnderTesting.ShieldRpsPerVolume;
+                                }
+                                else if (TestType == 1)
+                                {
+                                    topScore = shellUnderTesting.ShieldRpsPerCost;
+                                }
 
                                 if (bottomScore > topScore)
                                 {
@@ -1397,21 +1862,35 @@ namespace ApsCalc
 
                                 shellUnderTesting.RailDraw = midRangeLower;
                                 shellUnderTesting.CalculateRecoil();
-                                shellUnderTesting.CalculateRecoilVolume();
-                                shellUnderTesting.CalculateChargerVolume();
-                                shellUnderTesting.CalculateVolumePerIntake();
+                                shellUnderTesting.CalculateRecoilVolumeAndCost();
+                                shellUnderTesting.CalculateChargerVolumeAndCost();
+                                shellUnderTesting.CalculateVolumeAndCostPerIntake();
                                 shellUnderTesting.CalculateShieldRps();
-                                midRangeLowerScore = shellUnderTesting.ShieldRpsPerVolume;
+                                if (TestType == 0)
+                                {
+                                    midRangeLowerScore = shellUnderTesting.ShieldRpsPerVolume;
+                                }
+                                else if (TestType == 1)
+                                {
+                                    midRangeLowerScore = shellUnderTesting.ShieldRpsPerCost;
+                                }
 
                                 shellUnderTesting.RailDraw = midRangeUpper;
                                 shellUnderTesting.CalculateRecoil();
-                                shellUnderTesting.CalculateRecoilVolume();
-                                shellUnderTesting.CalculateChargerVolume();
-                                shellUnderTesting.CalculateVolumePerIntake();
+                                shellUnderTesting.CalculateRecoilVolumeAndCost();
+                                shellUnderTesting.CalculateChargerVolumeAndCost();
+                                shellUnderTesting.CalculateVolumeAndCostPerIntake();
                                 shellUnderTesting.CalculateShieldRps();
-                                midRangeUpperScore = shellUnderTesting.ShieldRpsPerVolume;
+                                if (TestType == 0)
+                                {
+                                    midRangeUpperScore = shellUnderTesting.ShieldRpsPerVolume;
+                                }
+                                else if (TestType == 1)
+                                {
+                                    midRangeUpperScore = shellUnderTesting.ShieldRpsPerCost;
+                                }
 
-                                // Determine which half of the range to continue testing
+                                // Determine which half of range to continue testing
                                 if (midRangeLowerScore >= midRangeUpperScore)
                                 {
                                     topOfRange = midRangeLower;
@@ -1421,7 +1900,7 @@ namespace ApsCalc
                                     bottomOfRange = midRangeUpper;
                                 }
                             }
-                            // Take the better of the two remaining values
+                            // Take better of two remaining values
                             if (midRangeLowerScore >= midRangeUpperScore)
                             {
                                 optimalDraw = midRangeLower;
@@ -1435,64 +1914,114 @@ namespace ApsCalc
                         // Check performance against top shells
                         shellUnderTesting.RailDraw = optimalDraw;
                         shellUnderTesting.CalculateRecoil();
-                        shellUnderTesting.CalculateRecoilVolume();
-                        shellUnderTesting.CalculateChargerVolume();
-                        shellUnderTesting.CalculateVolumePerIntake();
+                        shellUnderTesting.CalculateRecoilVolumeAndCost();
+                        shellUnderTesting.CalculateChargerVolumeAndCost();
+                        shellUnderTesting.CalculateVolumeAndCostPerIntake();
                         shellUnderTesting.CalculateVelocity();
                         shellUnderTesting.CalculateEffectiveRange();
                         shellUnderTesting.CalculateChemDps();
                         shellUnderTesting.CalculateShieldRps();
-                        if (shellUnderTesting.TotalLength <= 1000f)
-                        {
-                            if (shellUnderTesting.ShieldRpsPerVolume > TopDps1000.ShieldRpsPerVolume)
-                            {
-                                TopDps1000 = shellUnderTesting;
-                            }
-                        }
-                        else if (shellUnderTesting.TotalLength <= 2000f)
-                        {
-                            if (shellUnderTesting.ShieldRpsPerVolume > TopDps2000.ShieldRpsPerVolume)
-                            {
-                                TopDps2000 = shellUnderTesting;
-                            }
-                        }
-                        else if (shellUnderTesting.TotalLength <= 3000f)
-                        {
-                            if (shellUnderTesting.ShieldRpsPerVolume > TopDps3000.ShieldRpsPerVolume)
-                            {
-                                TopDps3000 = shellUnderTesting;
-                            }
-                        }
-                        else if (shellUnderTesting.TotalLength <= 4000f)
-                        {
-                            if (shellUnderTesting.ShieldRpsPerVolume > TopDps4000.ShieldRpsPerVolume)
-                            {
-                                TopDps4000 = shellUnderTesting;
-                            }
-                        }
-                        else if (shellUnderTesting.TotalLength <= 6000f)
-                        {
-                            if (shellUnderTesting.ShieldRpsPerVolume > TopDps6000.ShieldRpsPerVolume)
-                            {
-                                TopDps6000 = shellUnderTesting;
-                            }
-                        }
-                        else if (shellUnderTesting.TotalLength <= 8000f)
-                        {
-                            if (shellUnderTesting.ShieldRpsPerVolume > TopDps8000.ShieldRpsPerVolume)
-                            {
-                                TopDps8000 = shellUnderTesting;
-                            }
-                        }
 
+                        if (TestType == 0)
+                        {
+                            if (shellUnderTesting.TotalLength <= 1000f)
+                            {
+                                if (shellUnderTesting.ShieldRpsPerVolume > Top1000.ShieldRpsPerVolume)
+                                {
+                                    Top1000 = shellUnderTesting;
+                                }
+                            }
+                            else if (shellUnderTesting.TotalLength <= 2000f)
+                            {
+                                if (shellUnderTesting.ShieldRpsPerVolume > Top2000.ShieldRpsPerVolume)
+                                {
+                                    Top2000 = shellUnderTesting;
+                                }
+                            }
+                            else if (shellUnderTesting.TotalLength <= 3000f)
+                            {
+                                if (shellUnderTesting.ShieldRpsPerVolume > Top3000.ShieldRpsPerVolume)
+                                {
+                                    Top3000 = shellUnderTesting;
+                                }
+                            }
+                            else if (shellUnderTesting.TotalLength <= 4000f)
+                            {
+                                if (shellUnderTesting.ShieldRpsPerVolume > Top4000.ShieldRpsPerVolume)
+                                {
+                                    Top4000 = shellUnderTesting;
+                                }
+                            }
+                            else if (shellUnderTesting.TotalLength <= 6000f)
+                            {
+                                if (shellUnderTesting.ShieldRpsPerVolume > Top6000.ShieldRpsPerVolume)
+                                {
+                                    Top6000 = shellUnderTesting;
+                                }
+                            }
+                            else if (shellUnderTesting.TotalLength <= 8000f)
+                            {
+                                if (shellUnderTesting.ShieldRpsPerVolume > Top8000.ShieldRpsPerVolume)
+                                {
+                                    Top8000 = shellUnderTesting;
+                                }
+                            }
+                        }
+                        else if (TestType == 1)
+                        {
+                            if (shellUnderTesting.TotalLength <= 1000f)
+                            {
+                                if (shellUnderTesting.ShieldRpsPerCost > Top1000.ShieldRpsPerCost)
+                                {
+                                    Top1000 = shellUnderTesting;
+                                }
+                            }
+                            else if (shellUnderTesting.TotalLength <= 2000f)
+                            {
+                                if (shellUnderTesting.ShieldRpsPerCost > Top2000.ShieldRpsPerCost)
+                                {
+                                    Top2000 = shellUnderTesting;
+                                }
+                            }
+                            else if (shellUnderTesting.TotalLength <= 3000f)
+                            {
+                                if (shellUnderTesting.ShieldRpsPerCost > Top3000.ShieldRpsPerCost)
+                                {
+                                    Top3000 = shellUnderTesting;
+                                }
+                            }
+                            else if (shellUnderTesting.TotalLength <= 4000f)
+                            {
+                                if (shellUnderTesting.ShieldRpsPerCost > Top4000.ShieldRpsPerCost)
+                                {
+                                    Top4000 = shellUnderTesting;
+                                }
+                            }
+                            else if (shellUnderTesting.TotalLength <= 6000f)
+                            {
+                                if (shellUnderTesting.ShieldRpsPerCost > Top6000.ShieldRpsPerCost)
+                                {
+                                    Top6000 = shellUnderTesting;
+                                }
+                            }
+                            else if (shellUnderTesting.TotalLength <= 8000f)
+                            {
+                                if (shellUnderTesting.ShieldRpsPerCost > Top8000.ShieldRpsPerCost)
+                                {
+                                    Top8000 = shellUnderTesting;
+                                }
+                            }
+                        }
                         // Beltfed testing
                         if (shellUnderTesting.TotalLength <= 1000f)
                         {
-                            Shell shellUnderTestingBelt = new Shell();
-                            shellUnderTestingBelt.BarrelCount = BarrelCount;
-                            shellUnderTestingBelt.BoreEvacuator = BoreEvacuator;
-                            shellUnderTestingBelt.HeadModule = Module.AllModules[counts.HeadIndex];
-                            shellUnderTestingBelt.BaseModule = BaseModule;
+                            Shell shellUnderTestingBelt = new()
+                            {
+                                BarrelCount = BarrelCount,
+                                BoreEvacuator = BoreEvacuator,
+                                HeadModule = Module.AllModules[counts.HeadIndex],
+                                BaseModule = BaseModule
+                            };
                             FixedModuleCounts.CopyTo(shellUnderTestingBelt.BodyModuleCounts, 0);
                             shellUnderTestingBelt.Gauge = counts.Gauge;
                             shellUnderTestingBelt.BodyModuleCounts[VariableModuleIndices[0]] += counts.Var0Count;
@@ -1501,7 +2030,7 @@ namespace ApsCalc
                             shellUnderTestingBelt.GPCasingCount = counts.GPCount;
                             shellUnderTestingBelt.RGCasingCount = counts.RGCount;
                             shellUnderTestingBelt.CalculateLengths();
-                            shellUnderTestingBelt.CalculateLoaderVolume();
+                            shellUnderTestingBelt.CalculateLoaderVolumeAndCost();
                             shellUnderTestingBelt.CalculateVelocityModifier();
                             shellUnderTestingBelt.CalculateReloadTime();
                             shellUnderTestingBelt.CalculateBeltfedReload();
@@ -1514,10 +2043,10 @@ namespace ApsCalc
                             if (maxDraw > 0)
                             {
                                 // Binary search to find optimal draw without testing every value
-                                float bottomOfRange = minDraw;
                                 float bottomScore = 0;
-                                float topOfRange = maxDraw;
                                 float topScore = 0;
+                                float bottomOfRange = minDraw;
+                                float topOfRange = maxDraw;
                                 float midRangeLower = 0;
                                 float midRangeLowerScore = 0;
                                 float midRangeUpper = 0;
@@ -1525,30 +2054,51 @@ namespace ApsCalc
 
                                 shellUnderTestingBelt.RailDraw = minDraw;
                                 shellUnderTestingBelt.CalculateRecoil();
-                                shellUnderTestingBelt.CalculateRecoilVolume();
-                                shellUnderTestingBelt.CalculateChargerVolume();
-                                shellUnderTestingBelt.CalculateVolumePerIntake();
+                                shellUnderTestingBelt.CalculateRecoilVolumeAndCost();
+                                shellUnderTestingBelt.CalculateChargerVolumeAndCost();
+                                shellUnderTestingBelt.CalculateVolumeAndCostPerIntake();
                                 shellUnderTestingBelt.CalculateShieldRps();
-                                bottomScore = shellUnderTestingBelt.ShieldRpsPerVolumeBeltSustained;
+                                if (TestType == 0)
+                                {
+                                    bottomScore = shellUnderTestingBelt.ShieldRpsPerVolumeBeltSustained;
+                                }
+                                else if (TestType == 1)
+                                {
+                                    bottomScore = shellUnderTestingBelt.ShieldRpsPerCostBeltSustained;
+                                }
 
                                 shellUnderTestingBelt.RailDraw = maxDraw;
                                 shellUnderTestingBelt.CalculateRecoil();
-                                shellUnderTestingBelt.CalculateRecoilVolume();
-                                shellUnderTestingBelt.CalculateChargerVolume();
-                                shellUnderTestingBelt.CalculateVolumePerIntake();
+                                shellUnderTestingBelt.CalculateRecoilVolumeAndCost();
+                                shellUnderTestingBelt.CalculateChargerVolumeAndCost();
+                                shellUnderTestingBelt.CalculateVolumeAndCostPerIntake();
                                 shellUnderTestingBelt.CalculateShieldRps();
-                                topScore = shellUnderTestingBelt.ShieldRpsPerVolumeBeltSustained;
+                                if (TestType == 0)
+                                {
+                                    topScore = shellUnderTestingBelt.ShieldRpsPerVolumeBeltSustained;
+                                }
+                                else if (TestType == 1)
+                                {
+                                    topScore = shellUnderTestingBelt.ShieldRpsPerCostBeltSustained;
+                                }
 
                                 if (topScore > bottomScore)
                                 {
                                     // Check if max draw is optimal
                                     shellUnderTestingBelt.RailDraw = maxDraw - 1f;
                                     shellUnderTestingBelt.CalculateRecoil();
-                                    shellUnderTestingBelt.CalculateRecoilVolume();
-                                    shellUnderTestingBelt.CalculateChargerVolume();
-                                    shellUnderTestingBelt.CalculateVolumePerIntake();
+                                    shellUnderTestingBelt.CalculateRecoilVolumeAndCost();
+                                    shellUnderTestingBelt.CalculateChargerVolumeAndCost();
+                                    shellUnderTestingBelt.CalculateVolumeAndCostPerIntake();
                                     shellUnderTestingBelt.CalculateShieldRps();
-                                    bottomScore = shellUnderTestingBelt.ShieldRpsPerVolumeBeltSustained;
+                                    if (TestType == 0)
+                                    {
+                                        bottomScore = shellUnderTestingBelt.ShieldRpsPerVolumeBeltSustained;
+                                    }
+                                    else if (TestType == 1)
+                                    {
+                                        bottomScore = shellUnderTestingBelt.ShieldRpsPerCostBeltSustained;
+                                    }
 
                                     if (topScore > bottomScore)
                                     {
@@ -1560,11 +2110,18 @@ namespace ApsCalc
                                     // Check if min draw is optimal
                                     shellUnderTestingBelt.RailDraw = minDraw + 1f;
                                     shellUnderTestingBelt.CalculateRecoil();
-                                    shellUnderTestingBelt.CalculateRecoilVolume();
-                                    shellUnderTestingBelt.CalculateChargerVolume();
-                                    shellUnderTestingBelt.CalculateVolumePerIntake();
+                                    shellUnderTestingBelt.CalculateRecoilVolumeAndCost();
+                                    shellUnderTestingBelt.CalculateChargerVolumeAndCost();
+                                    shellUnderTestingBelt.CalculateVolumeAndCostPerIntake();
                                     shellUnderTestingBelt.CalculateShieldRps();
-                                    topScore = shellUnderTestingBelt.ShieldRpsPerVolumeBeltSustained;
+                                    if (TestType == 0)
+                                    {
+                                        topScore = shellUnderTestingBelt.ShieldRpsPerVolumeBeltSustained;
+                                    }
+                                    else if (TestType == 1)
+                                    {
+                                        topScore = shellUnderTestingBelt.ShieldRpsPerCostBeltSustained;
+                                    }
 
                                     if (bottomScore > topScore)
                                     {
@@ -1579,21 +2136,35 @@ namespace ApsCalc
 
                                     shellUnderTestingBelt.RailDraw = midRangeLower;
                                     shellUnderTestingBelt.CalculateRecoil();
-                                    shellUnderTestingBelt.CalculateRecoilVolume();
-                                    shellUnderTestingBelt.CalculateChargerVolume();
-                                    shellUnderTestingBelt.CalculateVolumePerIntake();
+                                    shellUnderTestingBelt.CalculateRecoilVolumeAndCost();
+                                    shellUnderTestingBelt.CalculateChargerVolumeAndCost();
+                                    shellUnderTestingBelt.CalculateVolumeAndCostPerIntake();
                                     shellUnderTestingBelt.CalculateShieldRps();
-                                    midRangeLowerScore = shellUnderTestingBelt.ShieldRpsPerVolumeBeltSustained;
+                                    if (TestType == 0)
+                                    {
+                                        midRangeLowerScore = shellUnderTestingBelt.ShieldRpsPerVolumeBeltSustained;
+                                    }
+                                    else if (TestType == 1)
+                                    {
+                                        midRangeLowerScore = shellUnderTestingBelt.ShieldRpsPerCostBeltSustained;
+                                    }
 
                                     shellUnderTestingBelt.RailDraw = midRangeUpper;
                                     shellUnderTestingBelt.CalculateRecoil();
-                                    shellUnderTestingBelt.CalculateRecoilVolume();
-                                    shellUnderTestingBelt.CalculateChargerVolume();
-                                    shellUnderTestingBelt.CalculateVolumePerIntake();
+                                    shellUnderTestingBelt.CalculateRecoilVolumeAndCost();
+                                    shellUnderTestingBelt.CalculateChargerVolumeAndCost();
+                                    shellUnderTestingBelt.CalculateVolumeAndCostPerIntake();
                                     shellUnderTestingBelt.CalculateShieldRps();
-                                    midRangeUpperScore = shellUnderTestingBelt.ShieldRpsPerVolumeBeltSustained;
+                                    if (TestType == 0)
+                                    {
+                                        midRangeUpperScore = shellUnderTestingBelt.ShieldRpsPerVolumeBeltSustained;
+                                    }
+                                    else if (TestType == 1)
+                                    {
+                                        midRangeUpperScore = shellUnderTestingBelt.ShieldRpsPerCostBeltSustained;
+                                    }
 
-                                    // Determine which half of the range to continue testing
+                                    // Determine which half of range to continue testing
                                     if (midRangeLowerScore >= midRangeUpperScore)
                                     {
                                         topOfRange = midRangeLower;
@@ -1603,7 +2174,7 @@ namespace ApsCalc
                                         bottomOfRange = midRangeUpper;
                                     }
                                 }
-                                // Take the better of the two remaining values
+                                // Take better of two remaining values
                                 if (midRangeLowerScore >= midRangeUpperScore)
                                 {
                                     optimalDraw = midRangeLower;
@@ -1617,18 +2188,29 @@ namespace ApsCalc
                             // Check performance against top shells
                             shellUnderTestingBelt.RailDraw = optimalDraw;
                             shellUnderTestingBelt.CalculateRecoil();
-                            shellUnderTestingBelt.CalculateRecoilVolume();
-                            shellUnderTestingBelt.CalculateChargerVolume();
-                            shellUnderTestingBelt.CalculateVolumePerIntake();
+                            shellUnderTestingBelt.CalculateRecoilVolumeAndCost();
+                            shellUnderTestingBelt.CalculateChargerVolumeAndCost();
+                            shellUnderTestingBelt.CalculateVolumeAndCostPerIntake();
                             shellUnderTestingBelt.CalculateVelocity();
                             shellUnderTestingBelt.CalculateEffectiveRange();
                             shellUnderTestingBelt.CalculateChemDps();
                             shellUnderTestingBelt.CalculateShieldRps();
 
-                            if (shellUnderTestingBelt.ShieldRpsPerVolumeBeltSustained > TopDpsBelt.ShieldRpsPerVolumeBeltSustained)
+                            if (TestType == 0)
                             {
-                                shellUnderTestingBelt.IsBelt = true;
-                                TopDpsBelt = shellUnderTestingBelt;
+                                if (shellUnderTestingBelt.ShieldRpsPerVolumeBeltSustained > TopBelt.ShieldRpsPerVolumeBeltSustained)
+                                {
+                                    shellUnderTestingBelt.IsBelt = true;
+                                    TopBelt = shellUnderTestingBelt;
+                                }
+                            }
+                            else if (TestType == 1)
+                            {
+                                if (shellUnderTestingBelt.ShieldRpsPerCostBeltSustained > TopBelt.ShieldRpsPerCostBeltSustained)
+                                {
+                                    shellUnderTestingBelt.IsBelt = true;
+                                    TopBelt = shellUnderTestingBelt;
+                                }
                             }
                         }
                     }
@@ -1638,91 +2220,93 @@ namespace ApsCalc
 
 
         /// <summary>
-        /// Adds the current top-performing shells to the TopDpsShells list for comparison with other lists
+        /// Adds current top-performing shells to TopShells list for comparison with other lists
+        /// Note that DPS is used only to determine whether a shell has been assigned to a particular length slot
         /// </summary>
         public void AddTopShellsToLocalList()
         {
-            if (TopDpsBelt.KineticDpsBeltSustained > 0 || TopDpsBelt.ChemDpsBeltSustained > 0 || TopDpsBelt.ShieldRpsBeltSustained > 0)
+            if (TopBelt.KineticDpsBeltSustained > 0 || TopBelt.ChemDpsBeltSustained > 0 || TopBelt.ShieldRpsBeltSustained > 0)
             {
-                TopDpsShellsLocal.Add(TopDpsBelt);
+                TopShellsLocal.Add(TopBelt);
             }
 
-            if (TopDps1000.KineticDps > 0 || TopDps1000.ChemDps > 0 || TopDps1000.ShieldRps > 0)
+            if (Top1000.KineticDps > 0 || Top1000.ChemDps > 0 || Top1000.ShieldRps > 0)
             {
-                TopDpsShellsLocal.Add(TopDps1000);
+                TopShellsLocal.Add(Top1000);
             }
 
-            if (TopDps2000.KineticDps > 0 || TopDps2000.ChemDps > 0 || TopDps2000.ShieldRps > 0)
+            if (Top2000.KineticDps > 0 || Top2000.ChemDps > 0 || Top2000.ShieldRps > 0)
             {
-                TopDpsShellsLocal.Add(TopDps2000);
+                TopShellsLocal.Add(Top2000);
             }
 
-            if (TopDps3000.KineticDps > 0 || TopDps3000.ChemDps > 0 || TopDps3000.ShieldRps > 0)
+            if (Top3000.KineticDps > 0 || Top3000.ChemDps > 0 || Top3000.ShieldRps > 0)
             {
-                TopDpsShellsLocal.Add(TopDps3000);
+                TopShellsLocal.Add(Top3000);
             }
 
-            if (TopDps4000.KineticDps > 0 || TopDps4000.ChemDps > 0 || TopDps4000.ShieldRps > 0)
+            if (Top4000.KineticDps > 0 || Top4000.ChemDps > 0 || Top4000.ShieldRps > 0)
             {
-                TopDpsShellsLocal.Add(TopDps4000);
+                TopShellsLocal.Add(Top4000);
             }
 
-            if (TopDps6000.KineticDps > 0 || TopDps6000.ChemDps > 0 || TopDps6000.ShieldRps > 0)
+            if (Top6000.KineticDps > 0 || Top6000.ChemDps > 0 || Top6000.ShieldRps > 0)
             {
-                TopDpsShellsLocal.Add(TopDps6000);
+                TopShellsLocal.Add(Top6000);
             }
 
-            if (TopDps8000.KineticDps > 0 || TopDps8000.ChemDps > 0 || TopDps8000.ShieldRps > 0)
+            if (Top8000.KineticDps > 0 || Top8000.ChemDps > 0 || Top8000.ShieldRps > 0)
             {
-                TopDpsShellsLocal.Add(TopDps8000);
+                TopShellsLocal.Add(Top8000);
             }
         }
 
 
         /// <summary>
-        /// Adds the current top-performing shells to the TopDpsShells dictionary for writing to console
+        /// Adds current top-performing shells to TopShells dictionary for writing to console
+        /// Note that DPS is used only to determine whether a shell has been assigned to a length slot
         /// </summary>
         public void AddTopShellsToDictionary()
         {
-            if (TopDpsBelt.KineticDpsBeltSustained > 0 || TopDpsBelt.ChemDpsBeltSustained > 0 || TopDpsBelt.ShieldRpsBeltSustained > 0)
+            if (TopBelt.KineticDpsBeltSustained > 0 || TopBelt.ChemDpsBeltSustained > 0 || TopBelt.ShieldRpsBeltSustained > 0)
             {
-                TopDpsShells.Add("1 m (belt)", TopDpsBelt);
+                TopDpsShells.Add("1 m (belt)", TopBelt);
             }
 
-            if (TopDps1000.KineticDps > 0 || TopDps1000.ChemDps > 0 || TopDps1000.ShieldRps > 0)
+            if (Top1000.KineticDps > 0 || Top1000.ChemDps > 0 || Top1000.ShieldRps > 0)
             {
-                TopDpsShells.Add("1 m", TopDps1000);
+                TopDpsShells.Add("1 m", Top1000);
             }
 
-            if (TopDps2000.KineticDps > 0 || TopDps2000.ChemDps > 0 || TopDps2000.ShieldRps > 0)
+            if (Top2000.KineticDps > 0 || Top2000.ChemDps > 0 || Top2000.ShieldRps > 0)
             {
-                TopDpsShells.Add("2 m", TopDps2000);
+                TopDpsShells.Add("2 m", Top2000);
             }
 
-            if (TopDps3000.KineticDps > 0 || TopDps3000.ChemDps > 0 || TopDps3000.ShieldRps > 0)
+            if (Top3000.KineticDps > 0 || Top3000.ChemDps > 0 || Top3000.ShieldRps > 0)
             {
-                TopDpsShells.Add("3 m", TopDps3000);
+                TopDpsShells.Add("3 m", Top3000);
             }
 
-            if (TopDps4000.KineticDps > 0 || TopDps4000.ChemDps > 0 || TopDps4000.ShieldRps > 0)
+            if (Top4000.KineticDps > 0 || Top4000.ChemDps > 0 || Top4000.ShieldRps > 0)
             {
-                TopDpsShells.Add("4 m", TopDps4000);
+                TopDpsShells.Add("4 m", Top4000);
             }
 
-            if (TopDps6000.KineticDps > 0 || TopDps6000.ChemDps > 0 || TopDps6000.ShieldRps > 0)
+            if (Top6000.KineticDps > 0 || Top6000.ChemDps > 0 || Top6000.ShieldRps > 0)
             {
-                TopDpsShells.Add("6 m", TopDps6000);
+                TopDpsShells.Add("6 m", Top6000);
             }
 
-            if (TopDps8000.KineticDps > 0 || TopDps8000.ChemDps > 0 || TopDps8000.ShieldRps > 0)
+            if (Top8000.KineticDps > 0 || Top8000.ChemDps > 0 || Top8000.ShieldRps > 0)
             {
-                TopDpsShells.Add("8 m", TopDps8000);
+                TopDpsShells.Add("8 m", Top8000);
             }
         }
 
 
         /// <summary>
-        /// Finds the top shells in the given list.  Used in multithreading.
+        /// Finds top shells in given list.  Used in multithreading.
         /// </summary>
         /// <param name="shellBag"></param>
         public void FindTopShellsInList(ConcurrentBag<Shell> shellBag)
@@ -1733,51 +2317,51 @@ namespace ApsCalc
                 {
                     if (rawShell.IsBelt)
                     {
-                        if (rawShell.KineticDpsPerVolumeBeltSustained > TopDpsBelt.KineticDpsPerVolumeBeltSustained)
+                        if (rawShell.KineticDpsPerVolumeBeltSustained > TopBelt.KineticDpsPerVolumeBeltSustained)
                         {
-                            TopDpsBelt = rawShell;
+                            TopBelt = rawShell;
                         }
                     }
                     if (rawShell.TotalLength <= 1000f)
                     {
-                        if (rawShell.KineticDpsPerVolume > TopDps1000.KineticDpsPerVolume)
+                        if (rawShell.KineticDpsPerVolume > Top1000.KineticDpsPerVolume)
                         {
-                            TopDps1000 = rawShell;
+                            Top1000 = rawShell;
                         }
                     }
                     else if (rawShell.TotalLength <= 2000f)
                     {
-                        if (rawShell.KineticDpsPerVolume > TopDps2000.KineticDpsPerVolume)
+                        if (rawShell.KineticDpsPerVolume > Top2000.KineticDpsPerVolume)
                         {
-                            TopDps2000 = rawShell;
+                            Top2000 = rawShell;
                         }
                     }
                     else if (rawShell.TotalLength <= 3000f)
                     {
-                        if (rawShell.KineticDpsPerVolume > TopDps3000.KineticDpsPerVolume)
+                        if (rawShell.KineticDpsPerVolume > Top3000.KineticDpsPerVolume)
                         {
-                            TopDps3000 = rawShell;
+                            Top3000 = rawShell;
                         }
                     }
                     else if (rawShell.TotalLength <= 4000f)
                     {
-                        if (rawShell.KineticDpsPerVolume > TopDps4000.KineticDpsPerVolume)
+                        if (rawShell.KineticDpsPerVolume > Top4000.KineticDpsPerVolume)
                         {
-                            TopDps4000 = rawShell;
+                            Top4000 = rawShell;
                         }
                     }
                     else if (rawShell.TotalLength <= 6000f)
                     {
-                        if (rawShell.KineticDpsPerVolume > TopDps6000.KineticDpsPerVolume)
+                        if (rawShell.KineticDpsPerVolume > Top6000.KineticDpsPerVolume)
                         {
-                            TopDps6000 = rawShell;
+                            Top6000 = rawShell;
                         }
                     }
                     else if (rawShell.TotalLength <= 8000f)
                     {
-                        if (rawShell.KineticDpsPerVolume > TopDps8000.KineticDpsPerVolume)
+                        if (rawShell.KineticDpsPerVolume > Top8000.KineticDpsPerVolume)
                         {
-                            TopDps8000 = rawShell;
+                            Top8000 = rawShell;
                         }
                     }
                 }
@@ -1788,51 +2372,51 @@ namespace ApsCalc
                 {
                     if (rawShell.IsBelt)
                     {
-                        if (rawShell.ChemDpsPerVolumeBeltSustained > TopDpsBelt.ChemDpsPerVolumeBeltSustained)
+                        if (rawShell.ChemDpsPerVolumeBeltSustained > TopBelt.ChemDpsPerVolumeBeltSustained)
                         {
-                            TopDpsBelt = rawShell;
+                            TopBelt = rawShell;
                         }
                     }
                     if (rawShell.TotalLength <= 1000f)
                     {
-                        if (rawShell.ChemDpsPerVolume > TopDps1000.ChemDpsPerVolume)
+                        if (rawShell.ChemDpsPerVolume > Top1000.ChemDpsPerVolume)
                         {
-                            TopDps1000 = rawShell;
+                            Top1000 = rawShell;
                         }
                     }
                     else if (rawShell.TotalLength <= 2000f)
                     {
-                        if (rawShell.ChemDpsPerVolume > TopDps2000.ChemDpsPerVolume)
+                        if (rawShell.ChemDpsPerVolume > Top2000.ChemDpsPerVolume)
                         {
-                            TopDps2000 = rawShell;
+                            Top2000 = rawShell;
                         }
                     }
                     else if (rawShell.TotalLength <= 3000f)
                     {
-                        if (rawShell.ChemDpsPerVolume > TopDps3000.ChemDpsPerVolume)
+                        if (rawShell.ChemDpsPerVolume > Top3000.ChemDpsPerVolume)
                         {
-                            TopDps3000 = rawShell;
+                            Top3000 = rawShell;
                         }
                     }
                     else if (rawShell.TotalLength <= 4000f)
                     {
-                        if (rawShell.ChemDpsPerVolume > TopDps4000.ChemDpsPerVolume)
+                        if (rawShell.ChemDpsPerVolume > Top4000.ChemDpsPerVolume)
                         {
-                            TopDps4000 = rawShell;
+                            Top4000 = rawShell;
                         }
                     }
                     else if (rawShell.TotalLength <= 6000f)
                     {
-                        if (rawShell.ChemDpsPerVolume > TopDps6000.ChemDpsPerVolume)
+                        if (rawShell.ChemDpsPerVolume > Top6000.ChemDpsPerVolume)
                         {
-                            TopDps6000 = rawShell;
+                            Top6000 = rawShell;
                         }
                     }
                     else if (rawShell.TotalLength <= 8000f)
                     {
-                        if (rawShell.ChemDpsPerVolume > TopDps8000.ChemDpsPerVolume)
+                        if (rawShell.ChemDpsPerVolume > Top8000.ChemDpsPerVolume)
                         {
-                            TopDps8000 = rawShell;
+                            Top8000 = rawShell;
                         }
                     }
                 }
@@ -1843,51 +2427,51 @@ namespace ApsCalc
                 {
                     if (rawShell.IsBelt)
                     {
-                        if (rawShell.ShieldRpsPerVolumeBeltSustained > TopDpsBelt.ShieldRpsPerVolumeBeltSustained)
+                        if (rawShell.ShieldRpsPerVolumeBeltSustained > TopBelt.ShieldRpsPerVolumeBeltSustained)
                         {
-                            TopDpsBelt = rawShell;
+                            TopBelt = rawShell;
                         }
                     }
                     if (rawShell.TotalLength <= 1000f)
                     {
-                        if (rawShell.ShieldRpsPerVolume > TopDps1000.ShieldRpsPerVolume)
+                        if (rawShell.ShieldRpsPerVolume > Top1000.ShieldRpsPerVolume)
                         {
-                            TopDps1000 = rawShell;
+                            Top1000 = rawShell;
                         }
                     }
                     else if (rawShell.TotalLength <= 2000f)
                     {
-                        if (rawShell.ShieldRpsPerVolume > TopDps2000.ShieldRpsPerVolume)
+                        if (rawShell.ShieldRpsPerVolume > Top2000.ShieldRpsPerVolume)
                         {
-                            TopDps2000 = rawShell;
+                            Top2000 = rawShell;
                         }
                     }
                     else if (rawShell.TotalLength <= 3000f)
                     {
-                        if (rawShell.ChemDpsPerVolume > TopDps3000.ChemDpsPerVolume)
+                        if (rawShell.ChemDpsPerVolume > Top3000.ChemDpsPerVolume)
                         {
-                            TopDps3000 = rawShell;
+                            Top3000 = rawShell;
                         }
                     }
                     else if (rawShell.TotalLength <= 4000f)
                     {
-                        if (rawShell.ShieldRpsPerVolume > TopDps4000.ShieldRpsPerVolume)
+                        if (rawShell.ShieldRpsPerVolume > Top4000.ShieldRpsPerVolume)
                         {
-                            TopDps4000 = rawShell;
+                            Top4000 = rawShell;
                         }
                     }
                     else if (rawShell.TotalLength <= 6000f)
                     {
-                        if (rawShell.ShieldRpsPerVolume > TopDps6000.ShieldRpsPerVolume)
+                        if (rawShell.ShieldRpsPerVolume > Top6000.ShieldRpsPerVolume)
                         {
-                            TopDps6000 = rawShell;
+                            Top6000 = rawShell;
                         }
                     }
                     else if (rawShell.TotalLength <= 8000f)
                     {
-                        if (rawShell.ShieldRpsPerVolume > TopDps8000.ShieldRpsPerVolume)
+                        if (rawShell.ShieldRpsPerVolume > Top8000.ShieldRpsPerVolume)
                         {
-                            TopDps8000 = rawShell;
+                            Top8000 = rawShell;
                         }
                     }
                 }
@@ -1896,7 +2480,7 @@ namespace ApsCalc
 
 
         /// <summary>
-        /// Write to the console the statistics of the top shells
+        /// Write to console statistics of top shells
         /// </summary>
         public void WriteTopShells()
         {
@@ -1996,6 +2580,15 @@ namespace ApsCalc
             {
                 Console.WriteLine("Damage type: shield disruption");
             }
+
+            if (TestType == 0)
+            {
+                Console.WriteLine("Testing for DPS / volume");
+            }
+            else if (TestType == 1)
+            {
+                Console.WriteLine("Testing for DPS / cost");
+            }
             Console.WriteLine("\n");
 
 
@@ -2039,18 +2632,22 @@ namespace ApsCalc
                 Console.WriteLine("Reload (s)");
                 Console.WriteLine("DPS");
                 Console.WriteLine("DPS per volume");
+                Console.WriteLine("DPS per cost");
                 if (disruptor)
                 {
                     Console.WriteLine("Shield reduction / s");
                     Console.WriteLine("Shield RPS / volume");
+                    Console.WriteLine("Shield RPS / cost");
                 }
                 Console.WriteLine("Uptime (belt)");
                 Console.WriteLine("DPS (belt, sustained)");
                 Console.WriteLine("DPS per volume (sustained)");
+                Console.WriteLine("DPS per cost (sustained)");
                 if (disruptor)
                 {
                     Console.WriteLine("Shield RPS (belt, sustained)");
                     Console.WriteLine("Shield RPS / volume (sustained)");
+                    Console.WriteLine("Shield RPS / cost (sustained)");
                 }
             }
 
@@ -2079,7 +2676,7 @@ namespace ApsCalc
 
 
         /// <summary>
-        /// The main test body.  Iterates over the IEnumerables to compare every permutation within the given parameters, then stores the results
+        /// The main test body.  Iterates over IEnumerables to compare every permutation within given parameters, then stores results
         /// </summary>
         public void ShellTest()
         {

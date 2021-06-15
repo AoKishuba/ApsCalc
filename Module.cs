@@ -17,7 +17,7 @@ namespace ApsCalc
         /// <param name="accMod">Inaccuracy modifier</param>
         /// <param name="mLength">Max length of module in mm (length equals gauge at or below this value)</param>
         /// <param name="mType">The type of module - base, middle, or head</param>
-        /// <param name="_isChem">True if the module carries a chemical payload</param>
+        /// <param name="_isChem">True if module carries a chemical payload</param>
         public Module(string name, float vMod, float kdMod, float apMod, float cMod, float accMod, float mLength, Position mType, bool _isChem)
         {
             Name = name;

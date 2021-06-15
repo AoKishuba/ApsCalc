@@ -11,7 +11,7 @@ namespace ApsCalc
     class Program
     {
         /// <summary>
-        /// Gathers shell parameters from the user, then runs the ShellCalc tests to find the highest-performing shells within those parameters
+        /// Gathers shell parameters from user, then runs ShellCalc tests to find highest-performing shells within those parameters
         /// </summary>
         /// <param name="args"></param>
         static void Main(string[] args)
@@ -22,7 +22,7 @@ namespace ApsCalc
             // Get number of barrels
             int barrelCount;
             int maxGaugeHardCap; 
-            Dictionary<int, int> gaugeHardCaps = new Dictionary<int, int>
+            Dictionary<int, int> gaugeHardCaps = new()
             {
                 { 1, 500 },
                 { 2, 250 },
@@ -134,7 +134,7 @@ namespace ApsCalc
                     modIndex++;
                 }
             }
-            // Counting backwards from the end of the module list
+            // Counting backwards from end of module list
             for (int i = Module.AllModules.Length - 1; i >= 0; i--)
             {
                 if (Module.AllModules[i].ModuleType == Module.Position.Middle || Module.AllModules[i].ModuleType == Module.Position.Head)
@@ -144,7 +144,7 @@ namespace ApsCalc
                 }
             }
             int headCount = 0;
-            List<int> HeadIndices = new List<int>();
+            List<int> HeadIndices = new();
             while (true)
             {
                 for (int i = minHeadIndex; i <= maxHeadIndex; i++)
@@ -250,7 +250,7 @@ namespace ApsCalc
                     modIndex++;
                 }
             }
-            // Counting backwards from the end of the module list
+            // Counting backwards from end of module list
             for (int i = Module.AllModules.Length - 1; i >= 0; i--)
             {
                 if (Module.AllModules[i].ModuleType == Module.Position.Base)
@@ -259,13 +259,12 @@ namespace ApsCalc
                     break;
                 }
             }
-            Module Base = default(Module);
+            Module Base = default;
             for (int i = minBaseIndex; i <= maxBaseIndex; i++)
             {
                 Console.WriteLine(i + " : " + Module.AllModules[i].Name);
             }
-            Console.WriteLine("\nEnter a number to select a base for the shell, or type 'done' if no special base is desired.");
-            int baseIndex;
+            Console.WriteLine("\nEnter a number to select a base for shell, or type 'done' if no special base is desired.");
             while (true)
             {
                 input = Console.ReadLine();
@@ -273,7 +272,7 @@ namespace ApsCalc
                 {
                     break;
                 }
-                if (int.TryParse(input, out baseIndex))
+                if (int.TryParse(input, out int baseIndex))
                 {
                     if (baseIndex < minBaseIndex || baseIndex > maxBaseIndex)
                     {
@@ -318,7 +317,7 @@ namespace ApsCalc
                     modIndex++;
                 }
             }
-            // Counting backwards from the end of the module list
+            // Counting backwards from end of module list
             for (int i = Module.AllModules.Length - 1; i >= 0; i--)
             {
                 if (Module.AllModules[i].ModuleType == Module.Position.Middle)
@@ -328,8 +327,8 @@ namespace ApsCalc
                 }
             }
             // Get fixed body module counts
-            // Create array with a number of elements equal to the number of body module types
-            List<float> fixedModuleCounts = new List<float>();
+            // Create array with a number of elements equal to number of body module types
+            List<float> fixedModuleCounts = new();
             for (int i = minBodyIndex; i <= maxBodyIndex; i++)
             {
                 fixedModuleCounts.Add(0);
@@ -425,7 +424,7 @@ namespace ApsCalc
                 {
                     if (varModCount > 0)
                     {
-                        // Set remaining indices to the first intex entered by the user to overwrite default values
+                        // Set remaining indices to first intex entered by user to overwrite default values
                         for (int i = varModCount; i < variableModuleIndices.Length; i++)
                         {
                             variableModuleIndices[i] = variableModuleIndices[0];
@@ -691,9 +690,9 @@ namespace ApsCalc
 
 
             // Get damage type to measure
-            int damageType = 0;
-            Scheme armorScheme = new Scheme();
-            float targetAC = default(float);
+            int damageType;
+            Scheme armorScheme = new();
+            float targetAC = default;
             Console.WriteLine("\nEnter 0 to measure kinetic damage\nEnter 1 to measure chemical damage (HE, Frag, FlaK, EMP).\nEnter 2 for pendepth." +
                 "\nEnter 3 for shield disruptor.");
             while (true)
@@ -769,7 +768,40 @@ namespace ApsCalc
             }
 
 
-            // Get user preference on whether labels should be included in the results
+            // Get volume vs cost
+            int testType;
+            Console.WriteLine("\nEnter 0 to measure damage per volume\nEnter 1 to damage per cost.");
+            while (true)
+            {
+                input = Console.ReadLine();
+                if (int.TryParse(input, out testType))
+                {
+                    if (testType < 0 || testType > 1)
+                    {
+                        Console.WriteLine("\nTEST TYPE RANGE ERROR: Enter 0 for damage per volume, 1 for damage per cost.");
+                    }
+                    else
+                    {
+                        testType = Convert.ToInt32(input);
+                        break;
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("\nTEST TYPE PARSE ERROR: Enter 0 for damage per volume, 1 for damage per cost.");
+                }
+            }
+            if (testType == 0)
+            {
+                Console.WriteLine("\nWill test damage per volume.\n");
+            }
+            else if (testType == 1)
+            {
+                Console.WriteLine("\nWill test damage per cost.\n");
+            }
+
+
+            // Get user preference on whether labels should be included in results
             bool labels;
             Console.WriteLine("\nInclude labels on results?  Labels are human-readable but inconvenient for copying to a spreadsheet.\nEnter 'y' or 'n'.");
             while (true)
@@ -794,14 +826,13 @@ namespace ApsCalc
             }
 
             // For tracking progress
-            float totalCombinations = HeadIndices.Count * Math.Min(maxGaugeInput - minGaugeInput, 1);
             Stopwatch stopWatchParallel = Stopwatch.StartNew();
 
-            ConcurrentBag<Shell> shellBag = new ConcurrentBag<Shell>();
+            ConcurrentBag<Shell> shellBag = new();
             Parallel.For(minGaugeInput, maxGaugeInput + 1, gauge =>
             {
                 float gaugeFloat = (float)gauge;
-                ShellCalc calcLocal = new ShellCalc(
+                ShellCalc calcLocal = new(
                     barrelCount,
                     gauge,
                     gauge,
@@ -820,19 +851,20 @@ namespace ApsCalc
                     targetAC,
                     damageType,
                     armorScheme,
+                    testType,
                     labels
                     );
                 
                 calcLocal.ShellTest();
                 calcLocal.AddTopShellsToLocalList();
 
-                foreach(Shell topShellLocal in calcLocal.TopDpsShellsLocal)
+                foreach(Shell topShellLocal in calcLocal.TopShellsLocal)
                 {
                     shellBag.Add(topShellLocal);
                 }
             });
 
-            ShellCalc calcFinal = new ShellCalc(
+            ShellCalc calcFinal = new(
                 barrelCount,
                 minGauge,
                 maxGauge,
@@ -851,6 +883,7 @@ namespace ApsCalc
                 targetAC,
                 damageType,
                 armorScheme,
+                testType,
                 labels
                 );
 
@@ -867,7 +900,7 @@ namespace ApsCalc
             // Prevent window from ending if CTL+C is pressed.
             Console.TreatControlCAsInput = true;
 
-            Console.WriteLine("Press the Escape (Esc) key to quit: \n");
+            Console.WriteLine("Press Escape (Esc) key to quit: \n");
             do
             {
                 cki = Console.ReadKey();
