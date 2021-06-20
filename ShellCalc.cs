@@ -311,16 +311,15 @@ namespace ApsCalc
         /// <summary>
         /// Optimize DPS per cost or volume by adjusting rail draw
         /// </summary>
-        public void OptimizeDrawByDamageType(Shell shellUnderTesting, float minLength, float maxLength)
+        public void OptimizeDrawByDamageType(Shell shellUnderTesting)
         {
             float optimalDraw = 0;
             shellUnderTesting.CalculateMaxDraw();
             float maxDraw = MathF.Min(shellUnderTesting.MaxDraw, MaxDrawInput);
             float minDraw = shellUnderTesting.CalculateMinimumDrawForVelocityandRange(MinVelocityInput, MinEffectiveRangeInput);
 
-            maxLength = MathF.Min(maxLength, MaxShellLength);
             // Length restrictions compartmentalize results by loader size and apply max length restrictions
-            if (maxDraw < minDraw || shellUnderTesting.TotalLength <= minLength || shellUnderTesting.TotalLength > maxLength)
+            if (maxDraw < minDraw)
             {
                 foreach (float damageType in shellUnderTesting.DpsPerVolumeDict.Keys)
                 {
@@ -658,9 +657,10 @@ namespace ApsCalc
         /// </summary>
         public void OptimizeRGCasingsByDamageType(Shell shellUnderTesting, float minLength, float maxLength)
         {
+            maxLength = MathF.Min(MaxShellLength, maxLength);
             // Calculate max rg casings by length, module count, and input
             shellUnderTesting.GetModuleCounts();
-            float maxRG = MathF.Floor((MaxShellLength - shellUnderTesting.TotalLength) / shellUnderTesting.Gauge);
+            float maxRG = MathF.Floor((maxLength - shellUnderTesting.TotalLength) / shellUnderTesting.Gauge);
             maxRG = MathF.Min(maxRG, 20f - shellUnderTesting.ModuleCountTotal);
             maxRG = MathF.Min(maxRG, MaxRGInput);
 
@@ -669,7 +669,14 @@ namespace ApsCalc
             shellUnderTesting.CalculateRecoil();
             float minDraw = shellUnderTesting.CalculateMinimumDrawForVelocityandRange(MinVelocityInput, MinEffectiveRangeInput);
             float minRG = MathF.Ceiling((minDraw - shellUnderTesting.MaxDraw) / shellUnderTesting.GaugeCoefficient / 6250f);
+
+            // Calculate min rg casings to fill loader length for rg-only shells
+            if (MaxGPInput == 0)
+            {
+                minRG = MathF.Max(minRG, MathF.Ceiling((minLength - shellUnderTesting.ProjectileLength) / shellUnderTesting.Gauge));
+            }
             minRG = MathF.Max(0, minRG);
+
 
             if (maxRG < minRG)
             {
@@ -699,7 +706,7 @@ namespace ApsCalc
                     float midRangeUpperScore = 0;
 
                     shellUnderTesting.RGCasingCount = minRG;
-                    OptimizeDrawByDamageType(shellUnderTesting, minLength, maxLength);
+                    OptimizeDrawByDamageType(shellUnderTesting);
                     if (TestType == 0)
                     {
                         bottomScore = shellUnderTesting.DpsPerVolumeDict[DamageType];
@@ -710,7 +717,7 @@ namespace ApsCalc
                     }
 
                     shellUnderTesting.RGCasingCount = maxRG;
-                    OptimizeDrawByDamageType(shellUnderTesting, minLength, maxLength);
+                    OptimizeDrawByDamageType(shellUnderTesting);
                     if (TestType == 0)
                     {
                         topScore = shellUnderTesting.DpsPerVolumeDict[DamageType];
@@ -724,7 +731,7 @@ namespace ApsCalc
                     {
                         // Check if max is optimal
                         shellUnderTesting.RGCasingCount = maxRG - 1f;
-                        OptimizeDrawByDamageType(shellUnderTesting, minLength, maxLength);
+                        OptimizeDrawByDamageType(shellUnderTesting);
                         if (TestType == 0)
                         {
                             bottomScore = shellUnderTesting.DpsPerVolumeDict[DamageType];
@@ -743,7 +750,7 @@ namespace ApsCalc
                     {
                         // Check if min is optimal
                         shellUnderTesting.RGCasingCount = minRG;
-                        OptimizeDrawByDamageType(shellUnderTesting, minLength, maxLength);
+                        OptimizeDrawByDamageType(shellUnderTesting);
                         if (TestType == 0)
                         {
                             bottomScore = shellUnderTesting.DpsPerVolumeDict[DamageType];
@@ -754,7 +761,7 @@ namespace ApsCalc
                         }
 
                         shellUnderTesting.RGCasingCount = minRG + 1f;
-                        OptimizeDrawByDamageType(shellUnderTesting, minLength, maxLength);
+                        OptimizeDrawByDamageType(shellUnderTesting);
                         if (TestType == 0)
                         {
                             topScore = shellUnderTesting.DpsPerVolumeDict[DamageType];
@@ -782,7 +789,7 @@ namespace ApsCalc
                             midRangeUpper = midRangeLower + 1f;
 
                             shellUnderTesting.RGCasingCount = midRangeLower;
-                            OptimizeDrawByDamageType(shellUnderTesting, minLength, maxLength);
+                            OptimizeDrawByDamageType(shellUnderTesting);
                             if (TestType == 0)
                             {
                                 midRangeLowerScore = shellUnderTesting.DpsPerVolumeDict[DamageType];
@@ -793,7 +800,7 @@ namespace ApsCalc
                             }
 
                             shellUnderTesting.RGCasingCount = midRangeUpper;
-                            OptimizeDrawByDamageType(shellUnderTesting, minLength, maxLength);
+                            OptimizeDrawByDamageType(shellUnderTesting);
                             if (TestType == 0)
                             {
                                 midRangeUpperScore = shellUnderTesting.DpsPerVolumeDict[DamageType];
@@ -830,7 +837,7 @@ namespace ApsCalc
                     shellUnderTesting.RGCasingCount = optimalRGCount;
                 }
                 shellUnderTesting.CalculateLengths();
-                OptimizeDrawByDamageType(shellUnderTesting, minLength, maxLength);
+                OptimizeDrawByDamageType(shellUnderTesting);
             }
         }
 
@@ -842,7 +849,7 @@ namespace ApsCalc
         {
             // Calculate max rg casings by length, module count, and input
             shellUnderTesting.GetModuleCounts();
-            float maxRG = MathF.Floor((MaxShellLength - shellUnderTesting.TotalLength) / shellUnderTesting.Gauge);
+            float maxRG = MathF.Floor((1000f - shellUnderTesting.TotalLength) / shellUnderTesting.Gauge);
             maxRG = MathF.Min(maxRG, 20f - shellUnderTesting.ModuleCountTotal);
             maxRG = MathF.Min(maxRG, MaxRGInput);
 
@@ -852,6 +859,8 @@ namespace ApsCalc
             float minDraw = shellUnderTesting.CalculateMinimumDrawForVelocityandRange(MinVelocityInput, MinEffectiveRangeInput);
             float minRG = MathF.Ceiling((minDraw - shellUnderTesting.MaxDraw) / shellUnderTesting.GaugeCoefficient / 6250f);
             minRG = MathF.Max(0, minRG);
+
+            // Calculate min rg casings to fill loader
 
             if (maxRG < minRG)
             {
@@ -1024,7 +1033,8 @@ namespace ApsCalc
             // Calculate max GP casings
             shellUnderTesting.CalculateLengths();
             // Multiply and divide by 100 to get floor to two decimal places
-            float maxGP = MathF.Min(MaxGPInput, MathF.Floor(100f * MaxShellLength / shellUnderTesting.Gauge) / 100f);
+            maxLength = MathF.Min(MaxShellLength, maxLength);
+            float maxGP = MathF.Min(MaxGPInput, MathF.Floor(100f * maxLength / shellUnderTesting.Gauge) / 100f);
             shellUnderTesting.GetModuleCounts();
             maxGP = MathF.Min(maxGP, 20f - shellUnderTesting.ModuleCountTotal);
 
@@ -1036,12 +1046,26 @@ namespace ApsCalc
             {
                 float minGP = 0;
                 float optimalGPCount = 0;
+                float lengthError;
                 float bottomScore = 0;
                 float topScore = 0;
                 float midRangeLower = 0;
                 float midRangeLowerScore = 0;
                 float midRangeUpper = 0;
                 float midRangeUpperScore = 0;
+
+                // Determine minimum GP count by length
+                shellUnderTesting.GPCasingCount = 0;
+                OptimizeRGCasingsByDamageType(shellUnderTesting, minLength, maxLength);
+                if (shellUnderTesting.TotalLength <= minLength)
+                {
+                    lengthError = minLength - shellUnderTesting.TotalLength;
+                }
+                else
+                {
+                    lengthError = 0;
+                }
+                minGP += lengthError;
 
                 shellUnderTesting.GPCasingCount = minGP;
                 OptimizeRGCasingsByDamageType(shellUnderTesting, minLength, maxLength);
@@ -1070,6 +1094,7 @@ namespace ApsCalc
                     // Check if max is optimal
                     shellUnderTesting.GPCasingCount = maxGP - 0.01f;
                     OptimizeRGCasingsByDamageType(shellUnderTesting, minLength, maxLength);
+
                     if (TestType == 0)
                     {
                         bottomScore = shellUnderTesting.DpsPerVolumeDict[DamageType];
@@ -1121,7 +1146,7 @@ namespace ApsCalc
                     float topOfRange = maxGP;
                     float bottomOfRange = minGP;
 
-                    while (topOfRange - bottomOfRange > 1)
+                    while (topOfRange - bottomOfRange > 0.01)
                     {
                         midRangeLower = MathF.Floor((topOfRange + bottomOfRange) * 50f) / 100f;
                         midRangeUpper = midRangeLower + 0.01f;
@@ -1187,7 +1212,7 @@ namespace ApsCalc
             // Calculate max GP casings
             shellUnderTesting.CalculateLengths();
             // Multiply and divide by 100 to get floor to two decimal places
-            float maxGP = MathF.Min(MaxGPInput, MathF.Floor(100f * MaxShellLength / shellUnderTesting.Gauge) / 100f);
+            float maxGP = MathF.Min(MaxGPInput, MathF.Floor(100000f / shellUnderTesting.Gauge) / 100f);
             shellUnderTesting.GetModuleCounts();
             maxGP = MathF.Min(maxGP, 20f - shellUnderTesting.ModuleCountTotal);
 
@@ -1312,7 +1337,6 @@ namespace ApsCalc
                         }
 
                         // Determine which half of range to continue testing
-                        // Midrange upper will equal a lot of time for pendepth
                         if (midRangeUpperScore == 0)
                         {
                             bottomOfRange = midRangeUpper;
@@ -1381,7 +1405,7 @@ namespace ApsCalc
                         CompareByDamageType(shellUnderTesting);
                     }
 
-                    if (shellUnderTesting.TotalLength <= 1000f)
+                    if (shellUnderTesting.ProjectileLength <= 1000f)
                     {
                         OptimizeGPCasingsByDamageTypeBelt(shellUnderTesting);
                         shellUnderTesting.CalculateEffectiveRange();
@@ -1391,6 +1415,7 @@ namespace ApsCalc
                 }
             }
         }
+
 
         /// <summary>
         /// Adds current top-performing shells to TopShells list for comparison with other lists

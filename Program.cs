@@ -447,7 +447,6 @@ namespace ApsCalc
                         {
                             variableModuleIndices[i] = variableModuleIndices[0];
                         }
-                        varModCount = 3;
                         break;
                     }
                     else
@@ -948,7 +947,7 @@ namespace ApsCalc
             {
                 string input;
 
-                Console.WriteLine("\nWould you like to enter parameters for an additional test, to run after the on you just entered?\nEnter 'y' or 'n'.");
+                Console.WriteLine("\nWould you like to enter parameters for an additional test, to run after the one you just entered?\nEnter 'y' or 'n'.");
                 input = Console.ReadLine();
                 if (input.ToLower() == "y")
                 {
