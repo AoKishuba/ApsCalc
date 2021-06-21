@@ -8,20 +8,38 @@ using System.Linq;
 
 namespace ApsCalc
 {
+    public struct TestParameters
+    {
+        public int BarrelCount;
+        public int MinGauge;
+        public int MaxGauge;
+        public List<int> HeadIndices;
+        public Module BaseModule;
+        public float[] FixedModulecounts;
+        public float MinModulecount;
+        public int[] VariableModuleIndices;
+        public float MaxGPCasingCount;
+        public bool UseEvacuator;
+        public float MaxRGCasingCount;
+        public float MaxLength;
+        public float MaxDraw;
+        public float MinVelocity;
+        public float MinEffectiverange;
+        public List<float> TargetACList;
+        public int DamageType;
+        public Scheme ArmorScheme;
+        public int TestType;
+        public bool Labels;
+    }
     class Program
     {
-        /// <summary>
-        /// Gathers shell parameters from user, then runs ShellCalc tests to find highest-performing shells within those parameters
-        /// </summary>
-        /// <param name="args"></param>
-        static void Main(string[] args)
+        static TestParameters GetTestParameters()
         {
-            Console.WriteLine("From the Depths APS Shell Optimizer\nWritten by Ao Kishuba\nhttps://github.com/AoKishuba/ApsCalc");
             string input;
 
             // Get number of barrels
             int barrelCount;
-            int maxGaugeHardCap; 
+            int maxGaugeHardCap;
             Dictionary<int, int> gaugeHardCaps = new()
             {
                 { 1, 500 },
@@ -33,7 +51,7 @@ namespace ApsCalc
             };
             // Get number of barrels
             Console.WriteLine("\nNumber of barrels : Max gauge in mm");
-            foreach(KeyValuePair<int, int> entry in gaugeHardCaps)
+            foreach (KeyValuePair<int, int> entry in gaugeHardCaps)
             {
                 Console.WriteLine(entry.Key + " : " + entry.Value);
             }
@@ -90,7 +108,7 @@ namespace ApsCalc
                     Console.WriteLine("\nMIN GAUGE PARSE ERROR: Enter an integer from 18 thru " + maxGaugeHardCap + ".");
                 }
             }
-            float minGauge = minGaugeInput;
+            int minGauge = minGaugeInput;
 
             // Get maximum gauge
             int maxGaugeInput;
@@ -115,7 +133,7 @@ namespace ApsCalc
                 }
             }
             Console.WriteLine("\nWill test gauges from " + minGaugeInput + " mm thru " + maxGaugeInput + " mm.\n");
-            float maxGauge = maxGaugeInput;
+            int maxGauge = maxGaugeInput;
 
             // Get head
             // Find indices of modules which can be used as heads
@@ -144,7 +162,7 @@ namespace ApsCalc
                 }
             }
             int headCount = 0;
-            List<int> HeadIndices = new();
+            List<int> headIndices = new();
             while (true)
             {
                 for (int i = minHeadIndex; i <= maxHeadIndex; i++)
@@ -200,13 +218,13 @@ namespace ApsCalc
                     }
                     else
                     {
-                        if (HeadIndices.Contains(modIndex))
+                        if (headIndices.Contains(modIndex))
                         {
                             Console.WriteLine("\nERROR: Duplicate head index.");
                         }
                         else
                         {
-                            HeadIndices.Add(modIndex);
+                            headIndices.Add(modIndex);
                             Console.WriteLine("\n" + Module.AllModules[modIndex].Name + " added to head list.\n");
                             headCount++;
                         }
@@ -259,7 +277,7 @@ namespace ApsCalc
                     break;
                 }
             }
-            Module Base = default;
+            Module baseModule = default;
             for (int i = minBaseIndex; i <= maxBaseIndex; i++)
             {
                 Console.WriteLine(i + " : " + Module.AllModules[i].Name);
@@ -284,8 +302,8 @@ namespace ApsCalc
                     }
                     else
                     {
-                        Base = (Module.AllModules[baseIndex]);
-                        Console.WriteLine("\n" + Base.Name + " selected.\n");
+                        baseModule = (Module.AllModules[baseIndex]);
+                        Console.WriteLine("\n" + baseModule.Name + " selected.\n");
                         break;
                     }
                 }
@@ -383,7 +401,7 @@ namespace ApsCalc
                 modIndex++;
             }
 
-            if (Base != null)
+            if (baseModule != null)
             {
                 minModulecount++;
             }
@@ -429,7 +447,6 @@ namespace ApsCalc
                         {
                             variableModuleIndices[i] = variableModuleIndices[0];
                         }
-                        varModCount = 3;
                         break;
                     }
                     else
@@ -519,7 +536,7 @@ namespace ApsCalc
 
 
             // Get bore evacuator
-            bool evacuator = true;
+            bool useEvacuator = true;
             if (maxGunPowderCasingInput > 0)
             {
                 Console.WriteLine("\nBore evacuator?\nEnter 'y' or 'n'.");
@@ -528,13 +545,13 @@ namespace ApsCalc
                     input = Console.ReadLine();
                     if (input.ToLower() == "y")
                     {
-                        evacuator = true;
+                        useEvacuator = true;
                         Console.WriteLine("\nUsing bore evacuator.\n");
                         break;
                     }
                     else if (input.ToLower() == "n")
                     {
-                        evacuator = false;
+                        useEvacuator = false;
                         Console.WriteLine("\nNo evacuator.\n");
                         break;
                     }
@@ -601,14 +618,14 @@ namespace ApsCalc
             modIndex = 0;
             foreach (float modCount in fixedModulecounts)
             {
-                minShellLength += Math.Min(minGaugeInput, Module.AllModules[modIndex].MaxLength) * modCount;
+                minShellLength += MathF.Min(minGaugeInput, Module.AllModules[modIndex].MaxLength) * modCount;
                 modIndex++;
             }
 
 
-            if (Base != null)
+            if (baseModule != null)
             {
-                minShellLength += Math.Min(minGaugeInput, Base.MaxLength);
+                minShellLength += MathF.Min(minGaugeInput, baseModule.MaxLength);
             }
 
 
@@ -664,14 +681,14 @@ namespace ApsCalc
 
 
             // Get minimum velocity
-            int minEffectiverangeInput;
+            int minEffectiveRangeInput;
             Console.WriteLine("\nEnter minimum effective range in m from 0 thru 2 000.");
             while (true)
             {
                 input = Console.ReadLine();
-                if (int.TryParse(input, out minEffectiverangeInput))
+                if (int.TryParse(input, out minEffectiveRangeInput))
                 {
-                    if (minEffectiverangeInput < 0 || minEffectiverangeInput > 2000)
+                    if (minEffectiveRangeInput < 0 || minEffectiveRangeInput > 2000)
                     {
                         Console.WriteLine("\nMIN RANGE RANGE ERROR: Enter a value from 0 thru 2 000.");
                     }
@@ -685,14 +702,14 @@ namespace ApsCalc
                     Console.WriteLine("\nMIN RANGE PARSE ERROR: Enter a value from 0 thru 2 000.");
                 }
             }
-            float minEffectiveRange = minEffectiverangeInput;
+            float minEffectiveRange = minEffectiveRangeInput;
 
 
 
             // Get damage type to measure
             int damageType;
             Scheme armorScheme = new();
-            float targetAC = default;
+            List<float> targetACList = new();
             Console.WriteLine("\nEnter 0 to measure kinetic damage\nEnter 1 to measure chemical damage (HE, Frag, FlaK, EMP).\nEnter 2 for pendepth." +
                 "\nEnter 3 for shield disruptor.");
             while (true)
@@ -717,28 +734,90 @@ namespace ApsCalc
             }
             if (damageType == 0)
             {
+                float minAC = 0.1f;
+                float maxAC = 100f;
+                float ACCount = 0;
                 // Get target armor class
-                Console.WriteLine("\nEnter target AC from 0.1 thru 100.0.");
                 while (true)
                 {
-                    input = Console.ReadLine();
-                    if (float.TryParse(input, out targetAC))
+                    if (ACCount > 0)
                     {
-                        if (targetAC < 0.1f || targetAC > 100.0f)
+                        Console.WriteLine("\nEnter an additional AC, or type 'done' if finished.");
+                    }
+                    else
+                    {
+                        Console.WriteLine("\nEnter target AC from 0.1 thru 100.0.");
+                    }
+                    input = Console.ReadLine();
+                    if (input.ToLower() == "done")
+                    {
+                        if (ACCount > 0)
                         {
-                            Console.WriteLine("\nTARGET AC RANGE ERROR: Enter a decimal from 0.1 thru 100.0.");
+                            break;
                         }
                         else
                         {
-                            break;
+                            Console.WriteLine("\nERROR: Enter at least one AC.");
+                        }
+                    }
+                    if (float.TryParse(input, out float targetAC))
+                    {
+                        if (targetAC < minAC || targetAC > maxAC)
+                        {
+                            if (ACCount > 0)
+                            {
+                                Console.WriteLine("\nAC RANGE ERROR: Enter a value from "
+                                    + minAC
+                                    + " thru "
+                                    + maxAC
+                                    + ", or type 'done'.");
+                            }
+                            else
+                            {
+                                Console.WriteLine("\nAC RANGE ERROR: Enter a value from"
+                                    + minAC
+                                    + " thru "
+                                    + maxAC);
+                            }
+                        }
+                        else
+                        {
+                            if (targetACList.Contains(targetAC))
+                            {
+                                Console.WriteLine("\nERROR: Duplicate AC.");
+                            }
+                            else
+                            {
+                                targetACList.Add(targetAC);
+                                Console.WriteLine(targetAC + " added to AC list.\n");
+                                ACCount++;
+                            }
                         }
                     }
                     else
                     {
-                        Console.WriteLine("\nTARGET AC PARSE ERROR: Enter a decimal from 0.1 thru 100.0.");
+                        if (ACCount > 0)
+                        {
+                            Console.WriteLine("\nAC PARSE ERROR: Enter a value from "
+                                + minAC
+                                + " thru "
+                                + maxAC
+                                + ", or type 'done'.");
+                        }
+                        else
+                        {
+                            Console.WriteLine("\nAC PARSE ERROR: Enter a value from "
+                                + minAC
+                                + " thru "
+                                + maxAC);
+                        }
                     }
                 }
-                Console.WriteLine("\nWill test kinetic damage against AC " + targetAC + ".\n");
+                Console.WriteLine("\nTarget AC List:");
+                foreach (float ac in targetACList)
+                {
+                    Console.WriteLine(ac);
+                }
             }
             else if (damageType == 1)
             {
@@ -753,13 +832,13 @@ namespace ApsCalc
             else if (damageType == 3)
             {
                 // Overwrite head list with disruptor conduit
-                HeadIndices.Clear();
+                headIndices.Clear();
                 modIndex = 0;
                 foreach (Module head in Module.AllModules)
                 {
                     if (head == Module.Disruptor)
                     {
-                        HeadIndices.Add(modIndex);
+                        headIndices.Add(modIndex);
                         break;
                     }
                     modIndex++;
@@ -825,71 +904,208 @@ namespace ApsCalc
                 }
             }
 
+            TestParameters tP = new();
+            tP.BarrelCount = barrelCount;
+            tP.MinGauge = minGauge;
+            tP.MaxGauge = maxGauge;
+            tP.HeadIndices = headIndices;
+            tP.BaseModule = baseModule;
+            tP.FixedModulecounts = fixedModulecounts;
+            tP.MinModulecount = minModulecount;
+            tP.VariableModuleIndices = variableModuleIndices;
+            tP.MaxGPCasingCount = maxGPCasingCount;
+            tP.UseEvacuator = useEvacuator;
+            tP.MaxRGCasingCount = maxRGCasingCount;
+            tP.MaxLength = maxLength;
+            tP.MaxDraw = maxDraw;
+            tP.MinVelocity = minVelocity;
+            tP.MinEffectiverange = minEffectiveRange;
+            tP.TargetACList = targetACList;
+            tP.DamageType = damageType;
+            tP.ArmorScheme = armorScheme;
+            tP.TestType = testType;
+            tP.Labels = labels;
+
+            return tP;
+        }
+
+
+        /// <summary>
+        /// Gathers shell parameters from user
+        /// </summary>
+        /// <param name="args"></param>
+        static void Main(string[] args)
+        {
+            Console.WriteLine("From the Depths APS Shell Optimizer\nWritten by Ao Kishuba\nhttps://github.com/AoKishuba/ApsCalc");
+
+            List<TestParameters> paramList = new();
+
+            paramList.Add(GetTestParameters());
+
+            // Get user preference on whether labels should be included in results
+            while (true)
+            {
+                string input;
+
+                Console.WriteLine("\nWould you like to enter parameters for an additional test, to run after the one you just entered?\nEnter 'y' or 'n'.");
+                input = Console.ReadLine();
+                if (input.ToLower() == "y")
+                {
+                    paramList.Add(GetTestParameters());
+                }
+                else if (input.ToLower() == "n")
+                {
+                    break;
+                }
+                else
+                {
+                    Console.WriteLine("\nERROR: Enter 'y' to enter parameters for next test, or 'n' to begin testing.\n");
+                }
+            }
+
+            Console.WriteLine("Calculating...");
+
             // For tracking progress
             Stopwatch stopWatchParallel = Stopwatch.StartNew();
 
-            ConcurrentBag<Shell> shellBag = new();
-            Parallel.For(minGaugeInput, maxGaugeInput + 1, gauge =>
+            foreach (TestParameters tP in paramList)
             {
-                float gaugeFloat = (float)gauge;
-                ShellCalc calcLocal = new(
-                    barrelCount,
-                    gauge,
-                    gauge,
-                    HeadIndices,
-                    Base,
-                    fixedModulecounts,
-                    minModulecount,
-                    variableModuleIndices,
-                    maxGPCasingCount,
-                    evacuator,
-                    maxRGCasingCount,
-                    maxLength,
-                    maxDraw,
-                    minVelocity,
-                    minEffectiverangeInput,
-                    targetAC,
-                    damageType,
-                    armorScheme,
-                    testType,
-                    labels
-                    );
-                
-                calcLocal.ShellTest();
-                calcLocal.AddTopShellsToLocalList();
-
-                foreach(Shell topShellLocal in calcLocal.TopShellsLocal)
+                if (tP.DamageType == 0)
                 {
-                    shellBag.Add(topShellLocal);
+                    foreach (float ac in tP.TargetACList)
+                    {
+                        ConcurrentBag<Shell> shellBag = new();
+                        Parallel.For(tP.MinGauge, tP.MaxGauge + 1, gauge =>
+                        {
+                            float gaugeFloat = gauge;
+                            ShellCalc calcLocal = new(
+                                tP.BarrelCount,
+                                gauge,
+                                gauge,
+                                tP.HeadIndices,
+                                tP.BaseModule,
+                                tP.FixedModulecounts,
+                                tP.MinModulecount,
+                                tP.VariableModuleIndices,
+                                tP.MaxGPCasingCount,
+                                tP.UseEvacuator,
+                                tP.MaxRGCasingCount,
+                                tP.MaxLength,
+                                tP.MaxDraw,
+                                tP.MinVelocity,
+                                tP.MinEffectiverange,
+                                ac,
+                                tP.DamageType,
+                                tP.ArmorScheme,
+                                tP.TestType,
+                                tP.Labels
+                                );
+
+
+                            calcLocal.ShellTest();
+                            calcLocal.AddTopShellsToLocalList();
+
+                            foreach (Shell topShellLocal in calcLocal.TopShellsLocal)
+                            {
+                                shellBag.Add(topShellLocal);
+                            }
+                        });
+
+                        ShellCalc calcFinal = new(
+                                tP.BarrelCount,
+                                tP.MinGauge,
+                                tP.MaxGauge,
+                                tP.HeadIndices,
+                                tP.BaseModule,
+                                tP.FixedModulecounts,
+                                tP.MinModulecount,
+                                tP.VariableModuleIndices,
+                                tP.MaxGPCasingCount,
+                                tP.UseEvacuator,
+                                tP.MaxRGCasingCount,
+                                tP.MaxLength,
+                                tP.MaxDraw,
+                                tP.MinVelocity,
+                                tP.MinEffectiverange,
+                                ac,
+                                tP.DamageType,
+                                tP.ArmorScheme,
+                                tP.TestType,
+                                tP.Labels
+                            );
+
+                        calcFinal.FindTopShellsInList(shellBag);
+                        calcFinal.AddTopShellsToDictionary();
+                        calcFinal.WriteTopShellsToConsole();
+                    }
                 }
-            });
+                else
+                {
+                    ConcurrentBag<Shell> shellBag = new();
+                    Parallel.For(tP.MinGauge, tP.MaxGauge + 1, gauge =>
+                    {
+                        float gaugeFloat = gauge;
+                        ShellCalc calcLocal = new(
+                            tP.BarrelCount,
+                            gauge,
+                            gauge,
+                            tP.HeadIndices,
+                            tP.BaseModule,
+                            tP.FixedModulecounts,
+                            tP.MinModulecount,
+                            tP.VariableModuleIndices,
+                            tP.MaxGPCasingCount,
+                            tP.UseEvacuator,
+                            tP.MaxRGCasingCount,
+                            tP.MaxLength,
+                            tP.MaxDraw,
+                            tP.MinVelocity,
+                            tP.MinEffectiverange,
+                            0, // Target AC does not matter for non-kinetic tests
+                            tP.DamageType,
+                            tP.ArmorScheme,
+                            tP.TestType,
+                            tP.Labels
+                            );
 
-            ShellCalc calcFinal = new(
-                barrelCount,
-                minGauge,
-                maxGauge,
-                HeadIndices,
-                Base,
-                fixedModulecounts,
-                minModulecount,
-                variableModuleIndices,
-                maxGPCasingCount,
-                evacuator,
-                maxRGCasingCount,
-                maxLength,
-                maxDraw,
-                minVelocity,
-                minEffectiverangeInput,
-                targetAC,
-                damageType,
-                armorScheme,
-                testType,
-                labels
-                );
+                        calcLocal.ShellTest();
+                        calcLocal.AddTopShellsToLocalList();
 
-            calcFinal.FindTopShellsInList(shellBag);
-            calcFinal.AddTopShellsToDictionary();
-            calcFinal.WriteTopShells();
+                        foreach (Shell topShellLocal in calcLocal.TopShellsLocal)
+                        {
+                            shellBag.Add(topShellLocal);
+                        }
+                    });
+
+                    ShellCalc calcFinal = new(
+                            tP.BarrelCount,
+                            tP.MinGauge,
+                            tP.MaxGauge,
+                            tP.HeadIndices,
+                            tP.BaseModule,
+                            tP.FixedModulecounts,
+                            tP.MinModulecount,
+                            tP.VariableModuleIndices,
+                            tP.MaxGPCasingCount,
+                            tP.UseEvacuator,
+                            tP.MaxRGCasingCount,
+                            tP.MaxLength,
+                            tP.MaxDraw,
+                            tP.MinVelocity,
+                            tP.MinEffectiverange,
+                            0, // Target AC does not matter for non-kinetic tests
+                            tP.DamageType,
+                            tP.ArmorScheme,
+                            tP.TestType,
+                            tP.Labels
+                        );
+
+                    calcFinal.FindTopShellsInList(shellBag);
+                    calcFinal.AddTopShellsToDictionary();
+                    calcFinal.WriteTopShellsToConsole();
+
+                }
+            }
             TimeSpan parallelDuration = stopWatchParallel.Elapsed;
             stopWatchParallel.Stop();
 
