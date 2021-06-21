@@ -1031,9 +1031,9 @@ namespace ApsCalc
         public void OptimizeGPCasingsByDamageType(Shell shellUnderTesting, float minLength, float maxLength)
         {
             // Calculate max GP casings
+            maxLength = MathF.Min(MaxShellLength, maxLength);
             shellUnderTesting.CalculateLengths();
             // Multiply and divide by 100 to get floor to two decimal places
-            maxLength = MathF.Min(MaxShellLength, maxLength);
             float maxGP = MathF.Min(MaxGPInput, MathF.Floor(100f * maxLength / shellUnderTesting.Gauge) / 100f);
             shellUnderTesting.GetModuleCounts();
             maxGP = MathF.Min(maxGP, 20f - shellUnderTesting.ModuleCountTotal);
@@ -1044,7 +1044,7 @@ namespace ApsCalc
             }
             else
             {
-                float minGP = 0;
+                float minGP;
                 float optimalGPCount = 0;
                 float lengthError;
                 float bottomScore = 0;
@@ -1057,15 +1057,8 @@ namespace ApsCalc
                 // Determine minimum GP count by length
                 shellUnderTesting.GPCasingCount = 0;
                 OptimizeRGCasingsByDamageType(shellUnderTesting, minLength, maxLength);
-                if (shellUnderTesting.TotalLength <= minLength)
-                {
-                    lengthError = minLength - shellUnderTesting.TotalLength;
-                }
-                else
-                {
-                    lengthError = 0;
-                }
-                minGP += lengthError;
+                lengthError = MathF.Max(minLength - shellUnderTesting.TotalLength, 0);
+                minGP = MathF.Min(lengthError / shellUnderTesting.Gauge, maxGP);
 
                 shellUnderTesting.GPCasingCount = minGP;
                 OptimizeRGCasingsByDamageType(shellUnderTesting, minLength, maxLength);
@@ -1092,7 +1085,7 @@ namespace ApsCalc
                 if (topScore > bottomScore)
                 {
                     // Check if max is optimal
-                    shellUnderTesting.GPCasingCount = maxGP - 0.01f;
+                    shellUnderTesting.GPCasingCount = MathF.Max(maxGP - 1f, minGP);
                     OptimizeRGCasingsByDamageType(shellUnderTesting, minLength, maxLength);
 
                     if (TestType == 0)
@@ -1123,7 +1116,7 @@ namespace ApsCalc
                         bottomScore = shellUnderTesting.DpsPerCostDict[DamageType];
                     }
 
-                    shellUnderTesting.GPCasingCount = minGP + 0.01f;
+                    shellUnderTesting.GPCasingCount = MathF.Min(minGP + 1f, maxGP);
                     OptimizeRGCasingsByDamageType(shellUnderTesting, minLength, maxLength);
                     if (TestType == 0)
                     {

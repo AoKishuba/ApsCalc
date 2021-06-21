@@ -975,6 +975,42 @@ namespace ApsCalc
                     foreach (float ac in tP.TargetACList)
                     {
                         ConcurrentBag<Shell> shellBag = new();
+                        /*
+                        for (float gauge = tP.MinGauge; gauge <= tP.MaxGauge; gauge ++)
+                        {
+                            float gaugeFloat = gauge;
+                            ShellCalc calcLocal = new(
+                                tP.BarrelCount,
+                                gauge,
+                                gauge,
+                                tP.HeadIndices,
+                                tP.BaseModule,
+                                tP.FixedModulecounts,
+                                tP.MinModulecount,
+                                tP.VariableModuleIndices,
+                                tP.MaxGPCasingCount,
+                                tP.UseEvacuator,
+                                tP.MaxRGCasingCount,
+                                tP.MaxLength,
+                                tP.MaxDraw,
+                                tP.MinVelocity,
+                                tP.MinEffectiverange,
+                                ac,
+                                tP.DamageType,
+                                tP.ArmorScheme,
+                                tP.TestType,
+                                tP.Labels
+                                );
+
+                            calcLocal.ShellTest();
+                            calcLocal.AddTopShellsToLocalList();
+
+                            foreach (Shell topShellLocal in calcLocal.TopShellsLocal)
+                            {
+                                shellBag.Add(topShellLocal);
+                            }
+                        }
+                        */
                         Parallel.For(tP.MinGauge, tP.MaxGauge + 1, gauge =>
                         {
                             float gaugeFloat = gauge;
@@ -1000,6 +1036,7 @@ namespace ApsCalc
                                 tP.TestType,
                                 tP.Labels
                                 );
+                        
 
                             // calcLocal.ShellTest();
                             calcLocal.ShellTest();
