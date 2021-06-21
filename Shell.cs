@@ -516,11 +516,7 @@ namespace ApsCalc
                     (float)((CooldownTime * multiBarrelPenalty / ReloadTime - boreEvacuatorBonus)
                     / (1f + BarrelCount * 0.05f)
                     / multiBarrelPenalty
-<<<<<<< Updated upstream
                     * Math.Sqrt(Gauge/1000f)
-=======
-                    * Math.Sqrt(Gauge / 1000f)
->>>>>>> Stashed changes
                     / 0.176775f);
 
                 if (TotalLength <= 1000f)
@@ -531,7 +527,6 @@ namespace ApsCalc
                     / multiBarrelPenalty
                     * Math.Sqrt(Gauge / 1000f)
                     / 0.176775f);
-<<<<<<< Updated upstream
                 }
                 else
                 {
@@ -602,84 +597,6 @@ namespace ApsCalc
                 else
                 {
                     coolerCostBelt = 0;
-=======
-                }
-                else
-                {
-                    coolerVolumeBelt = 0;
->>>>>>> Stashed changes
-                }
-            }
-            else
-            {
-<<<<<<< Updated upstream
-                coolerCost = 0;
-                coolerCostBelt = 0;
-            }
-
-=======
-                coolerVolume = 0;
-                coolerVolumeBelt = 0;
-            }
-
-            CoolerVolume = Math.Max(coolerVolume, 0);
-            CoolerVolumeBelt = Math.Max(coolerVolumeBelt, 0);
-        }
-
-        /// <summary>
-        /// Calculates marginal cost of coolers to sustain fire from one additional intake.  Ignores cooling from firing piece
-        /// </summary>
-        public void CalculateCoolerCost()
-        {
-            float multiBarrelPenalty;
-            if (BarrelCount > 1f)
-            {
-                multiBarrelPenalty = 1f + (BarrelCount - 1f) * 0.2f;
-            }
-            else
-            {
-                multiBarrelPenalty = 1f;
-            }
-
-            float boreEvacuatorBonus;
-            if (BoreEvacuator)
-            {
-                boreEvacuatorBonus =
-                    (float)(0.15f
-                    / (0.35355f / Math.Sqrt(Gauge / 1000f))
-                    * multiBarrelPenalty
-                    / BarrelCount);
-            }
-            else
-            {
-                boreEvacuatorBonus = 0;
-            }
-
-            float coolerCost;
-            float coolerCostBelt;
-            if (GPCasingCount > 0)
-            {
-                coolerCost =
-                    (float)((CooldownTime * multiBarrelPenalty / ReloadTime - boreEvacuatorBonus)
-                    / (1f + BarrelCount * 0.05f)
-                    / multiBarrelPenalty
-                    * Math.Sqrt(Gauge / 1000f)
-                    / 0.176775f
-                    * 50f);
-
-                if (TotalLength <= 1000f)
-                {
-                    coolerCostBelt =
-                    (float)((CooldownTime * multiBarrelPenalty / ReloadTimeBelt - boreEvacuatorBonus)
-                    / (1f + BarrelCount * 0.05f)
-                    / multiBarrelPenalty
-                    * Math.Sqrt(Gauge / 1000f)
-                    / 0.176775f
-                    * 50f);
-                }
-                else
-                {
-                    coolerCostBelt = 0;
                 }
             }
             else
@@ -688,7 +605,6 @@ namespace ApsCalc
                 coolerCostBelt = 0;
             }
 
->>>>>>> Stashed changes
             CoolerCost = Math.Max(coolerCost, 0);
             CoolerCostBelt = Math.Max(coolerCostBelt, 0);
         }
