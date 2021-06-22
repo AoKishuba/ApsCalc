@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using PenCalc;
+using System.IO;
 
 namespace ApsCalc
 {
@@ -1064,7 +1065,7 @@ namespace ApsCalc
         /// Gather info for top-performing shells and write to console
         /// </summary>
         /// <param name="labels">False if labels should be omitted from result printout.  Labels are hard to copy to spreadsheets</param>
-        public void GetShellInfoKinetic(bool labels)
+        public void WriteShellInfoToConsoleKinetic(bool labels)
         {
             if (labels)
             {
@@ -1169,7 +1170,117 @@ namespace ApsCalc
             }
         }
 
-        public void GetShellInfoChem(bool labels)
+
+        /// <summary>
+        /// Gather info for top-performing shells and write to console
+        /// </summary>
+        /// <param name="labels">False if labels should be omitted from result printout.  Labels are hard to copy to spreadsheets</param>
+        public void WriteShellInfoToFileKinetic(bool labels, StreamWriter writer)
+        {
+            if (labels)
+            {
+                writer.WriteLine("Gauge (mm): " + Gauge);
+                writer.WriteLine("Total length (mm): " + TotalLength);
+                writer.WriteLine("Length without casings: " + ProjectileLength);
+                writer.WriteLine("Total modules: " + ModuleCountTotal);
+
+
+                if (RGCasingCount > 0)
+                {
+                    writer.WriteLine("RG Casing: " + RGCasingCount);
+                }
+
+                if (GPCasingCount > 0)
+                {
+                    writer.WriteLine("GP Casing: " + GPCasingCount);
+                }
+
+                int modIndex = 0;
+                foreach (float modCount in BodyModuleCounts)
+                {
+                    if (modCount > 0)
+                    {
+                        writer.WriteLine(Module.AllModules[modIndex].Name + ": " + modCount);
+                    }
+                    modIndex++;
+                }
+
+                writer.WriteLine("Head: " + HeadModule.Name);
+                writer.WriteLine("Rail draw: " + RailDraw);
+                writer.WriteLine("Recoil: " + TotalRecoil);
+                writer.WriteLine("Velocity (m/s): " + Velocity);
+                writer.WriteLine("Effective range: " + EffectiveRange);
+                writer.WriteLine("Raw kinetic damage: " + KineticDamage);
+                writer.WriteLine("AP: " + ArmorPierce);
+                writer.WriteLine("Effective kinetic damage: " + EffectiveKineticDamage);
+
+                if (IsBelt)
+                {
+                    writer.WriteLine("Reload time (belt): " + ReloadTimeBelt);
+                    writer.WriteLine("Effective kinetic DPS (belt): " + KineticDpsBelt);
+                    writer.WriteLine("Effective kinetic DPS per volume (belt): " + KineticDpsPerVolumeBelt);
+                    writer.WriteLine("Effective kinetic DPS per cost (belt): " + KineticDpsPerCostBelt);
+                    writer.WriteLine("Uptime: " + UptimeBelt);
+                    writer.WriteLine("Effective kinetic DPS (belt, sustained): " + KineticDpsBeltSustained);
+                    writer.WriteLine("Effective kinetic DPS per volume (sustained): " + KineticDpsPerVolumeBeltSustained);
+                    writer.WriteLine("Effective kinetic DPS per cost (sustained): " + KineticDpsPerCostBeltSustained);
+                }
+                else
+                {
+                    writer.WriteLine("Reload time: " + ReloadTime);
+                    writer.WriteLine("Effective kinetic DPS: " + KineticDps);
+                    writer.WriteLine("Effective kinetic DPS per volume: " + KineticDpsPerVolume);
+                    writer.WriteLine("Effective kinetic DPS per cost: " + KineticDpsPerCost);
+                }
+            }
+
+
+            else if (!labels)
+            {
+                writer.WriteLine(Gauge);
+                writer.WriteLine(TotalLength);
+                writer.WriteLine(ProjectileLength);
+                writer.WriteLine(ModuleCountTotal);
+                writer.WriteLine(GPCasingCount);
+                writer.WriteLine(RGCasingCount);
+
+                foreach (float modCount in BodyModuleCounts)
+                {
+                    writer.WriteLine(modCount);
+                }
+
+                writer.WriteLine(HeadModule.Name);
+
+                writer.WriteLine(RailDraw);
+                writer.WriteLine(TotalRecoil);
+                writer.WriteLine(Velocity);
+                writer.WriteLine(EffectiveRange);
+                writer.WriteLine(KineticDamage);
+                writer.WriteLine(ArmorPierce);
+                writer.WriteLine(EffectiveKineticDamage);
+
+                if (IsBelt)
+                {
+                    writer.WriteLine(ReloadTimeBelt);
+                    writer.WriteLine(KineticDpsBelt);
+                    writer.WriteLine(KineticDpsPerVolumeBelt);
+                    writer.WriteLine(KineticDpsPerCostBelt);
+                    writer.WriteLine(UptimeBelt);
+                    writer.WriteLine(KineticDpsBeltSustained);
+                    writer.WriteLine(KineticDpsPerVolumeBeltSustained);
+                    writer.WriteLine(KineticDpsPerCostBeltSustained);
+                }
+                else
+                {
+                    writer.WriteLine(ReloadTime);
+                    writer.WriteLine(KineticDps);
+                    writer.WriteLine(KineticDpsPerVolume);
+                    writer.WriteLine(KineticDpsPerCost);
+                }
+            }
+        }
+
+        public void WriteShellInfoToConsoleChem(bool labels)
         {
             // Determine if disruptor
             bool disruptor;
@@ -1322,6 +1433,161 @@ namespace ApsCalc
                 }
             }
         }
+
+        public void WriteShellInfoToFileChem(bool labels, StreamWriter writer)
+        {
+            // Determine if disruptor
+            bool disruptor;
+            if (HeadModule == Module.Disruptor)
+            {
+                disruptor = true;
+            }
+            else
+            {
+                disruptor = false;
+            }
+            if (labels)
+            {
+                writer.WriteLine("Gauge (mm): " + Gauge);
+                writer.WriteLine("Total length (mm): " + TotalLength);
+                writer.WriteLine("Length without casings: " + ProjectileLength);
+                writer.WriteLine("Total modules: " + ModuleCountTotal);
+
+
+                if (RGCasingCount > 0)
+                {
+                    writer.WriteLine("RG Casing: " + RGCasingCount);
+                }
+
+                if (GPCasingCount > 0)
+                {
+                    writer.WriteLine("GP Casing: " + GPCasingCount);
+                }
+
+                int modIndex = 0;
+                foreach (float modCount in BodyModuleCounts)
+                {
+                    if (modCount > 0)
+                    {
+                        writer.WriteLine(Module.AllModules[modIndex].Name + ": " + modCount);
+                    }
+                    modIndex++;
+                }
+
+                writer.WriteLine("Head: " + HeadModule.Name);
+                writer.WriteLine("Rail draw: " + RailDraw);
+                writer.WriteLine("Recoil: " + TotalRecoil);
+                writer.WriteLine("Velocity (m/s): " + Velocity);
+                writer.WriteLine("Effective range (m): " + EffectiveRange);
+                writer.WriteLine("Chemical payload strength: " + ChemDamage);
+                if (disruptor)
+                {
+                    writer.WriteLine("Shield reduction (decimal): " + ShieldReduction);
+                }
+
+
+                if (IsBelt)
+                {
+                    writer.WriteLine("Reload time (belt): " + ReloadTimeBelt);
+                    writer.WriteLine("Chemical DPS (belt): " + ChemDpsBelt);
+                    writer.WriteLine("Chemical DPS per volume (belt): " + ChemDpsPerVolumeBelt);
+                    writer.WriteLine("Chemical DPS per cost (belt): " + ChemDpsPerCostBelt);
+                    if (disruptor)
+                    {
+                        writer.WriteLine("Shield RPS (belt): " + ShieldRpsBelt);
+                        writer.WriteLine("Shield RPS per volume (belt): " + ShieldRpsPerVolumeBelt);
+                        writer.WriteLine("Shield RPS per cost (belt): " + ShieldRpsPerCostBelt);
+                    }
+                    writer.WriteLine("Uptime: " + UptimeBelt);
+                    writer.WriteLine("Chemical DPS (belt, sustained): " + ChemDpsBeltSustained);
+                    writer.WriteLine("Chemical DPS per volume (sustained): " + ChemDpsPerVolumeBeltSustained);
+                    writer.WriteLine("Chemical DPS per cost (sustained): " + ChemDpsPerCostBeltSustained);
+                    if (disruptor)
+                    {
+                        writer.WriteLine("Shield RPS (belt, sustained): " + ShieldRpsBeltSustained);
+                        writer.WriteLine("Shield RPS per volume (sustained): " + ShieldRpsPerVolumeBeltSustained);
+                        writer.WriteLine("Shield RPS per cost (sustained): " + ShieldRpsPerCostBeltSustained);
+                    }
+                }
+                else
+                {
+                    writer.WriteLine("Reload time: " + ReloadTime);
+                    writer.WriteLine("Chemical DPS: " + ChemDps);
+                    writer.WriteLine("Chemical DPS per volume: " + ChemDpsPerVolume);
+                    writer.WriteLine("Chemical DPS per cost: " + ChemDpsPerCost);
+                    if (disruptor)
+                    {
+                        writer.WriteLine("Shield RPS: " + ShieldRps);
+                        writer.WriteLine("Shield RPS per Volume: " + ShieldRpsPerVolume);
+                        writer.WriteLine("Shield RPS per cost: " + ShieldRpsPerCost);
+                    }
+                }
+            }
+
+
+            else if (!labels)
+            {
+                writer.WriteLine(Gauge);
+                writer.WriteLine(TotalLength);
+                writer.WriteLine(ProjectileLength);
+                writer.WriteLine(ModuleCountTotal);
+                writer.WriteLine(GPCasingCount);
+                writer.WriteLine(RGCasingCount);
+                foreach (float modCount in BodyModuleCounts)
+                {
+                    writer.WriteLine(modCount);
+                }
+
+                writer.WriteLine(HeadModule.Name);
+                writer.WriteLine(RailDraw);
+                writer.WriteLine(TotalRecoil);
+                writer.WriteLine(Velocity);
+                writer.WriteLine(EffectiveRange);
+                writer.WriteLine(ChemDamage);
+                if (disruptor)
+                {
+                    writer.WriteLine(ShieldReduction);
+                }
+
+                if (IsBelt)
+                {
+                    writer.WriteLine(ReloadTimeBelt);
+                    writer.WriteLine(ChemDpsBelt);
+                    writer.WriteLine(ChemDpsPerVolumeBelt);
+                    writer.WriteLine(ChemDpsPerCostBelt);
+                    if (disruptor)
+                    {
+                        writer.WriteLine(ShieldRpsBelt);
+                        writer.WriteLine(ShieldRpsPerVolumeBelt);
+                        writer.WriteLine(ShieldRpsPerCostBelt);
+                    }
+                    writer.WriteLine(UptimeBelt);
+                    writer.WriteLine(ChemDpsBeltSustained);
+                    writer.WriteLine(ChemDpsPerVolumeBeltSustained);
+                    writer.WriteLine(ChemDpsPerCostBeltSustained);
+                    if (disruptor)
+                    {
+                        writer.WriteLine(ShieldRpsBeltSustained);
+                        writer.WriteLine(ShieldRpsPerVolumeBeltSustained);
+                        writer.WriteLine(ShieldRpsPerCostBeltSustained);
+                    }
+                }
+                else
+                {
+                    writer.WriteLine(ReloadTime);
+                    writer.WriteLine(ChemDps);
+                    writer.WriteLine(ChemDpsPerVolume);
+                    writer.WriteLine(ChemDpsPerCost);
+                    if (disruptor)
+                    {
+                        writer.WriteLine(ShieldRps);
+                        writer.WriteLine(ShieldRpsPerVolume);
+                        writer.WriteLine(ShieldRpsPerCost);
+                    }
+                }
+            }
+        }
+
 
 
         /// <summary>

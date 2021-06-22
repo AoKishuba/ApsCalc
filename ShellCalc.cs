@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
-using System.Text;
+using System.IO;
 using PenCalc;
 
 namespace ApsCalc
@@ -43,6 +43,7 @@ namespace ApsCalc
         /// <param name="targetArmorScheme">Target armor scheme, from Pencalc namespace</param>
         /// <param name="testType">0 for DPS per volume, 1 for DPS per cost</param>
         /// <param name="labels">True if row headers should be printed on every line</param>
+        /// <param name="writeToFile">True if results should be written to text file instead of console</param>
         public ShellCalc(
             int barrelCount,
             float minGauge,
@@ -63,7 +64,8 @@ namespace ApsCalc
             float damageType,
             Scheme targetArmorScheme,
             int testType,
-            bool labels
+            bool labels,
+            bool writeToFile
             )
         {
             BarrelCount = barrelCount;
@@ -86,6 +88,7 @@ namespace ApsCalc
             TargetArmorScheme = targetArmorScheme;
             TestType = testType;
             Labels = labels;
+            WriteToFile = writeToFile;
         }
 
 
@@ -109,6 +112,7 @@ namespace ApsCalc
         public Scheme TargetArmorScheme { get; }
         public int TestType { get; }
         public bool Labels { get; }
+        public bool WriteToFile { get; }
 
 
         // Store top-DPS shells by loader length
@@ -399,6 +403,7 @@ namespace ApsCalc
                         // Check performance against top shells
                         shellUnderTesting.RailDraw = optimalDraw;
                         shellUnderTesting.CalculateDpsByType(DamageType, TargetAC, TargetArmorScheme);
+                        shellUnderTesting.CalculateVelocity();
                         shellUnderTesting.CalculateEffectiveRange();
 
                         if (TestType == 0)
@@ -633,6 +638,7 @@ namespace ApsCalc
                             // Check performance against top shells
                             shellUnderTestingBelt.RailDraw = optimalDraw;
                             shellUnderTestingBelt.CalculateDpsByTypeBelt(DamageType, TargetAC, TargetArmorScheme);
+                            shellUnderTesting.CalculateVelocity();
                             shellUnderTestingBelt.CalculateEffectiveRange();
 
                             if (TestType == 0)
@@ -914,11 +920,25 @@ namespace ApsCalc
             }
         }
 
+        /// <summary>
+        /// Write top shell information
+        /// </summary>
+        public void WriteTopShells()
+        {
+            if (WriteToFile)
+            {
+                WriteTopShellsToFile();
+            }
+            else
+            {
+                WriteTopShellsToConsole();
+            }
+        }
 
         /// <summary>
         /// Write to console statistics of top shells
         /// </summary>
-        public void WriteTopShellsToConsole()
+        void WriteTopShellsToConsole()
         {
             // Determine presence of disruptor conduit
             bool disruptor = false;
@@ -1095,7 +1115,7 @@ namespace ApsCalc
                     Console.WriteLine("\n");
                     Console.WriteLine(topShell.Key);
                     topShell.Value.GetModuleCounts();
-                    topShell.Value.GetShellInfoKinetic(Labels);
+                    topShell.Value.WriteShellInfoToConsoleKinetic(Labels);
                 }
             }
             else if (DamageType == 1 || DamageType == 2 || DamageType == 3)
@@ -1105,7 +1125,211 @@ namespace ApsCalc
                     Console.WriteLine("\n");
                     Console.WriteLine(topShell.Key);
                     topShell.Value.GetModuleCounts();
-                    topShell.Value.GetShellInfoChem(Labels);
+                    topShell.Value.WriteShellInfoToConsoleChem(Labels);
+                }
+            }
+        }
+
+
+        /// <summary>
+        /// Write to file statistics of top shells
+        /// </summary>
+        void WriteTopShellsToFile()
+        {
+            // Determine presence of disruptor conduit
+            bool disruptor = false;
+            foreach (int headIndex in HeadList)
+            {
+                if (Module.AllModules[headIndex] == Module.Disruptor)
+                {
+                    disruptor = true;
+                    break;
+                }
+            }
+
+            // Create filename from current time
+            string fileName = DateTime.Now.ToString("HHmmss");
+
+            using var writer = new StreamWriter(fileName, append: true);
+            FileStream fs = (FileStream)writer.BaseStream;
+            Console.WriteLine("Writing results to filename: " + fs.Name);
+
+
+            writer.WriteLine("Test Parameters");
+            writer.WriteLine(BarrelCount + " Barrels");
+            if (MinGauge == MaxGauge)
+            {
+                writer.WriteLine("Gauge: " + MinGauge);
+            }
+            else
+            {
+                writer.WriteLine("Gauge: " + MinGauge + " mm thru " + MaxGauge + " mm");
+            }
+
+
+            if (HeadList.Count == 1)
+            {
+                writer.WriteLine("Head: " + Module.AllModules[HeadList[0]].Name);
+            }
+            else
+            {
+                writer.WriteLine("Heads: ");
+                foreach (int headIndex in HeadList)
+                {
+                    writer.WriteLine(Module.AllModules[headIndex].Name);
+                }
+            }
+
+            if (BaseModule != null)
+            {
+                writer.WriteLine("Base: " + BaseModule.Name);
+            }
+
+            writer.WriteLine("Fixed modules: ");
+
+            int modIndex = 0;
+            foreach (float modCount in FixedModuleCounts)
+            {
+                writer.WriteLine(Module.AllModules[modIndex].Name + ": " + modCount);
+                modIndex++;
+            }
+
+            if (VariableModuleIndices[0] == VariableModuleIndices[1])
+            {
+                writer.WriteLine("Variable module: " + Module.AllModules[VariableModuleIndices[0]].Name);
+            }
+            else
+            {
+                writer.WriteLine("Variable modules: ");
+                foreach (int varModIndex in VariableModuleIndices)
+                {
+                    writer.WriteLine(Module.AllModules[varModIndex].Name);
+                }
+            }
+
+            writer.WriteLine("Max GP casings: " + MaxGPInput);
+            if (MaxGPInput > 0 && BoreEvacuator)
+            {
+                writer.WriteLine("Bore evacuator equipped");
+            }
+            writer.WriteLine("Max RG casings: " + MaxRGInput);
+            writer.WriteLine("Max draw: " + MaxDrawInput);
+            writer.WriteLine("Max length: " + MaxShellLength);
+            writer.WriteLine("Min velocity: " + MinVelocityInput);
+            writer.WriteLine("Min effective range: " + MinEffectiveRangeInput);
+
+            if (DamageType == 0)
+            {
+                writer.WriteLine("Damage type: kinetic");
+                writer.WriteLine("Target AC: " + TargetAC);
+            }
+            else if (DamageType == 1)
+            {
+                writer.WriteLine("Damage type: chemical");
+            }
+            else if (DamageType == 2)
+            {
+                writer.WriteLine("Damage type: pendepth (chemical)");
+                writer.WriteLine("Target armor scheme:");
+                foreach (Layer armorLayer in TargetArmorScheme.LayerList)
+                {
+                    writer.WriteLine(armorLayer.Name);
+                }
+            }
+            else if (DamageType == 3)
+            {
+                writer.WriteLine("Damage type: shield disruption");
+            }
+
+            if (TestType == 0)
+            {
+                writer.WriteLine("Testing for DPS / volume");
+            }
+            else if (TestType == 1)
+            {
+                writer.WriteLine("Testing for DPS / cost");
+            }
+            writer.WriteLine("\n");
+
+
+            if (!Labels)
+            {
+                writer.WriteLine("\n");
+                writer.WriteLine("Row Headers:");
+                writer.WriteLine("Gauge (mm)");
+                writer.WriteLine("Total length (mm)");
+                writer.WriteLine("Length without casings (mm)");
+                writer.WriteLine("Total modules");
+                writer.WriteLine("GP casings");
+                writer.WriteLine("RG casings");
+
+                for (int i = 0; i < FixedModuleCounts.Length; i++)
+                {
+                    writer.WriteLine(Module.AllModules[i].Name);
+                }
+
+                writer.WriteLine("Head");
+                writer.WriteLine("Draw");
+                writer.WriteLine("Recoil");
+                writer.WriteLine("Velocity (m/s)");
+                writer.WriteLine("Effective range (m)");
+
+                if (DamageType == 0)
+                {
+                    writer.WriteLine("Raw KD");
+                    writer.WriteLine("AP");
+                    writer.WriteLine("Eff. KD");
+                }
+                else if (DamageType == 1 || DamageType == 2 || DamageType == 3)
+                {
+                    writer.WriteLine("Chemical payload strength");
+                    if (disruptor)
+                    {
+                        writer.WriteLine("Shield reduction");
+                    }
+                }
+
+                writer.WriteLine("Reload (s)");
+                writer.WriteLine("DPS");
+                writer.WriteLine("DPS per volume");
+                writer.WriteLine("DPS per cost");
+                if (disruptor)
+                {
+                    writer.WriteLine("Shield reduction / s");
+                    writer.WriteLine("Shield RPS / volume");
+                    writer.WriteLine("Shield RPS / cost");
+                }
+                writer.WriteLine("Uptime (belt)");
+                writer.WriteLine("DPS (belt, sustained)");
+                writer.WriteLine("DPS per volume (sustained)");
+                writer.WriteLine("DPS per cost (sustained)");
+                if (disruptor)
+                {
+                    writer.WriteLine("Shield RPS (belt, sustained)");
+                    writer.WriteLine("Shield RPS / volume (sustained)");
+                    writer.WriteLine("Shield RPS / cost (sustained)");
+                }
+            }
+
+
+            if (DamageType == 0)
+            {
+                foreach (KeyValuePair<string, Shell> topShell in TopDpsShells)
+                {
+                    writer.WriteLine("\n");
+                    writer.WriteLine(topShell.Key);
+                    topShell.Value.GetModuleCounts();
+                    topShell.Value.WriteShellInfoToFileKinetic(Labels, writer);
+                }
+            }
+            else if (DamageType == 1 || DamageType == 2 || DamageType == 3)
+            {
+                foreach (KeyValuePair<string, Shell> topShell in TopDpsShells)
+                {
+                    writer.WriteLine("\n");
+                    writer.WriteLine(topShell.Key);
+                    topShell.Value.GetModuleCounts();
+                    topShell.Value.WriteShellInfoToFileChem(Labels, writer);
                 }
             }
         }

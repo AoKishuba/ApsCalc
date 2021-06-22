@@ -30,6 +30,7 @@ namespace ApsCalc
         public Scheme ArmorScheme;
         public int TestType;
         public bool Labels;
+        public bool WriteToFile;
     }
     class Program
     {
@@ -904,6 +905,30 @@ namespace ApsCalc
                 }
             }
 
+            // Get user preference on writing to file or to console
+            bool writeToFile;
+            Console.WriteLine("\nWrite results to console or to text file?\nEnter 'c' for console or 'f' for file.");
+            while (true)
+            {
+                input = Console.ReadLine();
+                if (input.ToLower() == "f")
+                {
+                    writeToFile = true;
+                    Console.WriteLine("\nResults will be written to file in script directory.\n");
+                    break;
+                }
+                else if (input.ToLower() == "c")
+                {
+                    writeToFile = false;
+                    Console.WriteLine("\nResults will be written to this console.\n");
+                    break;
+                }
+                else
+                {
+                    Console.WriteLine("\nERROR: Enter 'c' to write to console, or 'f' to write to text file.\n");
+                }
+            }
+
             TestParameters tP = new();
             tP.BarrelCount = barrelCount;
             tP.MinGauge = minGauge;
@@ -925,6 +950,7 @@ namespace ApsCalc
             tP.ArmorScheme = armorScheme;
             tP.TestType = testType;
             tP.Labels = labels;
+            tP.WriteToFile = writeToFile;
 
             return tP;
         }
@@ -998,7 +1024,8 @@ namespace ApsCalc
                                 tP.DamageType,
                                 tP.ArmorScheme,
                                 tP.TestType,
-                                tP.Labels
+                                tP.Labels,
+                                tP.WriteToFile
                                 );
 
 
@@ -1031,12 +1058,13 @@ namespace ApsCalc
                                 tP.DamageType,
                                 tP.ArmorScheme,
                                 tP.TestType,
-                                tP.Labels
+                                tP.Labels,
+                                tP.WriteToFile
                             );
 
                         calcFinal.FindTopShellsInList(shellBag);
                         calcFinal.AddTopShellsToDictionary();
-                        calcFinal.WriteTopShellsToConsole();
+                        calcFinal.WriteTopShells();
                     }
                 }
                 else
@@ -1065,7 +1093,8 @@ namespace ApsCalc
                             tP.DamageType,
                             tP.ArmorScheme,
                             tP.TestType,
-                            tP.Labels
+                            tP.Labels,
+                            tP.WriteToFile
                             );
 
                         calcLocal.ShellTest();
@@ -1097,13 +1126,13 @@ namespace ApsCalc
                             tP.DamageType,
                             tP.ArmorScheme,
                             tP.TestType,
-                            tP.Labels
+                            tP.Labels,
+                            tP.WriteToFile
                         );
 
                     calcFinal.FindTopShellsInList(shellBag);
                     calcFinal.AddTopShellsToDictionary();
-                    calcFinal.WriteTopShellsToConsole();
-
+                    calcFinal.WriteTopShells();
                 }
             }
             TimeSpan parallelDuration = stopWatchParallel.Elapsed;
