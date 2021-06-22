@@ -163,9 +163,12 @@ namespace ApsCalc
         public void CopyStatsFrom(Shell shellToCopy)
         {
             Gauge = shellToCopy.Gauge;
+            BarrelCount = shellToCopy.BarrelCount;
+            BoreEvacuator = shellToCopy.BoreEvacuator;
 
             TotalLength = shellToCopy.TotalLength;
             ProjectileLength = shellToCopy.ProjectileLength;
+            EffectiveProjectileModuleCount = shellToCopy.EffectiveProjectileModuleCount;
 
             ModuleCountTotal = shellToCopy.ModuleCountTotal;
             GPCasingCount = shellToCopy.GPCasingCount;
@@ -176,6 +179,7 @@ namespace ApsCalc
             BaseModule = shellToCopy.BaseModule;
 
             RailDraw = shellToCopy.RailDraw;
+            GPRecoil = shellToCopy.GPRecoil;
             TotalRecoil = shellToCopy.TotalRecoil;
 
             Velocity = shellToCopy.Velocity;
@@ -203,6 +207,11 @@ namespace ApsCalc
             LoaderVolume = shellToCopy.LoaderVolume;
             LoaderCost = shellToCopy.LoaderCost;
             // Belt loader cost and volume are fixed and read-only
+
+            OverallArmorPierceModifier = shellToCopy.OverallArmorPierceModifier;
+            OverallChemModifier = shellToCopy.OverallChemModifier;
+            OverallKineticDamageModifier = shellToCopy.OverallKineticDamageModifier;
+            OverallVelocityModifier = shellToCopy.OverallVelocityModifier;
 
             KineticDamage = shellToCopy.KineticDamage;
             ArmorPierce = shellToCopy.ArmorPierce;
@@ -718,6 +727,8 @@ namespace ApsCalc
         /// </summary>
         public void CalculateKineticDamage()
         {
+            CalculateVelocity();
+
             if (HeadModule == Module.HollowPoint)
             {
                 KineticDamage = GaugeCoefficient
@@ -761,7 +772,7 @@ namespace ApsCalc
         /// <summary>
         /// Calculates beltfed loader reload time and uptime
         /// </summary>
-        public void CalculateBeltfedReload()
+        public void CalculateReloadTimeBelt()
         {
             if (TotalLength <= 1000f)
             {
@@ -769,13 +780,13 @@ namespace ApsCalc
                 float gaugeModifier;
                 if (Gauge <= 250f)
                 {
-                    gaugeModifier = 2;
+                    gaugeModifier = 2f;
                 }
                 else
                 {
                     gaugeModifier = 1f;
                 }
-                float shellCapacity = (1f * MathF.Min(64, MathF.Floor(1000 / Gauge) * gaugeModifier) + 1f);
+                float shellCapacity = (1f * MathF.Min(64f, MathF.Floor(1000f / Gauge) * gaugeModifier) + 1f);
                 float firingCycleLength = (shellCapacity - 1f) * ReloadTimeBelt;
                 float loadingCycleLength = (shellCapacity - 2f) * ReloadTimeBelt / 2f; // 2 intakes
                 UptimeBelt = firingCycleLength / (firingCycleLength + loadingCycleLength);
@@ -876,8 +887,6 @@ namespace ApsCalc
         /// </summary>
         public void CalculatePendepthDps(Scheme targetArmorScheme)
         {
-            CalculateRecoil();
-            CalculateVelocity();
             CalculateKineticDamage();
             CalculateAP();
 
@@ -902,17 +911,11 @@ namespace ApsCalc
 
         public void CalculatePendepthDpsBelt(Scheme targetArmorScheme)
         {
-            CalculateRecoil();
-            CalculateVelocity();
             CalculateKineticDamage();
             CalculateAP();
 
             if (KineticDamage >= targetArmorScheme.GetRequiredKD(ArmorPierce))
             {
-                CalculateRecoilVolumeAndCost();
-                CalculateChargerVolumeAndCost();
-                CalculateVolumeAndCostPerIntake();
-
                 CalculateChemDpsBelt();
                 DpsPerVolumeDict[2] = ChemDpsPerVolumeBeltSustained;
                 DpsPerCostDict[2] = ChemDpsPerCostBeltSustained;
@@ -938,8 +941,6 @@ namespace ApsCalc
         /// </summary>
         public void CalculateKineticDps(float targetAC)
         {
-            CalculateRecoil();
-            CalculateVelocity();
             CalculateKineticDamage();
             CalculateAP();
 
@@ -958,8 +959,6 @@ namespace ApsCalc
         {
             if (TotalLength <= 1000f)
             {
-                CalculateRecoil();
-                CalculateVelocity();
                 CalculateKineticDamage();
                 CalculateAP();
 
@@ -1370,7 +1369,6 @@ namespace ApsCalc
             }
             else if (damageType == 3)
             {
-                CalculateChemDamage();
                 CalculateShieldReduction();
             }
         }
@@ -1378,14 +1376,9 @@ namespace ApsCalc
 
         public void CalculateDpsByType(float damageType, float targetAC, Scheme targetArmorScheme)
         {
-            CalculateReloadTime();
-            CalculateBeltfedReload();
             CalculateRecoil();
-            CalculateVelocity();
-            CalculateLoaderVolumeAndCost();
             CalculateChargerVolumeAndCost();
             CalculateRecoilVolumeAndCost();
-            CalculateCoolerVolumeAndCost();
             CalculateVolumeAndCostPerIntake();
 
             if (damageType == 0)
@@ -1409,14 +1402,9 @@ namespace ApsCalc
 
         public void CalculateDpsByTypeBelt(float damageType, float targetAC, Scheme targetArmorScheme)
         {
-            CalculateReloadTime();
-            CalculateBeltfedReload();
             CalculateRecoil();
-            CalculateVelocity();
-            CalculateLoaderVolumeAndCost();
             CalculateChargerVolumeAndCost();
             CalculateRecoilVolumeAndCost();
-            CalculateCoolerVolumeAndCost();
             CalculateVolumeAndCostPerIntake();
 
             if (damageType == 0)
