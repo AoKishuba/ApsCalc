@@ -996,6 +996,8 @@ namespace ApsCalc
 
             foreach (TestParameters tP in paramList)
             {
+                Stopwatch stopWatchIndiv = Stopwatch.StartNew();
+
                 if (tP.DamageType == 0)
                 {
                     foreach (float ac in tP.TargetACList)
@@ -1134,11 +1136,14 @@ namespace ApsCalc
                     calcFinal.AddTopShellsToDictionary();
                     calcFinal.WriteTopShells();
                 }
+
+                Console.WriteLine("Time elapsed for this test: " + stopWatchIndiv.Elapsed);
+                stopWatchIndiv.Stop();
             }
             TimeSpan parallelDuration = stopWatchParallel.Elapsed;
             stopWatchParallel.Stop();
 
-            Console.WriteLine("Time elapsed: " + parallelDuration);
+            Console.WriteLine("\nTime elapsed (all tests): " + parallelDuration);
 
             // Keep window open until user presses Esc
             ConsoleKeyInfo cki;
