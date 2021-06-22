@@ -1,0 +1,62 @@
+ApsCalc: a calculator for optimizing shells for the Advanced Projectile System in From the Depths. Written by Ao Kishuba.
+Special thanks to HerpeDerpeDerp and MrNukealizer, without whom this project would not have been possible.
+
+TEST PARAMETERS
+Barrel Count: number of barrels. APS cannons can have anywhere from 1-6 barrels. Additional barrels help cooling, but impose an accuracy penalty and limit max gauge.
+n.b. I have never seen any measurable increase in performance from using multiple barrels, even for smaller/beltfed loaders, and the gauge restrictions put a hard cap
+on performance for larger or chemical shells.
+
+Minimum Gauge: smallest gauge to be tested, in mm. Must be greater than 18 mm.
+Maximum Gauge: largest gauge to be tested, in mm. Must be greater than or equal than Minimum Gauge and less than or equal to 500 mm (or the max allowed by the
+barrel count, whichever is less).
+
+Head Indices: modules to be put at the front of the shells to be tested. The frontmost module on a shell is weighted in certain calculations, and can have a large
+effect on shell performance. Some heads, like the Disruptor Conduit, add functionality. Any module other than the dedicated base modules can be put at the front of a
+shell, although the dedicated "Head" modules offer the best performance for any shell type.
+
+Base Module: module to be put at the back of the projectile (the part of the shell which hits the target - excludes gunpowder and railgun casings). The base modules
+add functionality or modify performance, and in general it is recommended to use some kind of a base. Base Bleeder is a good default choice.
+
+Fixed Modules: modules to be included with every shell. Primarily meant for fuzes. If testing for pendepth (APHE, APF, &c), adding a single fixed chem warhead will 
+save a small amount of time, since at least one will be needed.
+
+Variable Module Indices: the optimizer will test every possible combination of variable modules. Examples would be Solid Body and Sabot Body for kinetic shells, or 
+Solid Body and Chem Body for pendepth.
+
+Max Gunpowder Casings: maximum allowed number of GP casings. Note that GP casing length is adjustable up to two decimal places, although a decimal casing counts as
+a complete module for module count limit purposes.
+Bore Evacuator: whether a bore evacuator will be used. A bore evacuator is an APS component which forms part of the barrel and increases the efficiency of coolers.
+
+Max Railgun Casings: maximum allowed number of RG casings. RG casings increase the max rail draw of the shell, but are not part of the projectile, and so do not
+reduce the shell velocity for a given amount of charge. This means a shell with RG casings can be "supercharged" to go faster than it would under its own max draw.
+
+Max Rail Draw: maximum allowed rail draw. Note that each shell has its own max rail draw, determined by the size of the shell (gauge and number of non-GP components), 
+and the optimizer will use that limit or this one, whichever is lower for a particular shell.
+
+Max Shell Length: maximum length of the shell. Must be greater than the smallest possible shell - ie, one with the minimum gauge, made up only of fixed modules. This
+value is shown in the console as part of the prompt.
+
+Minimum Velocity: minimum shell velocity. Note that a high minimum velocity may be impossible to meet within the casing and rail draw restrictions.
+Minimum Effective Range: effective range is the distance a shell will travel in its "lifetime", after which it will become useless. Particularly small shells may have 
+an effective range of less than 1 km, and may not be suitable for use on certain craft.
+
+Damage Type: damage type to optimize.
+  0. Kinetic. Prompts entry of target AC value/s. Note that more than one AC value can be entered; each will be run as a separate test
+  1. Chemical. Results are displayed in generic "Chem damage" units. All chemical warheads have identical scaling, so one can take the optimal EMP shell and swap in 
+  HE warheads to get the optimal HE shell
+  2. Pendepth. Prompts entry of target armor configuration. Measures chemical damage, but only shells capable of penetrating the given armor scheme will be counted.
+  3. Shield Disruptor. Automatically replaces user-given Head List with the Disruptor Conduit Head, which is required for shield disruption. Measures chemical damage 
+  and shield reduction percentage (displayed in the printout as a decimal, where 1 = 100% shield strength reduction)
+
+Test Type: whether to optimize for DPS per Volume or DPS per Cost. "Volume" and "Cost" are both marginal - they include the volume (or cost) only of components which
+scale linearly with number of inputs. That is to say, components like the APS firing piece, barrels, gauge increases, ejectors, &c, are not counted, because their 
+proprotion of the cost depends on the size of the gun. The components which are counted are the loader, input, recoil absorbers, coolers, and rail chargers. Beltfed
+loaders assume a fixed configuration of 1 clip and 2 inputs per loader.
+
+Labels: whether to include labels on each line of the printout. Labels make reading much quicker, but get in the way of copying the results to a spreadsheet. If the 
+user enters 'n', the optimizer will print the row headers once, then print the resulting shells below.
+
+Write to File: whether to write the results to a text file or to the console. Depending on the OS, the console may be inconvenient to use, or may have a character 
+limit; also, printing to a file allows the user to start another batch of tests while preserving the current results. If the user enters 'f', the optimizer will 
+output the results of each test to a separate file. The files will be located in the folder with the ApsCalc executable in it; the console will display the complete
+path for each file as it is created.
