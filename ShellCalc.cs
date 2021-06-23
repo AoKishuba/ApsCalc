@@ -36,6 +36,7 @@ namespace ApsCalc
         /// <param name="maxRGInput">Max desired number of railgun casings</param>
         /// <param name="maxShellLengthInput">Max desired shell length in mm</param>
         /// <param name="maxDrawInput">Max desired rail draw</param>
+        /// <param name="maxRecoilInput">Max desired recoil, including rail and GP</param>
         /// <param name="minVelocityInput">Min desired velocity</param>
         /// <param name="minEffectiveRangeInput">Min desired effective range</param>
         /// <param name="targetAC">Armor class of target for kinetic damage calculations</param>
@@ -58,6 +59,7 @@ namespace ApsCalc
             float maxRGInput,
             float maxShellLengthInput,
             float maxDrawInput,
+            float maxRecoilInput,
             float minVelocityInput,
             float minEffectiveRangeInput,
             float targetAC,
@@ -81,6 +83,7 @@ namespace ApsCalc
             MaxRGInput = maxRGInput;
             MaxShellLength = maxShellLengthInput;
             MaxDrawInput = maxDrawInput;
+            MaxRecoilInput = maxRecoilInput;
             MinVelocityInput = minVelocityInput;
             MinEffectiveRangeInput = minEffectiveRangeInput;
             TargetAC = targetAC;
@@ -105,6 +108,7 @@ namespace ApsCalc
         public float MaxRGInput { get; }
         public float MaxShellLength { get; }
         public float MaxDrawInput { get; }
+        public float MaxRecoilInput { get; }
         public float MinVelocityInput { get; }
         public float MinEffectiveRangeInput { get; }
         public float TargetAC { get; }
@@ -256,6 +260,7 @@ namespace ApsCalc
                     shellUnderTesting.CalculateMaxDraw();
 
                     float maxDraw = MathF.Min(shellUnderTesting.MaxDraw, MaxDrawInput);
+                    maxDraw = MathF.Min(maxDraw, MaxRecoilInput - shellUnderTesting.GPRecoil);
                     float minDraw = shellUnderTesting.CalculateMinimumDrawForVelocityandRange(MinVelocityInput, MinEffectiveRangeInput);
 
                     if (maxDraw >= minDraw)
@@ -1010,6 +1015,7 @@ namespace ApsCalc
             }
             Console.WriteLine("Max RG casings: " + MaxRGInput);
             Console.WriteLine("Max draw: " + MaxDrawInput);
+            Console.Write("Max recoil: " + MaxRecoilInput);
             Console.WriteLine("Max length: " + MaxShellLength);
             Console.WriteLine("Min velocity: " + MinVelocityInput);
             Console.WriteLine("Min effective range: " + MinEffectiveRangeInput);
@@ -1214,6 +1220,7 @@ namespace ApsCalc
             }
             writer.WriteLine("Max RG casings: " + MaxRGInput);
             writer.WriteLine("Max draw: " + MaxDrawInput);
+            writer.WriteLine("Max recoil: " + MaxRecoilInput);
             writer.WriteLine("Max length: " + MaxShellLength);
             writer.WriteLine("Min velocity: " + MinVelocityInput);
             writer.WriteLine("Min effective range: " + MinEffectiveRangeInput);

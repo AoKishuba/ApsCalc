@@ -23,6 +23,7 @@ namespace ApsCalc
         public float MaxRGCasingCount;
         public float MaxLength;
         public float MaxDraw;
+        public float MaxRecoil;
         public float MinVelocity;
         public float MinEffectiverange;
         public List<float> TargetACList;
@@ -572,7 +573,7 @@ namespace ApsCalc
                 input = Console.ReadLine();
                 if (int.TryParse(input, out maxRailgunCasingInput))
                 {
-                    if (maxRailgunCasingInput < 0f || maxRailgunCasingInput > maxOtherCount)
+                    if (maxRailgunCasingInput < 0 || maxRailgunCasingInput > maxOtherCount)
                     {
                         Console.WriteLine("\nMAX RG CASING COUNT RANGE ERROR: Enter an integer from 0 thru " + maxOtherCount + ".");
                     }
@@ -612,6 +613,31 @@ namespace ApsCalc
                 }
             }
             float maxDraw = maxRailDrawInput;
+
+
+            // Get maximum recoil
+            int maxRecoilInput;
+            Console.WriteLine("\nEnter maximum recoil from 0 thru 250 000.");
+            while (true)
+            {
+                input = Console.ReadLine();
+                if (int.TryParse(input, out maxRecoilInput))
+                {
+                    if (maxRecoilInput < 0 || maxRecoilInput > 250000)
+                    {
+                        Console.WriteLine("\nMAX RECOIL RANGE ERROR: Enter an integer from 0 thru 250 000.");
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("\nMAX RECOIL PARSE ERROR: Enter an integer from 0 thru 250 000.");
+                }
+            }
+            float maxRecoil = maxRecoilInput;
 
 
             // Calculate minimum shell length
@@ -941,8 +967,9 @@ namespace ApsCalc
             tP.MaxGPCasingCount = maxGPCasingCount;
             tP.UseEvacuator = useEvacuator;
             tP.MaxRGCasingCount = maxRGCasingCount;
-            tP.MaxLength = maxLength;
             tP.MaxDraw = maxDraw;
+            tP.MaxRecoil = maxRecoil;
+            tP.MaxLength = maxLength;
             tP.MinVelocity = minVelocity;
             tP.MinEffectiverange = minEffectiveRange;
             tP.TargetACList = targetACList;
@@ -1020,6 +1047,7 @@ namespace ApsCalc
                                 tP.MaxRGCasingCount,
                                 tP.MaxLength,
                                 tP.MaxDraw,
+                                tP.MaxRecoil,
                                 tP.MinVelocity,
                                 tP.MinEffectiverange,
                                 ac,
@@ -1054,6 +1082,7 @@ namespace ApsCalc
                                 tP.MaxRGCasingCount,
                                 tP.MaxLength,
                                 tP.MaxDraw,
+                                tP.MaxRecoil,
                                 tP.MinVelocity,
                                 tP.MinEffectiverange,
                                 ac,
@@ -1089,6 +1118,7 @@ namespace ApsCalc
                             tP.MaxRGCasingCount,
                             tP.MaxLength,
                             tP.MaxDraw,
+                            tP.MaxRecoil,
                             tP.MinVelocity,
                             tP.MinEffectiverange,
                             0, // Target AC does not matter for non-kinetic tests
@@ -1122,6 +1152,7 @@ namespace ApsCalc
                             tP.MaxRGCasingCount,
                             tP.MaxLength,
                             tP.MaxDraw,
+                            tP.MaxRecoil,
                             tP.MinVelocity,
                             tP.MinEffectiverange,
                             0, // Target AC does not matter for non-kinetic tests
