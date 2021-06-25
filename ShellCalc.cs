@@ -507,9 +507,30 @@ namespace ApsCalc
                         if (shellUnderTesting.TotalLength <= 1000f)
                         {
                             Shell shellUnderTestingBelt = new();
-                            shellUnderTestingBelt.CopyStatsFrom(shellUnderTesting);
+                            shellUnderTestingBelt.BarrelCount = BarrelCount;
+                            shellUnderTestingBelt.BoreEvacuator = BoreEvacuator;
+                            shellUnderTestingBelt.HeadModule = Module.AllModules[counts.HeadIndex];
+                            shellUnderTestingBelt.BaseModule = BaseModule;
+                            FixedModuleCounts.CopyTo(shellUnderTestingBelt.BodyModuleCounts, 0);
+
+                            shellUnderTestingBelt.Gauge = counts.Gauge;
+                            shellUnderTestingBelt.BodyModuleCounts[VariableModuleIndices[0]] += counts.Var0Count;
+                            shellUnderTestingBelt.BodyModuleCounts[VariableModuleIndices[1]] += counts.Var1Count;
+                            shellUnderTestingBelt.BodyModuleCounts[VariableModuleIndices[2]] += counts.Var2Count;
+                            shellUnderTestingBelt.GPCasingCount = counts.GPCount;
+                            shellUnderTestingBelt.RGCasingCount = counts.RGCount;
+
                             shellUnderTestingBelt.IsBelt = true;
+                            shellUnderTestingBelt.CalculateLengths();
+                            shellUnderTestingBelt.CalculateVelocityModifier();
+                            shellUnderTestingBelt.CalculateRecoil();
+                            shellUnderTestingBelt.CalculateMaxDraw();
+                            shellUnderTestingBelt.CalculateReloadTime();
                             shellUnderTestingBelt.CalculateReloadTimeBelt();
+                            shellUnderTestingBelt.CalculateCooldownTime();
+                            shellUnderTestingBelt.CalculateDamageModifierByType(DamageType);
+                            shellUnderTestingBelt.CalculateDamageByType(DamageType);
+                            shellUnderTestingBelt.CalculateLoaderVolumeAndCost();
                             shellUnderTestingBelt.CalculateCoolerVolumeAndCost();
 
                             if (maxDraw > 0)
@@ -643,7 +664,7 @@ namespace ApsCalc
                             // Check performance against top shells
                             shellUnderTestingBelt.RailDraw = optimalDraw;
                             shellUnderTestingBelt.CalculateDpsByTypeBelt(DamageType, TargetAC, TargetArmorScheme);
-                            shellUnderTesting.CalculateVelocity();
+                            shellUnderTestingBelt.CalculateVelocity();
                             shellUnderTestingBelt.CalculateEffectiveRange();
 
                             if (TestType == 0)
@@ -1093,8 +1114,20 @@ namespace ApsCalc
 
                 Console.WriteLine("Reload (s)");
                 Console.WriteLine("DPS");
+                Console.WriteLine("Loader volume");
+                Console.WriteLine("Cooler volume");
+                Console.WriteLine("Charger volume");
+                Console.WriteLine("Recoil volume");
+                Console.WriteLine("Total volume");
                 Console.WriteLine("DPS per volume");
+
+                Console.WriteLine("Loader cost");
+                Console.WriteLine("Cooler cost");
+                Console.WriteLine("Charger cost");
+                Console.WriteLine("Recoil cost");
+                Console.WriteLine("Total cost");
                 Console.WriteLine("DPS per cost");
+
                 if (disruptor)
                 {
                     Console.WriteLine("Shield reduction / s");
@@ -1298,7 +1331,19 @@ namespace ApsCalc
 
                 writer.WriteLine("Reload (s)");
                 writer.WriteLine("DPS");
+
+                writer.WriteLine("Loader volume");
+                writer.WriteLine("Cooler volume");
+                writer.WriteLine("Charger volume");
+                writer.WriteLine("Recoil volume");
+                writer.WriteLine("Total volume");
                 writer.WriteLine("DPS per volume");
+
+                writer.WriteLine("Loader cost");
+                writer.WriteLine("Cooler cost");
+                writer.WriteLine("Charger cost");
+                writer.WriteLine("Recoil cost");
+                writer.WriteLine("Total cost");
                 writer.WriteLine("DPS per cost");
                 if (disruptor)
                 {

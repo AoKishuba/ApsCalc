@@ -122,7 +122,7 @@ namespace ApsCalc
 
         // Cost
         public float LoaderCost { get; set; }
-        public float LoaderCostBelt { get; } = 160f; // loader, clip, 2 intakes
+        public float LoaderCostBelt { get; } = 860f; // loader, clip, 2 intakes
         public float RecoilCost { get; set; }
         public float RecoilCostBelt { get; set; }
         public float ChargerCost { get; set; }
@@ -155,111 +155,6 @@ namespace ApsCalc
         public float ShieldRpsPerCost { get; set; }
         public float ShieldRpsPerCostBelt { get; set; }
         public float ShieldRpsPerCostBeltSustained { get; set; }
-
-
-
-        /// <summary>
-        /// Copies stats from given shell
-        /// </summary>
-        public void CopyStatsFrom(Shell shellToCopy)
-        {
-            Gauge = shellToCopy.Gauge;
-            BarrelCount = shellToCopy.BarrelCount;
-            BoreEvacuator = shellToCopy.BoreEvacuator;
-
-            TotalLength = shellToCopy.TotalLength;
-            ProjectileLength = shellToCopy.ProjectileLength;
-            EffectiveProjectileModuleCount = shellToCopy.EffectiveProjectileModuleCount;
-
-            ModuleCountTotal = shellToCopy.ModuleCountTotal;
-            GPCasingCount = shellToCopy.GPCasingCount;
-            RGCasingCount = shellToCopy.RGCasingCount;
-
-            shellToCopy.BodyModuleCounts.CopyTo(BodyModuleCounts, 0);
-            HeadModule = shellToCopy.HeadModule;
-            BaseModule = shellToCopy.BaseModule;
-
-            RailDraw = shellToCopy.RailDraw;
-            GPRecoil = shellToCopy.GPRecoil;
-            TotalRecoil = shellToCopy.TotalRecoil;
-
-            Velocity = shellToCopy.Velocity;
-            EffectiveRange = shellToCopy.EffectiveRange;
-
-            ReloadTime = shellToCopy.ReloadTime;
-            ReloadTimeBelt = shellToCopy.ReloadTimeBelt;
-            UptimeBelt = shellToCopy.UptimeBelt;
-
-            CoolerVolume = shellToCopy.CoolerVolume;
-            CoolerVolumeBelt = shellToCopy.CoolerVolumeBelt;
-            CoolerCost = shellToCopy.CoolerCost;
-            CoolerCostBelt = shellToCopy.CoolerCostBelt;
-
-            ChargerVolume = shellToCopy.ChargerVolume;
-            ChargerVolumeBelt = shellToCopy.ChargerVolumeBelt;
-            ChargerCost = shellToCopy.ChargerCost;
-            ChargerCostBelt = shellToCopy.ChargerCostBelt;
-
-            RecoilVolume = shellToCopy.RecoilVolume;
-            RecoilVolumeBelt = shellToCopy.RecoilVolumeBelt;
-            RecoilCost = shellToCopy.RecoilCost;
-            RecoilCostBelt = shellToCopy.RecoilCostBelt;
-
-            LoaderVolume = shellToCopy.LoaderVolume;
-            LoaderCost = shellToCopy.LoaderCost;
-            // Belt loader cost and volume are fixed and read-only
-
-            OverallArmorPierceModifier = shellToCopy.OverallArmorPierceModifier;
-            OverallChemModifier = shellToCopy.OverallChemModifier;
-            OverallKineticDamageModifier = shellToCopy.OverallKineticDamageModifier;
-            OverallVelocityModifier = shellToCopy.OverallVelocityModifier;
-
-            KineticDamage = shellToCopy.KineticDamage;
-            ArmorPierce = shellToCopy.ArmorPierce;
-            EffectiveKineticDamage = shellToCopy.EffectiveKineticDamage;
-            KineticDps = shellToCopy.KineticDps;
-            KineticDpsBelt = shellToCopy.KineticDpsBelt;
-            KineticDpsBeltSustained = shellToCopy.KineticDpsBeltSustained;
-            KineticDpsPerCost = shellToCopy.KineticDpsPerCost;
-            KineticDpsPerCostBelt = shellToCopy.KineticDpsPerCostBelt;
-            KineticDpsPerCostBeltSustained = shellToCopy.KineticDpsPerCostBeltSustained;
-            DpsPerCostDict[0] = shellToCopy.DpsPerCostDict[0];
-
-            KineticDpsPerVolume = shellToCopy.KineticDpsPerVolume;
-            KineticDpsPerVolumeBelt = shellToCopy.KineticDpsPerVolumeBelt;
-            KineticDpsPerVolumeBeltSustained = shellToCopy.KineticDpsPerVolumeBeltSustained;
-            DpsPerVolumeDict[0] = shellToCopy.DpsPerVolumeDict[0];
-
-            ChemDamage = shellToCopy.ChemDamage;
-            ChemDps = shellToCopy.ChemDps;
-            ChemDpsBelt = shellToCopy.ChemDpsBelt;
-            ChemDpsBeltSustained = shellToCopy.ChemDpsBeltSustained;
-            ChemDpsPerCost = shellToCopy.ChemDpsPerCost;
-            ChemDpsPerCostBelt = shellToCopy.ChemDpsPerCostBelt;
-            ChemDpsPerCostBeltSustained = shellToCopy.ChemDpsPerCostBeltSustained;
-            DpsPerCostDict[1] = shellToCopy.DpsPerCostDict[1];
-            DpsPerCostDict[2] = shellToCopy.DpsPerCostDict[2];
-
-            ChemDpsPerVolume = shellToCopy.ChemDpsPerVolume;
-            ChemDpsPerVolumeBelt = shellToCopy.ChemDpsPerVolumeBelt;
-            ChemDpsPerVolumeBeltSustained = shellToCopy.ChemDpsPerVolumeBeltSustained;
-            DpsPerVolumeDict[1] = shellToCopy.DpsPerVolumeDict[1];
-            DpsPerVolumeDict[2] = shellToCopy.DpsPerVolumeDict[2];
-
-            ShieldReduction = shellToCopy.ShieldReduction;
-            ShieldRps = shellToCopy.ShieldRps;
-            ShieldRpsBelt = shellToCopy.ShieldRpsBelt;
-            ShieldRpsBeltSustained = shellToCopy.ShieldRpsBeltSustained;
-            ShieldRpsPerCost = shellToCopy.ShieldRpsPerCost;
-            ShieldRpsPerCostBelt = shellToCopy.ShieldRpsPerCostBelt;
-            ShieldRpsPerCostBeltSustained = shellToCopy.ShieldRpsPerCostBeltSustained;
-            DpsPerCostDict[3] = shellToCopy.DpsPerCostDict[3];
-
-            ShieldRpsPerVolume = shellToCopy.ShieldRpsPerVolume;
-            ShieldRpsPerVolumeBelt = shellToCopy.ShieldRpsPerVolumeBelt;
-            ShieldRpsPerVolumeBeltSustained = shellToCopy.ShieldRpsPerVolumeBeltSustained;
-            DpsPerVolumeDict[3] = shellToCopy.DpsPerVolumeDict[3];
-        }
 
 
         /// <summary>
@@ -1108,8 +1003,21 @@ namespace ApsCalc
                 {
                     Console.WriteLine("Reload time (belt): " + ReloadTimeBelt);
                     Console.WriteLine("Effective kinetic DPS (belt): " + KineticDpsBelt);
+
+                    Console.WriteLine("Loader volume: " + LoaderVolumeBelt);
+                    Console.WriteLine("Cooler volume: " + CoolerVolumeBelt);
+                    Console.WriteLine("Charger volume: " + ChargerVolumeBelt);
+                    Console.WriteLine("Recoil volume: " + RecoilVolumeBelt);
+                    Console.WriteLine("Total volume: " + VolumePerIntakeBelt);
                     Console.WriteLine("Effective kinetic DPS per volume (belt): " + KineticDpsPerVolumeBelt);
+
+                    Console.WriteLine("Loader cost: " + LoaderCostBelt);
+                    Console.WriteLine("Cooler cost: " + CoolerCostBelt);
+                    Console.WriteLine("Charger cost: " + ChargerCostBelt);
+                    Console.WriteLine("Recoil cost: " + RecoilCostBelt);
+                    Console.WriteLine("Total cost: " + CostPerIntakeBelt);
                     Console.WriteLine("Effective kinetic DPS per cost (belt): " + KineticDpsPerCostBelt);
+
                     Console.WriteLine("Uptime: " + UptimeBelt);
                     Console.WriteLine("Effective kinetic DPS (belt, sustained): " + KineticDpsBeltSustained);
                     Console.WriteLine("Effective kinetic DPS per volume (sustained): " + KineticDpsPerVolumeBeltSustained);
@@ -1119,7 +1027,19 @@ namespace ApsCalc
                 {
                     Console.WriteLine("Reload time: " + ReloadTime);
                     Console.WriteLine("Effective kinetic DPS: " + KineticDps);
+
+                    Console.WriteLine("Loader volume: " + LoaderVolume);
+                    Console.WriteLine("Cooler volume: " + CoolerVolume);
+                    Console.WriteLine("Charger volume: " + ChargerVolume);
+                    Console.WriteLine("Recoil volume: " + RecoilVolume);
+                    Console.WriteLine("Total volume: " + VolumePerIntake);
                     Console.WriteLine("Effective kinetic DPS per volume: " + KineticDpsPerVolume);
+
+                    Console.WriteLine("Loader cost: " + LoaderCost);
+                    Console.WriteLine("Cooler cost: " + CoolerCost);
+                    Console.WriteLine("Charger cost: " + ChargerCost);
+                    Console.WriteLine("Recoil cost: " + RecoilCost);
+                    Console.WriteLine("Total cost: " + CostPerIntake);
                     Console.WriteLine("Effective kinetic DPS per cost: " + KineticDpsPerCost);
                 }
             }
@@ -1153,8 +1073,21 @@ namespace ApsCalc
                 {
                     Console.WriteLine(ReloadTimeBelt);
                     Console.WriteLine(KineticDpsBelt);
+
+                    Console.WriteLine(LoaderVolumeBelt);
+                    Console.WriteLine(CoolerVolumeBelt);
+                    Console.WriteLine(ChargerVolumeBelt);
+                    Console.WriteLine(RecoilVolumeBelt);
+                    Console.WriteLine(VolumePerIntakeBelt);
                     Console.WriteLine(KineticDpsPerVolumeBelt);
+
+                    Console.WriteLine(LoaderCostBelt);
+                    Console.WriteLine(CoolerCostBelt);
+                    Console.WriteLine(ChargerCostBelt);
+                    Console.WriteLine(RecoilCostBelt);
+                    Console.WriteLine(CostPerIntakeBelt);
                     Console.WriteLine(KineticDpsPerCostBelt);
+
                     Console.WriteLine(UptimeBelt);
                     Console.WriteLine(KineticDpsBeltSustained);
                     Console.WriteLine(KineticDpsPerVolumeBeltSustained);
@@ -1164,7 +1097,19 @@ namespace ApsCalc
                 {
                     Console.WriteLine(ReloadTime);
                     Console.WriteLine(KineticDps);
+
+                    Console.WriteLine(LoaderVolume);
+                    Console.WriteLine(CoolerVolume);
+                    Console.WriteLine(ChargerVolume);
+                    Console.WriteLine(RecoilVolume);
+                    Console.WriteLine(VolumePerIntake);
                     Console.WriteLine(KineticDpsPerVolume);
+
+                    Console.WriteLine(LoaderCost);
+                    Console.WriteLine(CoolerCost);
+                    Console.WriteLine(ChargerCost);
+                    Console.WriteLine(RecoilCost);
+                    Console.WriteLine(CostPerIntake);
                     Console.WriteLine(KineticDpsPerCost);
                 }
             }
@@ -1218,8 +1163,21 @@ namespace ApsCalc
                 {
                     writer.WriteLine("Reload time (belt): " + ReloadTimeBelt);
                     writer.WriteLine("Effective kinetic DPS (belt): " + KineticDpsBelt);
+
+                    writer.WriteLine("Loader volume: " + LoaderVolumeBelt);
+                    writer.WriteLine("Cooler volume: " + CoolerVolumeBelt);
+                    writer.WriteLine("Charger volume: " + ChargerVolumeBelt);
+                    writer.WriteLine("Recoil volume: " + RecoilVolumeBelt);
+                    writer.WriteLine("Total volume: " + VolumePerIntakeBelt);
                     writer.WriteLine("Effective kinetic DPS per volume (belt): " + KineticDpsPerVolumeBelt);
+
+                    writer.WriteLine("Loader cost: " + LoaderCostBelt);
+                    writer.WriteLine("Cooler cost: " + CoolerCostBelt);
+                    writer.WriteLine("Charger cost: " + ChargerCostBelt);
+                    writer.WriteLine("Recoil cost: " + RecoilCostBelt);
+                    writer.WriteLine("Total cost: " + CostPerIntakeBelt);
                     writer.WriteLine("Effective kinetic DPS per cost (belt): " + KineticDpsPerCostBelt);
+
                     writer.WriteLine("Uptime: " + UptimeBelt);
                     writer.WriteLine("Effective kinetic DPS (belt, sustained): " + KineticDpsBeltSustained);
                     writer.WriteLine("Effective kinetic DPS per volume (sustained): " + KineticDpsPerVolumeBeltSustained);
@@ -1229,7 +1187,19 @@ namespace ApsCalc
                 {
                     writer.WriteLine("Reload time: " + ReloadTime);
                     writer.WriteLine("Effective kinetic DPS: " + KineticDps);
+
+                    writer.WriteLine("Loader volume: " + LoaderVolume);
+                    writer.WriteLine("Cooler volume: " + CoolerVolume);
+                    writer.WriteLine("Charger volume: " + ChargerVolume);
+                    writer.WriteLine("Recoil volume: " + RecoilVolume);
+                    writer.WriteLine("Total volume: " + VolumePerIntake);
                     writer.WriteLine("Effective kinetic DPS per volume: " + KineticDpsPerVolume);
+
+                    writer.WriteLine("Loader cost: " + LoaderCost);
+                    writer.WriteLine("Cooler cost: " + CoolerCost);
+                    writer.WriteLine("Charger cost: " + ChargerCost);
+                    writer.WriteLine("Recoil cost: " + RecoilCost);
+                    writer.WriteLine("Total cost: " + CostPerIntake);
                     writer.WriteLine("Effective kinetic DPS per cost: " + KineticDpsPerCost);
                 }
             }
@@ -1263,8 +1233,21 @@ namespace ApsCalc
                 {
                     writer.WriteLine(ReloadTimeBelt);
                     writer.WriteLine(KineticDpsBelt);
+
+                    writer.WriteLine(LoaderVolumeBelt);
+                    writer.WriteLine(CoolerVolumeBelt);
+                    writer.WriteLine(ChargerVolumeBelt);
+                    writer.WriteLine(RecoilVolumeBelt);
+                    writer.WriteLine(VolumePerIntakeBelt);
                     writer.WriteLine(KineticDpsPerVolumeBelt);
+
+                    writer.WriteLine(LoaderCostBelt);
+                    writer.WriteLine(CoolerCostBelt);
+                    writer.WriteLine(ChargerCostBelt);
+                    writer.WriteLine(RecoilCostBelt);
+                    writer.WriteLine(CostPerIntakeBelt);
                     writer.WriteLine(KineticDpsPerCostBelt);
+
                     writer.WriteLine(UptimeBelt);
                     writer.WriteLine(KineticDpsBeltSustained);
                     writer.WriteLine(KineticDpsPerVolumeBeltSustained);
@@ -1274,7 +1257,19 @@ namespace ApsCalc
                 {
                     writer.WriteLine(ReloadTime);
                     writer.WriteLine(KineticDps);
+
+                    writer.WriteLine(LoaderVolume);
+                    writer.WriteLine(CoolerVolume);
+                    writer.WriteLine(ChargerVolume);
+                    writer.WriteLine(RecoilVolume);
+                    writer.WriteLine(VolumePerIntake);
                     writer.WriteLine(KineticDpsPerVolume);
+
+                    writer.WriteLine(LoaderCost);
+                    writer.WriteLine(CoolerCost);
+                    writer.WriteLine(ChargerCost);
+                    writer.WriteLine(RecoilCost);
+                    writer.WriteLine(CostPerIntake);
                     writer.WriteLine(KineticDpsPerCost);
                 }
             }
@@ -1336,7 +1331,19 @@ namespace ApsCalc
                 {
                     Console.WriteLine("Reload time (belt): " + ReloadTimeBelt);
                     Console.WriteLine("Chemical DPS (belt): " + ChemDpsBelt);
+
+                    Console.WriteLine("Loader volume: " + LoaderVolumeBelt);
+                    Console.WriteLine("Cooler volume: " + CoolerVolumeBelt);
+                    Console.WriteLine("Charger volume: " + ChargerVolumeBelt);
+                    Console.WriteLine("Recoil volume: " + RecoilVolumeBelt);
+                    Console.WriteLine("Total volume: " + VolumePerIntakeBelt);
                     Console.WriteLine("Chemical DPS per volume (belt): " + ChemDpsPerVolumeBelt);
+
+                    Console.WriteLine("Loader cost: " + LoaderCostBelt);
+                    Console.WriteLine("Cooler cost: " + CoolerCostBelt);
+                    Console.WriteLine("Charger cost: " + ChargerCostBelt);
+                    Console.WriteLine("Recoil cost: " + RecoilCostBelt);
+                    Console.WriteLine("Total cost: " + CostPerIntakeBelt);
                     Console.WriteLine("Chemical DPS per cost (belt): " + ChemDpsPerCostBelt);
                     if (disruptor)
                     {
@@ -1359,7 +1366,19 @@ namespace ApsCalc
                 {
                     Console.WriteLine("Reload time: " + ReloadTime);
                     Console.WriteLine("Chemical DPS: " + ChemDps);
+
+                    Console.WriteLine("Loader volume: " + LoaderVolume);
+                    Console.WriteLine("Cooler volume: " + CoolerVolume);
+                    Console.WriteLine("Charger volume: " + ChargerVolume);
+                    Console.WriteLine("Recoil volume: " + RecoilVolume);
+                    Console.WriteLine("Total volume: " + VolumePerIntake);
                     Console.WriteLine("Chemical DPS per volume: " + ChemDpsPerVolume);
+
+                    Console.WriteLine("Loader cost: " + LoaderCost);
+                    Console.WriteLine("Cooler cost: " + CoolerCost);
+                    Console.WriteLine("Charger cost: " + ChargerCost);
+                    Console.WriteLine("Recoil cost: " + RecoilCost);
+                    Console.WriteLine("Total cost: " + CostPerIntake);
                     Console.WriteLine("Chemical DPS per cost: " + ChemDpsPerCost);
                     if (disruptor)
                     {
@@ -1399,7 +1418,19 @@ namespace ApsCalc
                 {
                     Console.WriteLine(ReloadTimeBelt);
                     Console.WriteLine(ChemDpsBelt);
+
+                    Console.WriteLine(LoaderVolumeBelt);
+                    Console.WriteLine(CoolerVolumeBelt);
+                    Console.WriteLine(ChargerVolumeBelt);
+                    Console.WriteLine(RecoilVolumeBelt);
+                    Console.WriteLine(VolumePerIntakeBelt);
                     Console.WriteLine(ChemDpsPerVolumeBelt);
+
+                    Console.WriteLine(LoaderCostBelt);
+                    Console.WriteLine(CoolerCostBelt);
+                    Console.WriteLine(ChargerCostBelt);
+                    Console.WriteLine(RecoilCostBelt);
+                    Console.WriteLine(CostPerIntakeBelt);
                     Console.WriteLine(ChemDpsPerCostBelt);
                     if (disruptor)
                     {
@@ -1422,7 +1453,19 @@ namespace ApsCalc
                 {
                     Console.WriteLine(ReloadTime);
                     Console.WriteLine(ChemDps);
+
+                    Console.WriteLine(LoaderVolume);
+                    Console.WriteLine(CoolerVolume);
+                    Console.WriteLine(ChargerVolume);
+                    Console.WriteLine(RecoilVolume);
+                    Console.WriteLine(VolumePerIntake);
                     Console.WriteLine(ChemDpsPerVolume);
+
+                    Console.WriteLine(LoaderCost);
+                    Console.WriteLine(CoolerCost);
+                    Console.WriteLine(ChargerCost);
+                    Console.WriteLine(RecoilCost);
+                    Console.WriteLine(CostPerIntake);
                     Console.WriteLine(ChemDpsPerCost);
                     if (disruptor)
                     {
@@ -1490,7 +1533,19 @@ namespace ApsCalc
                 {
                     writer.WriteLine("Reload time (belt): " + ReloadTimeBelt);
                     writer.WriteLine("Chemical DPS (belt): " + ChemDpsBelt);
+
+                    writer.WriteLine("Loader volume: " + LoaderVolumeBelt);
+                    writer.WriteLine("Cooler volume: " + CoolerVolumeBelt);
+                    writer.WriteLine("Charger volume: " + ChargerVolumeBelt);
+                    writer.WriteLine("Recoil volume: " + RecoilVolumeBelt);
+                    writer.WriteLine("Total volume: " + VolumePerIntakeBelt);
                     writer.WriteLine("Chemical DPS per volume (belt): " + ChemDpsPerVolumeBelt);
+
+                    writer.WriteLine("Loader cost: " + LoaderCostBelt);
+                    writer.WriteLine("Cooler cost: " + CoolerCostBelt);
+                    writer.WriteLine("Charger cost: " + ChargerCostBelt);
+                    writer.WriteLine("Recoil cost: " + RecoilCostBelt);
+                    writer.WriteLine("Total cost: " + CostPerIntakeBelt);
                     writer.WriteLine("Chemical DPS per cost (belt): " + ChemDpsPerCostBelt);
                     if (disruptor)
                     {
@@ -1513,8 +1568,20 @@ namespace ApsCalc
                 {
                     writer.WriteLine("Reload time: " + ReloadTime);
                     writer.WriteLine("Chemical DPS: " + ChemDps);
-                    writer.WriteLine("Chemical DPS per volume: " + ChemDpsPerVolume);
-                    writer.WriteLine("Chemical DPS per cost: " + ChemDpsPerCost);
+
+                    writer.WriteLine("Loader volume: " + LoaderVolume);
+                    writer.WriteLine("Cooler volume: " + CoolerVolume);
+                    writer.WriteLine("Charger volume: " + ChargerVolume);
+                    writer.WriteLine("Recoil volume: " + RecoilVolume);
+                    writer.WriteLine("Total volume: " + VolumePerIntake);
+                    writer.WriteLine("Chemical DPS per volume (belt): " + ChemDpsPerVolume);
+
+                    writer.WriteLine("Loader cost: " + LoaderCost);
+                    writer.WriteLine("Cooler cost: " + CoolerCost);
+                    writer.WriteLine("Charger cost: " + ChargerCost);
+                    writer.WriteLine("Recoil cost: " + RecoilCost);
+                    writer.WriteLine("Total cost: " + CostPerIntake);
+                    writer.WriteLine("Chemical DPS per cost (belt): " + ChemDpsPerCost);
                     if (disruptor)
                     {
                         writer.WriteLine("Shield RPS: " + ShieldRps);
@@ -1553,7 +1620,19 @@ namespace ApsCalc
                 {
                     writer.WriteLine(ReloadTimeBelt);
                     writer.WriteLine(ChemDpsBelt);
+
+                    writer.WriteLine(LoaderVolumeBelt);
+                    writer.WriteLine(CoolerVolumeBelt);
+                    writer.WriteLine(ChargerVolumeBelt);
+                    writer.WriteLine(RecoilVolumeBelt);
+                    writer.WriteLine(VolumePerIntakeBelt);
                     writer.WriteLine(ChemDpsPerVolumeBelt);
+
+                    writer.WriteLine(LoaderCostBelt);
+                    writer.WriteLine(CoolerCostBelt);
+                    writer.WriteLine(ChargerCostBelt);
+                    writer.WriteLine(RecoilCostBelt);
+                    writer.WriteLine(CostPerIntakeBelt);
                     writer.WriteLine(ChemDpsPerCostBelt);
                     if (disruptor)
                     {
@@ -1576,7 +1655,19 @@ namespace ApsCalc
                 {
                     writer.WriteLine(ReloadTime);
                     writer.WriteLine(ChemDps);
+
+                    writer.WriteLine(LoaderVolume);
+                    writer.WriteLine(CoolerVolume);
+                    writer.WriteLine(ChargerVolume);
+                    writer.WriteLine(RecoilVolume);
+                    writer.WriteLine(VolumePerIntake);
                     writer.WriteLine(ChemDpsPerVolume);
+
+                    writer.WriteLine(LoaderCost);
+                    writer.WriteLine(CoolerCost);
+                    writer.WriteLine(ChargerCost);
+                    writer.WriteLine(RecoilCost);
+                    writer.WriteLine(CostPerIntake);
                     writer.WriteLine(ChemDpsPerCost);
                     if (disruptor)
                     {
