@@ -8,7 +8,6 @@ namespace ApsCalc
 {
     public struct ModuleCount
     {
-        public float Gauge;
         public int HeadIndex;
         public float Var0Count;
         public float Var1Count;
@@ -24,8 +23,7 @@ namespace ApsCalc
         /// Takes shell parameters and calculates performance of shell permutations.
         /// </summary>
         /// <param name="barrelCount">Number of barrels</param>
-        /// <param name="minGauge">Min desired gauge in mm</param>
-        /// <param name="maxGauge">Max desired gauge in mm</param>
+        /// <param name="gauge">Desired gauge in mm</param>
         /// <param name="headList">List of module indices for every module to be used as head</param>
         /// <param name="baseModule">The special base module, if any</param>
         /// <param name="fixedModuleCounts">An array of integers representing number of shells at that index in module list</param>
@@ -47,8 +45,7 @@ namespace ApsCalc
         /// <param name="writeToFile">True if results should be written to text file instead of console</param>
         public ShellCalc(
             int barrelCount,
-            float minGauge,
-            float maxGauge,
+            float gauge,
             List<int> headList,
             Module baseModule,
             float[] fixedModuleCounts,
@@ -71,8 +68,7 @@ namespace ApsCalc
             )
         {
             BarrelCount = barrelCount;
-            MinGauge = minGauge;
-            MaxGauge = maxGauge;
+            Gauge = gauge;
             HeadList = headList;
             BaseModule = baseModule;
             FixedModuleCounts = fixedModuleCounts;
@@ -96,8 +92,7 @@ namespace ApsCalc
 
 
         public int BarrelCount { get; }
-        public float MinGauge { get; }
-        public float MaxGauge { get; }
+        public float Gauge { get; }
         public List<int> HeadList { get; }
         public Module BaseModule { get; }
         public float[] FixedModuleCounts { get; }
@@ -146,55 +141,52 @@ namespace ApsCalc
 
             foreach (int index in HeadList)
             {
-                for (float gauge = MinGauge; gauge <= MaxGauge; gauge++)
+                for (float var0Count = 0; var0Count <= var0Max; var0Count++)
                 {
-                    for (float var0Count = 0; var0Count <= var0Max; var0Count++)
+                    if (VariableModuleIndices[0] == VariableModuleIndices[1])
                     {
-                        if (VariableModuleIndices[0] == VariableModuleIndices[1])
+                        var1Max = 0; // No need to add duplicates
+                    }
+                    else
+                    {
+                        var1Max = 20f - (FixedModuleTotal + var0Count);
+                    }
+
+                    for (float var1Count = 0; var1Count <= var1Max; var1Count++)
+                    {
+                        if (VariableModuleIndices[2] == VariableModuleIndices[0] || VariableModuleIndices[2] == VariableModuleIndices[1])
                         {
-                            var1Max = 0; // No need to add duplicates
+                            var2Max = 0; // No need to add duplicates
                         }
                         else
                         {
-                            var1Max = 20f - (FixedModuleTotal + var0Count);
+                            var2Max = 20f - (FixedModuleTotal + var0Count + var1Count);
                         }
-
-                        for (float var1Count = 0; var1Count <= var1Max; var1Count++)
+                        for (float var2Count = 0; var2Count <= var2Max; var2Count++)
                         {
-                            if (VariableModuleIndices[2] == VariableModuleIndices[0] || VariableModuleIndices[2] == VariableModuleIndices[1])
-                            {
-                                var2Max = 0; // No need to add duplicates
-                            }
-                            else
-                            {
-                                var2Max = 20f - (FixedModuleTotal + var0Count + var1Count);
-                            }
-                            for (float var2Count = 0; var2Count <= var2Max; var2Count++)
-                            {
-                                gpMax = MathF.Min(20f - (FixedModuleTotal + var0Count + var1Count), MaxGPInput);
+                            gpMax = MathF.Min(20f - (FixedModuleTotal + var0Count + var1Count), MaxGPInput);
 
-                                for (float gpCount = 0; gpCount <= gpMax; gpCount += 0.01f)
+                            for (float gpCount = 0; gpCount <= gpMax; gpCount += 0.01f)
+                            {
+                                rgMax = MathF.Min(20f - (FixedModuleTotal + var0Count + var1Count + gpCount), MaxRGInput);
+
+                                for (float rgCount = 0; rgCount <= rgMax; rgCount++)
                                 {
-                                    rgMax = MathF.Min(20f - (FixedModuleTotal + var0Count + var1Count + gpCount), MaxRGInput);
-
-                                    for (float rgCount = 0; rgCount <= rgMax; rgCount++)
+                                    yield return new ModuleCount
                                     {
-                                        yield return new ModuleCount
-                                        {
-                                            Gauge = gauge,
-                                            HeadIndex = index,
-                                            Var0Count = var0Count,
-                                            Var1Count = var1Count,
-                                            Var2Count = var2Count,
-                                            GPCount = gpCount,
-                                            RGCount = rgCount
-                                        };
-                                    }
+                                        HeadIndex = index,
+                                        Var0Count = var0Count,
+                                        Var1Count = var1Count,
+                                        Var2Count = var2Count,
+                                        GPCount = gpCount,
+                                        RGCount = rgCount
+                                    };
                                 }
-                            }                            
+                            }
                         }
                     }
                 }
+
             }
         }
 
@@ -244,7 +236,7 @@ namespace ApsCalc
                 shellUnderTesting.BaseModule = BaseModule;
                 FixedModuleCounts.CopyTo(shellUnderTesting.BodyModuleCounts, 0);
 
-                shellUnderTesting.Gauge = counts.Gauge;
+                shellUnderTesting.Gauge = Gauge;
                 shellUnderTesting.BodyModuleCounts[VariableModuleIndices[0]] += counts.Var0Count;
                 shellUnderTesting.BodyModuleCounts[VariableModuleIndices[1]] += counts.Var1Count;
                 shellUnderTesting.BodyModuleCounts[VariableModuleIndices[2]] += counts.Var2Count;
@@ -513,7 +505,7 @@ namespace ApsCalc
                             shellUnderTestingBelt.BaseModule = BaseModule;
                             FixedModuleCounts.CopyTo(shellUnderTestingBelt.BodyModuleCounts, 0);
 
-                            shellUnderTestingBelt.Gauge = counts.Gauge;
+                            shellUnderTestingBelt.Gauge = Gauge;
                             shellUnderTestingBelt.BodyModuleCounts[VariableModuleIndices[0]] += counts.Var0Count;
                             shellUnderTestingBelt.BodyModuleCounts[VariableModuleIndices[1]] += counts.Var1Count;
                             shellUnderTestingBelt.BodyModuleCounts[VariableModuleIndices[2]] += counts.Var2Count;
@@ -949,22 +941,22 @@ namespace ApsCalc
         /// <summary>
         /// Write top shell information
         /// </summary>
-        public void WriteTopShells()
+        public void WriteTopShells(float minGauge, float maxGauge)
         {
             if (WriteToFile)
             {
-                WriteTopShellsToFile();
+                WriteTopShellsToFile(minGauge, maxGauge);
             }
             else
             {
-                WriteTopShellsToConsole();
+                WriteTopShellsToConsole(minGauge, maxGauge);
             }
         }
 
         /// <summary>
         /// Write to console statistics of top shells
         /// </summary>
-        void WriteTopShellsToConsole()
+        void WriteTopShellsToConsole(float minGauge, float maxGauge)
         {
             // Determine presence of disruptor conduit
             bool disruptor = false;
@@ -979,13 +971,13 @@ namespace ApsCalc
 
             Console.WriteLine("Test Parameters");
             Console.WriteLine(BarrelCount + " Barrels");
-            if (MinGauge == MaxGauge)
+            if (minGauge == maxGauge)
             {
-                Console.WriteLine("Gauge: " + MinGauge);
+                Console.WriteLine("Gauge: " + minGauge);
             }
             else
             {
-                Console.WriteLine("Gauge: " + MinGauge + " mm thru " + MaxGauge + " mm");
+                Console.WriteLine("Gauge: " + minGauge + " mm thru " + maxGauge + " mm");
             }
 
 
@@ -1036,7 +1028,7 @@ namespace ApsCalc
             }
             Console.WriteLine("Max RG casings: " + MaxRGInput);
             Console.WriteLine("Max draw: " + MaxDrawInput);
-            Console.Write("Max recoil: " + MaxRecoilInput);
+            Console.WriteLine("Max recoil: " + MaxRecoilInput);
             Console.WriteLine("Max length: " + MaxShellLength);
             Console.WriteLine("Min velocity: " + MinVelocityInput);
             Console.WriteLine("Min effective range: " + MinEffectiveRangeInput);
@@ -1173,7 +1165,7 @@ namespace ApsCalc
         /// <summary>
         /// Write to file statistics of top shells
         /// </summary>
-        void WriteTopShellsToFile()
+        void WriteTopShellsToFile(float minGauge, float maxGauge)
         {
             // Determine presence of disruptor conduit
             bool disruptor = false;
@@ -1187,7 +1179,7 @@ namespace ApsCalc
             }
 
             // Create filename from current time
-            string fileName = DateTime.Now.ToString("HHmmss");
+            string fileName = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss-ff");
 
             using var writer = new StreamWriter(fileName, append: true);
             FileStream fs = (FileStream)writer.BaseStream;
@@ -1196,13 +1188,13 @@ namespace ApsCalc
 
             writer.WriteLine("Test Parameters");
             writer.WriteLine(BarrelCount + " Barrels");
-            if (MinGauge == MaxGauge)
+            if (minGauge == maxGauge)
             {
-                writer.WriteLine("Gauge: " + MinGauge);
+                writer.WriteLine("Gauge: " + minGauge);
             }
             else
             {
-                writer.WriteLine("Gauge: " + MinGauge + " mm thru " + MaxGauge + " mm");
+                writer.WriteLine("Gauge: " + minGauge + " mm thru " + maxGauge + " mm");
             }
 
 

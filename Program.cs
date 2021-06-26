@@ -1036,7 +1036,6 @@ namespace ApsCalc
                             ShellCalc calcLocal = new(
                                 tP.BarrelCount,
                                 gauge,
-                                gauge,
                                 tP.HeadIndices,
                                 tP.BaseModule,
                                 tP.FixedModulecounts,
@@ -1070,8 +1069,7 @@ namespace ApsCalc
 
                         ShellCalc calcFinal = new(
                                 tP.BarrelCount,
-                                tP.MinGauge,
-                                tP.MaxGauge,
+                                0f, // Gauge does not matter for calcFinal because it is only running tests on pre-calculated shells
                                 tP.HeadIndices,
                                 tP.BaseModule,
                                 tP.FixedModulecounts,
@@ -1095,7 +1093,7 @@ namespace ApsCalc
 
                         calcFinal.FindTopShellsInList(shellBag);
                         calcFinal.AddTopShellsToDictionary();
-                        calcFinal.WriteTopShells();
+                        calcFinal.WriteTopShells(tP.MinGauge, tP.MaxGauge);
                     }
                 }
                 else
@@ -1106,7 +1104,6 @@ namespace ApsCalc
                         float gaugeFloat = gauge;
                         ShellCalc calcLocal = new(
                             tP.BarrelCount,
-                            gauge,
                             gauge,
                             tP.HeadIndices,
                             tP.BaseModule,
@@ -1140,8 +1137,7 @@ namespace ApsCalc
 
                     ShellCalc calcFinal = new(
                             tP.BarrelCount,
-                            tP.MinGauge,
-                            tP.MaxGauge,
+                            0f, // Gauge does not matter for calcFinal because it is only running tests on pre-calculated shells
                             tP.HeadIndices,
                             tP.BaseModule,
                             tP.FixedModulecounts,
@@ -1165,7 +1161,7 @@ namespace ApsCalc
 
                     calcFinal.FindTopShellsInList(shellBag);
                     calcFinal.AddTopShellsToDictionary();
-                    calcFinal.WriteTopShells();
+                    calcFinal.WriteTopShells(tP.MinGauge, tP.MaxGauge);
                 }
 
                 Console.WriteLine("Time elapsed for this test: " + stopWatchIndiv.Elapsed);
