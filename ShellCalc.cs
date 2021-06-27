@@ -1097,10 +1097,14 @@ namespace ApsCalc
                 }
                 else if (DamageType == 1 || DamageType == 2 || DamageType == 3)
                 {
-                    Console.WriteLine("Chemical payload strength");
                     if (disruptor)
                     {
+                        Console.WriteLine("EMP damage");
                         Console.WriteLine("Shield reduction");
+                    }
+                    else
+                    {
+                        Console.WriteLine("HE damage");
                     }
                 }
 
@@ -1314,10 +1318,14 @@ namespace ApsCalc
                 }
                 else if (DamageType == 1 || DamageType == 2 || DamageType == 3)
                 {
-                    writer.WriteLine("Chemical payload strength");
                     if (disruptor)
                     {
+                        writer.WriteLine("EMP damage");
                         writer.WriteLine("Shield reduction");
+                    }
+                    else
+                    {
+                        writer.WriteLine("HE damage");
                     }
                 }
 

@@ -7,6 +7,10 @@ namespace ApsCalc
 {
     public class Shell
     {
+        // Conversion factor from chemical multiplier to HE damage
+        readonly float chemToHE = MathF.Pow(24f / 30f, 0.9f) * 3000;
+        readonly float chemToEmp = 1500;
+
         public Shell() { BaseModule = default; }
 
         /// <summary>
@@ -708,7 +712,14 @@ namespace ApsCalc
             }
             if (HeadModule.IsChem == true)
             {
-                chemBodies++;
+                if (HeadModule.Name == "HE, Frag, FlaK, or EMP head")
+                {
+                    chemBodies++;
+                }
+                else if (HeadModule.Name == "Squash or Shaped charge head")
+                {
+                    chemBodies += 0.2f;
+                }
             }
 
             ChemDamage = GaugeCoefficient * chemBodies * OverallChemModifier;
@@ -1320,71 +1331,121 @@ namespace ApsCalc
                 Console.WriteLine("Recoil: " + TotalRecoil);
                 Console.WriteLine("Velocity (m/s): " + Velocity);
                 Console.WriteLine("Effective range (m): " + EffectiveRange);
-                Console.WriteLine("Chemical payload strength: " + ChemDamage);
                 if (disruptor)
                 {
+                    Console.WriteLine("EMP damage: " + ChemDamage * chemToEmp);
                     Console.WriteLine("Shield reduction (decimal): " + ShieldReduction);
+                }
+                else
+                {
+                    Console.WriteLine("HE damage: " + ChemDamage * chemToHE);
                 }
 
 
                 if (IsBelt)
                 {
                     Console.WriteLine("Reload time (belt): " + ReloadTimeBelt);
-                    Console.WriteLine("Chemical DPS (belt): " + ChemDpsBelt);
+
+                    if (disruptor)
+                    {
+                        Console.WriteLine("EMP DPS (belt): " + ChemDpsBelt * chemToEmp);
+                    }
+                    else
+                    {
+                        Console.WriteLine("HE DPS (belt): " + ChemDpsBelt * chemToHE);
+                    }
 
                     Console.WriteLine("Loader volume: " + LoaderVolumeBelt);
                     Console.WriteLine("Cooler volume: " + CoolerVolumeBelt);
                     Console.WriteLine("Charger volume: " + ChargerVolumeBelt);
                     Console.WriteLine("Recoil volume: " + RecoilVolumeBelt);
                     Console.WriteLine("Total volume: " + VolumePerIntakeBelt);
-                    Console.WriteLine("Chemical DPS per volume (belt): " + ChemDpsPerVolumeBelt);
+                    if (disruptor)
+                    {
+                        Console.WriteLine("EMP DPS per volume (belt): " + ChemDpsPerVolumeBelt * chemToEmp);
+                    }
+                    else
+                    {
+                        Console.WriteLine("HE DPS per volume (belt): " + ChemDpsPerVolumeBelt * chemToHE);
+                    }
+
 
                     Console.WriteLine("Loader cost: " + LoaderCostBelt);
                     Console.WriteLine("Cooler cost: " + CoolerCostBelt);
                     Console.WriteLine("Charger cost: " + ChargerCostBelt);
                     Console.WriteLine("Recoil cost: " + RecoilCostBelt);
                     Console.WriteLine("Total cost: " + CostPerIntakeBelt);
-                    Console.WriteLine("Chemical DPS per cost (belt): " + ChemDpsPerCostBelt);
                     if (disruptor)
                     {
+                        Console.WriteLine("EMP DPS per cost (belt): " + ChemDpsPerCostBelt * chemToEmp);
                         Console.WriteLine("Shield RPS (belt): " + ShieldRpsBelt);
                         Console.WriteLine("Shield RPS per volume (belt): " + ShieldRpsPerVolumeBelt);
                         Console.WriteLine("Shield RPS per cost (belt): " + ShieldRpsPerCostBelt);
                     }
+                    else
+                    {
+                        Console.WriteLine("HE DPS per cost (belt): " + ChemDpsPerCostBelt * chemToHE);
+                    }
+
+
                     Console.WriteLine("Uptime: " + UptimeBelt);
-                    Console.WriteLine("Chemical DPS (belt, sustained): " + ChemDpsBeltSustained);
-                    Console.WriteLine("Chemical DPS per volume (sustained): " + ChemDpsPerVolumeBeltSustained);
-                    Console.WriteLine("Chemical DPS per cost (sustained): " + ChemDpsPerCostBeltSustained);
                     if (disruptor)
                     {
+                        Console.WriteLine("EMP DPS (belt, sustained): " + ChemDpsBeltSustained * chemToEmp);
+                        Console.WriteLine("EMP DPS per volume (sustained): " + ChemDpsPerVolumeBeltSustained * chemToEmp);
+                        Console.WriteLine("EMP DPS per cost (sustained): " + ChemDpsPerCostBeltSustained * chemToEmp);
                         Console.WriteLine("Shield RPS (belt, sustained): " + ShieldRpsBeltSustained);
-                        Console.WriteLine("Shield RPS per volume (sustained): " + ShieldRpsPerVolumeBeltSustained);
-                        Console.WriteLine("Shield RPS per cost (sustained): " + ShieldRpsPerCostBeltSustained);
+                        Console.WriteLine("RPS per volume (sustained): " + ShieldRpsPerVolumeBeltSustained);
+                        Console.WriteLine("RPS per cost (sustained): " + ShieldRpsPerCostBeltSustained);
+                    }
+                    else
+                    {
+                        Console.WriteLine("HE DPS (belt, sustained): " + ChemDpsBeltSustained * chemToHE);
+                        Console.WriteLine("HE DPS per volume (sustained): " + ChemDpsPerVolumeBeltSustained * chemToHE);
+                        Console.WriteLine("HE DPS per cost (sustained): " + ChemDpsPerCostBeltSustained * chemToHE);
                     }
                 }
                 else
                 {
                     Console.WriteLine("Reload time: " + ReloadTime);
-                    Console.WriteLine("Chemical DPS: " + ChemDps);
+                    if (disruptor)
+                    {
+                        Console.WriteLine("EMP DPS: " + ChemDps * chemToEmp);
+                    }
+                    else
+                    {
+                        Console.WriteLine("HE DPS: " + ChemDps * chemToHE);
+                    }
 
                     Console.WriteLine("Loader volume: " + LoaderVolume);
                     Console.WriteLine("Cooler volume: " + CoolerVolume);
                     Console.WriteLine("Charger volume: " + ChargerVolume);
                     Console.WriteLine("Recoil volume: " + RecoilVolume);
                     Console.WriteLine("Total volume: " + VolumePerIntake);
-                    Console.WriteLine("Chemical DPS per volume: " + ChemDpsPerVolume);
+                    if (disruptor)
+                    {
+                        Console.WriteLine("EMP DPS per volume: " + ChemDpsPerVolume * chemToEmp);
+                    }
+                    else
+                    {
+                        Console.WriteLine("HE DPS per volume: " + ChemDpsPerVolume * chemToHE);
+                    }
 
                     Console.WriteLine("Loader cost: " + LoaderCost);
                     Console.WriteLine("Cooler cost: " + CoolerCost);
                     Console.WriteLine("Charger cost: " + ChargerCost);
                     Console.WriteLine("Recoil cost: " + RecoilCost);
                     Console.WriteLine("Total cost: " + CostPerIntake);
-                    Console.WriteLine("Chemical DPS per cost: " + ChemDpsPerCost);
                     if (disruptor)
                     {
+                        Console.WriteLine("EMP DPS per cost: " + ChemDpsPerCost * chemToEmp);
                         Console.WriteLine("Shield RPS: " + ShieldRps);
                         Console.WriteLine("Shield RPS per Volume: " + ShieldRpsPerVolume);
                         Console.WriteLine("Shield RPS per cost: " + ShieldRpsPerCost);
+                    }
+                    else
+                    {
+                        Console.WriteLine("HE DPS per cost: " + ChemDpsPerCost * chemToHE);
                     }
                 }
             }
@@ -1408,70 +1469,118 @@ namespace ApsCalc
                 Console.WriteLine(TotalRecoil);
                 Console.WriteLine(Velocity);
                 Console.WriteLine(EffectiveRange);
-                Console.WriteLine(ChemDamage);
                 if (disruptor)
                 {
+                    Console.WriteLine(ChemDamage * chemToEmp);
                     Console.WriteLine(ShieldReduction);
+                }
+                else
+                {
+                    Console.WriteLine(ChemDamage * chemToHE);
                 }
 
                 if (IsBelt)
                 {
                     Console.WriteLine(ReloadTimeBelt);
-                    Console.WriteLine(ChemDpsBelt);
+                    if (disruptor)
+                    {
+                        Console.WriteLine(ChemDpsBelt * chemToEmp);
+                    }
+                    else
+                    {
+                        Console.WriteLine(ChemDpsBelt * chemToHE);
+                    }
 
                     Console.WriteLine(LoaderVolumeBelt);
                     Console.WriteLine(CoolerVolumeBelt);
                     Console.WriteLine(ChargerVolumeBelt);
                     Console.WriteLine(RecoilVolumeBelt);
                     Console.WriteLine(VolumePerIntakeBelt);
-                    Console.WriteLine(ChemDpsPerVolumeBelt);
+                    if (disruptor)
+                    {
+                        Console.WriteLine(ChemDpsPerVolumeBelt * chemToEmp);
+                    }
+                    else
+                    {
+                        Console.WriteLine(ChemDpsPerVolumeBelt * chemToHE);
+                    }
+
 
                     Console.WriteLine(LoaderCostBelt);
                     Console.WriteLine(CoolerCostBelt);
                     Console.WriteLine(ChargerCostBelt);
                     Console.WriteLine(RecoilCostBelt);
                     Console.WriteLine(CostPerIntakeBelt);
-                    Console.WriteLine(ChemDpsPerCostBelt);
                     if (disruptor)
                     {
+                        Console.WriteLine(ChemDpsPerCostBelt * chemToEmp);
                         Console.WriteLine(ShieldRpsBelt);
                         Console.WriteLine(ShieldRpsPerVolumeBelt);
                         Console.WriteLine(ShieldRpsPerCostBelt);
                     }
+                    else
+                    {
+                        Console.WriteLine(ChemDpsPerCostBelt * chemToHE);
+                    }
+
                     Console.WriteLine(UptimeBelt);
-                    Console.WriteLine(ChemDpsBeltSustained);
-                    Console.WriteLine(ChemDpsPerVolumeBeltSustained);
-                    Console.WriteLine(ChemDpsPerCostBeltSustained);
                     if (disruptor)
                     {
+                        Console.WriteLine(ChemDpsBeltSustained * chemToEmp);
+                        Console.WriteLine(ChemDpsPerVolumeBeltSustained * chemToEmp);
+                        Console.WriteLine(ChemDpsPerCostBeltSustained * chemToEmp);
                         Console.WriteLine(ShieldRpsBeltSustained);
                         Console.WriteLine(ShieldRpsPerVolumeBeltSustained);
                         Console.WriteLine(ShieldRpsPerCostBeltSustained);
+                    }
+                    else
+                    {
+                        Console.WriteLine(ChemDpsBeltSustained * chemToHE);
+                        Console.WriteLine(ChemDpsPerVolumeBeltSustained * chemToHE);
+                        Console.WriteLine(ChemDpsPerCostBeltSustained * chemToHE);
                     }
                 }
                 else
                 {
                     Console.WriteLine(ReloadTime);
-                    Console.WriteLine(ChemDps);
+                    if (disruptor)
+                    {
+                        Console.WriteLine(ChemDps * chemToEmp);
+                    }
+                    else
+                    {
+                        Console.WriteLine(ChemDps * chemToHE);
+                    }
 
                     Console.WriteLine(LoaderVolume);
                     Console.WriteLine(CoolerVolume);
                     Console.WriteLine(ChargerVolume);
                     Console.WriteLine(RecoilVolume);
                     Console.WriteLine(VolumePerIntake);
-                    Console.WriteLine(ChemDpsPerVolume);
+                    if (disruptor)
+                    {
+                        Console.WriteLine(ChemDpsPerVolume * chemToEmp);
+                    }
+                    else
+                    {
+                        Console.WriteLine(ChemDpsPerVolume * chemToHE);
+                    }
 
                     Console.WriteLine(LoaderCost);
                     Console.WriteLine(CoolerCost);
                     Console.WriteLine(ChargerCost);
                     Console.WriteLine(RecoilCost);
                     Console.WriteLine(CostPerIntake);
-                    Console.WriteLine(ChemDpsPerCost);
                     if (disruptor)
                     {
+                        Console.WriteLine(ChemDpsPerCost * chemToEmp);
                         Console.WriteLine(ShieldRps);
                         Console.WriteLine(ShieldRpsPerVolume);
                         Console.WriteLine(ShieldRpsPerCost);
+                    }
+                    else
+                    {
+                        Console.WriteLine(ChemDpsPerCost * chemToHE);
                     }
                 }
             }
@@ -1489,6 +1598,7 @@ namespace ApsCalc
             {
                 disruptor = false;
             }
+
             if (labels)
             {
                 writer.WriteLine("Gauge (mm): " + Gauge);
@@ -1522,71 +1632,121 @@ namespace ApsCalc
                 writer.WriteLine("Recoil: " + TotalRecoil);
                 writer.WriteLine("Velocity (m/s): " + Velocity);
                 writer.WriteLine("Effective range (m): " + EffectiveRange);
-                writer.WriteLine("Chemical payload strength: " + ChemDamage);
                 if (disruptor)
                 {
+                    writer.WriteLine("EMP damage: " + ChemDamage * chemToEmp);
                     writer.WriteLine("Shield reduction (decimal): " + ShieldReduction);
+                }
+                else
+                {
+                    writer.WriteLine("HE damage: " + ChemDamage * chemToHE);
                 }
 
 
                 if (IsBelt)
                 {
                     writer.WriteLine("Reload time (belt): " + ReloadTimeBelt);
-                    writer.WriteLine("Chemical DPS (belt): " + ChemDpsBelt);
+
+                    if (disruptor)
+                    {
+                        writer.WriteLine("EMP DPS (belt): " + ChemDpsBelt * chemToEmp);
+                    }
+                    else
+                    {
+                        writer.WriteLine("HE DPS (belt): " + ChemDpsBelt * chemToHE);
+                    }
 
                     writer.WriteLine("Loader volume: " + LoaderVolumeBelt);
                     writer.WriteLine("Cooler volume: " + CoolerVolumeBelt);
                     writer.WriteLine("Charger volume: " + ChargerVolumeBelt);
                     writer.WriteLine("Recoil volume: " + RecoilVolumeBelt);
                     writer.WriteLine("Total volume: " + VolumePerIntakeBelt);
-                    writer.WriteLine("Chemical DPS per volume (belt): " + ChemDpsPerVolumeBelt);
+                    if (disruptor)
+                    {
+                        writer.WriteLine("EMP DPS per volume (belt): " + ChemDpsPerVolumeBelt * chemToEmp);
+                    }
+                    else
+                    {
+                        writer.WriteLine("HE DPS per volume (belt): " + ChemDpsPerVolumeBelt * chemToHE);
+                    }
+
 
                     writer.WriteLine("Loader cost: " + LoaderCostBelt);
                     writer.WriteLine("Cooler cost: " + CoolerCostBelt);
                     writer.WriteLine("Charger cost: " + ChargerCostBelt);
                     writer.WriteLine("Recoil cost: " + RecoilCostBelt);
                     writer.WriteLine("Total cost: " + CostPerIntakeBelt);
-                    writer.WriteLine("Chemical DPS per cost (belt): " + ChemDpsPerCostBelt);
                     if (disruptor)
                     {
+                        writer.WriteLine("EMP DPS per cost (belt): " + ChemDpsPerCostBelt * chemToEmp);
                         writer.WriteLine("Shield RPS (belt): " + ShieldRpsBelt);
                         writer.WriteLine("Shield RPS per volume (belt): " + ShieldRpsPerVolumeBelt);
                         writer.WriteLine("Shield RPS per cost (belt): " + ShieldRpsPerCostBelt);
                     }
+                    else
+                    {
+                        writer.WriteLine("HE DPS per cost (belt): " + ChemDpsPerCostBelt * chemToHE);
+                    }
+
+
                     writer.WriteLine("Uptime: " + UptimeBelt);
-                    writer.WriteLine("Chemical DPS (belt, sustained): " + ChemDpsBeltSustained);
-                    writer.WriteLine("Chemical DPS per volume (sustained): " + ChemDpsPerVolumeBeltSustained);
-                    writer.WriteLine("Chemical DPS per cost (sustained): " + ChemDpsPerCostBeltSustained);
                     if (disruptor)
                     {
+                        writer.WriteLine("EMP DPS (belt, sustained): " + ChemDpsBeltSustained * chemToEmp);
+                        writer.WriteLine("EMP DPS per volume (sustained): " + ChemDpsPerVolumeBeltSustained * chemToEmp);
+                        writer.WriteLine("EMP DPS per cost (sustained): " + ChemDpsPerCostBeltSustained * chemToEmp);
                         writer.WriteLine("Shield RPS (belt, sustained): " + ShieldRpsBeltSustained);
-                        writer.WriteLine("Shield RPS per volume (sustained): " + ShieldRpsPerVolumeBeltSustained);
-                        writer.WriteLine("Shield RPS per cost (sustained): " + ShieldRpsPerCostBeltSustained);
+                        writer.WriteLine("RPS per volume (sustained): " + ShieldRpsPerVolumeBeltSustained);
+                        writer.WriteLine("RPS per cost (sustained): " + ShieldRpsPerCostBeltSustained);
+                    }
+                    else
+                    {
+                        writer.WriteLine("HE DPS (belt, sustained): " + ChemDpsBeltSustained * chemToHE);
+                        writer.WriteLine("HE DPS per volume (sustained): " + ChemDpsPerVolumeBeltSustained * chemToHE);
+                        writer.WriteLine("HE DPS per cost (sustained): " + ChemDpsPerCostBeltSustained * chemToHE);
                     }
                 }
                 else
                 {
                     writer.WriteLine("Reload time: " + ReloadTime);
-                    writer.WriteLine("Chemical DPS: " + ChemDps);
+                    if (disruptor)
+                    {
+                        writer.WriteLine("EMP DPS: " + ChemDps * chemToEmp);
+                    }
+                    else
+                    {
+                        writer.WriteLine("HE DPS: " + ChemDps * chemToHE);
+                    }
 
                     writer.WriteLine("Loader volume: " + LoaderVolume);
                     writer.WriteLine("Cooler volume: " + CoolerVolume);
                     writer.WriteLine("Charger volume: " + ChargerVolume);
                     writer.WriteLine("Recoil volume: " + RecoilVolume);
                     writer.WriteLine("Total volume: " + VolumePerIntake);
-                    writer.WriteLine("Chemical DPS per volume (belt): " + ChemDpsPerVolume);
+                    if (disruptor)
+                    {
+                        writer.WriteLine("EMP DPS per volume: " + ChemDpsPerVolume * chemToEmp);
+                    }
+                    else
+                    {
+                        writer.WriteLine("HE DPS per volume: " + ChemDpsPerVolume * chemToHE);
+                    }
 
                     writer.WriteLine("Loader cost: " + LoaderCost);
                     writer.WriteLine("Cooler cost: " + CoolerCost);
                     writer.WriteLine("Charger cost: " + ChargerCost);
                     writer.WriteLine("Recoil cost: " + RecoilCost);
                     writer.WriteLine("Total cost: " + CostPerIntake);
-                    writer.WriteLine("Chemical DPS per cost (belt): " + ChemDpsPerCost);
                     if (disruptor)
                     {
+                        writer.WriteLine("EMP DPS per cost: " + ChemDpsPerCost * chemToEmp);
                         writer.WriteLine("Shield RPS: " + ShieldRps);
                         writer.WriteLine("Shield RPS per Volume: " + ShieldRpsPerVolume);
                         writer.WriteLine("Shield RPS per cost: " + ShieldRpsPerCost);
+                    }
+                    else
+                    {
+                        writer.WriteLine("HE DPS per cost: " + ChemDpsPerCost * chemToHE);
                     }
                 }
             }
@@ -1610,70 +1770,118 @@ namespace ApsCalc
                 writer.WriteLine(TotalRecoil);
                 writer.WriteLine(Velocity);
                 writer.WriteLine(EffectiveRange);
-                writer.WriteLine(ChemDamage);
                 if (disruptor)
                 {
+                    writer.WriteLine(ChemDamage * chemToEmp);
                     writer.WriteLine(ShieldReduction);
+                }
+                else
+                {
+                    writer.WriteLine(ChemDamage * chemToHE);
                 }
 
                 if (IsBelt)
                 {
                     writer.WriteLine(ReloadTimeBelt);
-                    writer.WriteLine(ChemDpsBelt);
+                    if (disruptor)
+                    {
+                        writer.WriteLine(ChemDpsBelt * chemToEmp);
+                    }
+                    else
+                    {
+                        writer.WriteLine(ChemDpsBelt * chemToHE);
+                    }
 
                     writer.WriteLine(LoaderVolumeBelt);
                     writer.WriteLine(CoolerVolumeBelt);
                     writer.WriteLine(ChargerVolumeBelt);
                     writer.WriteLine(RecoilVolumeBelt);
                     writer.WriteLine(VolumePerIntakeBelt);
-                    writer.WriteLine(ChemDpsPerVolumeBelt);
+                    if (disruptor)
+                    {
+                        writer.WriteLine(ChemDpsPerVolumeBelt * chemToEmp);
+                    }
+                    else
+                    {
+                        writer.WriteLine(ChemDpsPerVolumeBelt * chemToHE);
+                    }
+
 
                     writer.WriteLine(LoaderCostBelt);
                     writer.WriteLine(CoolerCostBelt);
                     writer.WriteLine(ChargerCostBelt);
                     writer.WriteLine(RecoilCostBelt);
                     writer.WriteLine(CostPerIntakeBelt);
-                    writer.WriteLine(ChemDpsPerCostBelt);
                     if (disruptor)
                     {
+                        writer.WriteLine(ChemDpsPerCostBelt * chemToEmp);
                         writer.WriteLine(ShieldRpsBelt);
                         writer.WriteLine(ShieldRpsPerVolumeBelt);
                         writer.WriteLine(ShieldRpsPerCostBelt);
                     }
+                    else
+                    {
+                        writer.WriteLine(ChemDpsPerCostBelt * chemToHE);
+                    }
+
                     writer.WriteLine(UptimeBelt);
-                    writer.WriteLine(ChemDpsBeltSustained);
-                    writer.WriteLine(ChemDpsPerVolumeBeltSustained);
-                    writer.WriteLine(ChemDpsPerCostBeltSustained);
                     if (disruptor)
                     {
+                        writer.WriteLine(ChemDpsBeltSustained * chemToEmp);
+                        writer.WriteLine(ChemDpsPerVolumeBeltSustained * chemToEmp);
+                        writer.WriteLine(ChemDpsPerCostBeltSustained * chemToEmp);
                         writer.WriteLine(ShieldRpsBeltSustained);
                         writer.WriteLine(ShieldRpsPerVolumeBeltSustained);
                         writer.WriteLine(ShieldRpsPerCostBeltSustained);
+                    }
+                    else
+                    {
+                        writer.WriteLine(ChemDpsBeltSustained * chemToHE);
+                        writer.WriteLine(ChemDpsPerVolumeBeltSustained * chemToHE);
+                        writer.WriteLine(ChemDpsPerCostBeltSustained * chemToHE);
                     }
                 }
                 else
                 {
                     writer.WriteLine(ReloadTime);
-                    writer.WriteLine(ChemDps);
+                    if (disruptor)
+                    {
+                        writer.WriteLine(ChemDps * chemToEmp);
+                    }
+                    else
+                    {
+                        writer.WriteLine(ChemDps * chemToHE);
+                    }
 
                     writer.WriteLine(LoaderVolume);
                     writer.WriteLine(CoolerVolume);
                     writer.WriteLine(ChargerVolume);
                     writer.WriteLine(RecoilVolume);
                     writer.WriteLine(VolumePerIntake);
-                    writer.WriteLine(ChemDpsPerVolume);
+                    if (disruptor)
+                    {
+                        writer.WriteLine(ChemDpsPerVolume * chemToEmp);
+                    }
+                    else
+                    {
+                        writer.WriteLine(ChemDpsPerVolume * chemToHE);
+                    }
 
                     writer.WriteLine(LoaderCost);
                     writer.WriteLine(CoolerCost);
                     writer.WriteLine(ChargerCost);
                     writer.WriteLine(RecoilCost);
                     writer.WriteLine(CostPerIntake);
-                    writer.WriteLine(ChemDpsPerCost);
                     if (disruptor)
                     {
+                        writer.WriteLine(ChemDpsPerCost * chemToEmp);
                         writer.WriteLine(ShieldRps);
                         writer.WriteLine(ShieldRpsPerVolume);
                         writer.WriteLine(ShieldRpsPerCost);
+                    }
+                    else
+                    {
+                        writer.WriteLine(ChemDpsPerCost * chemToHE);
                     }
                 }
             }
