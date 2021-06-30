@@ -27,7 +27,7 @@ namespace ApsCalc
         public float MinVelocity;
         public float MinEffectiverange;
         public List<float> TargetACList;
-        public int DamageType;
+        public DamageType DamageType;
         public Scheme ArmorScheme;
         public int TestType;
         public bool Labels;
@@ -144,7 +144,7 @@ namespace ApsCalc
             int maxHeadIndex = 0;
             foreach (Module mod in Module.AllModules)
             {
-                if (mod.ModuleType == Module.Position.Middle || mod.ModuleType == Module.Position.Head)
+                if (mod.ModulePosition == Module.Position.Middle || mod.ModulePosition == Module.Position.Head)
                 {
                     minHeadIndex = modIndex;
                     break;
@@ -157,7 +157,7 @@ namespace ApsCalc
             // Counting backwards from end of module list
             for (int i = Module.AllModules.Length - 1; i >= 0; i--)
             {
-                if (Module.AllModules[i].ModuleType == Module.Position.Middle || Module.AllModules[i].ModuleType == Module.Position.Head)
+                if (Module.AllModules[i].ModulePosition == Module.Position.Middle || Module.AllModules[i].ModulePosition == Module.Position.Head)
                 {
                     maxHeadIndex = i;
                     break;
@@ -260,7 +260,7 @@ namespace ApsCalc
             int maxBaseIndex = 0;
             foreach (Module mod in Module.AllModules)
             {
-                if (mod.ModuleType == Module.Position.Base)
+                if (mod.ModulePosition == Module.Position.Base)
                 {
                     minBaseIndex = modIndex;
                     break;
@@ -273,7 +273,7 @@ namespace ApsCalc
             // Counting backwards from end of module list
             for (int i = Module.AllModules.Length - 1; i >= 0; i--)
             {
-                if (Module.AllModules[i].ModuleType == Module.Position.Base)
+                if (Module.AllModules[i].ModulePosition == Module.Position.Base)
                 {
                     maxBaseIndex = i;
                     break;
@@ -304,7 +304,7 @@ namespace ApsCalc
                     }
                     else
                     {
-                        baseModule = (Module.AllModules[baseIndex]);
+                        baseModule = Module.AllModules[baseIndex];
                         Console.WriteLine("\n" + baseModule.Name + " selected.\n");
                         break;
                     }
@@ -327,7 +327,7 @@ namespace ApsCalc
             int maxBodyIndex = 0;
             foreach (Module mod in Module.AllModules)
             {
-                if (mod.ModuleType == Module.Position.Middle)
+                if (mod.ModulePosition == Module.Position.Middle)
                 {
                     minBodyIndex = modIndex;
                     break;
@@ -340,7 +340,7 @@ namespace ApsCalc
             // Counting backwards from end of module list
             for (int i = Module.AllModules.Length - 1; i >= 0; i--)
             {
-                if (Module.AllModules[i].ModuleType == Module.Position.Middle)
+                if (Module.AllModules[i].ModulePosition == Module.Position.Middle)
                 {
                     maxBodyIndex = i;
                     break;
@@ -733,34 +733,35 @@ namespace ApsCalc
 
 
 
-            // Get damage type to measure
-            int damageType;
+            // Get damage type to optimize
+            int damageTypeInput;
+            DamageType damageType;
             Scheme armorScheme = new();
             List<float> targetACList = new();
-            Console.WriteLine("\nEnter 0 to measure kinetic damage\nEnter 1 to measure chemical damage (HE, Frag, FlaK, EMP).\nEnter 2 for pendepth." +
-                "\nEnter 3 for shield disruptor.");
+            Console.WriteLine("\nSelect damage type to optimize:\n0: Kinetic\n1: EMP\n2: FlaK\n3: Frag\n4: HE\n5: Pendepth\n6: Disruptor");
             while (true)
             {
                 input = Console.ReadLine();
-                if (int.TryParse(input, out damageType))
+                if (int.TryParse(input, out damageTypeInput))
                 {
-                    if (damageType < 0 || damageType > 3)
+                    if (damageTypeInput < 0 || damageTypeInput > 6)
                     {
-                        Console.WriteLine("\nDAMAGE TYPE RANGE ERROR: Enter 0 for kinetic, 1 for chemical, 2 for pendepth, or 3 for disruptor.");
+                        Console.WriteLine("\nDAMAGE TYPE RANGE ERROR: 0: Kinetic | 1: EMP | 2: FlaK | 3: Frag | 4: HE | 5: Pendepth | 6: Disruptor.");
                     }
                     else
                     {
-                        damageType = Convert.ToInt32(input);
+                        damageTypeInput = Convert.ToInt32(input);
                         break;
                     }
                 }
                 else
                 {
-                    Console.WriteLine("\nDAMAGE TYPE PARSE ERROR: Enter 0 for kinetic, 1 for chemical, 2 for pendepth, or 3 for disruptor.");
+                    Console.WriteLine("\nDAMAGE TYPE PARSE ERROR: 0: Kinetic | 1: EMP | 2: FlaK | 3: Frag | 4: HE | 5: Pendepth | 6: Disruptor.");
                 }
             }
-            if (damageType == 0)
+            if (damageTypeInput == 0)
             {
+                damageType = DamageType.Kinetic;
                 float minAC = 0.1f;
                 float maxAC = 100f;
                 float ACCount = 0;
@@ -846,18 +847,36 @@ namespace ApsCalc
                     Console.WriteLine(ac);
                 }
             }
-            else if (damageType == 1)
+            else if (damageTypeInput == 1)
             {
-                Console.WriteLine("\nWill test chemical damage.\n");
+                damageType = DamageType.Emp;
+                Console.WriteLine("\nWill optimize EMP damage.\n");
             }
-            else if (damageType == 2)
+            else if (damageTypeInput == 2)
             {
+                damageType = DamageType.FlaK;
+                Console.WriteLine("\nWill optimize flaK damage.\n");
+            }
+            else if (damageTypeInput == 3)
+            {
+                damageType = DamageType.Frag;
+                Console.WriteLine("\nWill optimize frag damage.\n");
+            }
+            else if (damageTypeInput == 4)
+            {
+                damageType = DamageType.HE;
+                Console.WriteLine("\nWill optimize HE damage.\n");
+            }
+            else if (damageTypeInput == 5)
+            {
+                damageType = DamageType.Pendepth;
                 Console.WriteLine("\n");
                 armorScheme.GetLayerList();
                 armorScheme.CalculateLayerAC();
             }
-            else if (damageType == 3)
+            else
             {
+                damageType = DamageType.Disruptor;
                 // Overwrite head list with disruptor conduit
                 headIndices.Clear();
                 modIndex = 0;
@@ -870,7 +889,7 @@ namespace ApsCalc
                     }
                     modIndex++;
                 }
-                Console.WriteLine("Head set to Disruptor conduit.  Will test shield reduction strength.");
+                Console.WriteLine("Head set to Disruptor conduit.  Will optimize shield reduction strength.");
             }
 
 

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.IO;
+using System.Linq;
 using PenCalc;
 
 namespace ApsCalc
@@ -14,6 +15,18 @@ namespace ApsCalc
         public float Var2Count;
         public float GPCount;
         public float RGCount;
+    }
+
+    // Module positions.  Enum is faster than strings.
+    public enum DamageType : int
+    {
+        Kinetic,
+        Emp,
+        FlaK,
+        Frag,
+        HE,
+        Pendepth,
+        Disruptor
     }
 
 
@@ -38,7 +51,7 @@ namespace ApsCalc
         /// <param name="minVelocityInput">Min desired velocity</param>
         /// <param name="minEffectiveRangeInput">Min desired effective range</param>
         /// <param name="targetAC">Armor class of target for kinetic damage calculations</param>
-        /// <param name="damageType">0 for kinetic, 1 for chemical, 2 for pendepth, 3 for disruptor</param>
+        /// <param name="damageType">DamageType Enum, determines which damage type is optimized</param>
         /// <param name="targetArmorScheme">Target armor scheme, from Pencalc namespace</param>
         /// <param name="testType">0 for DPS per volume, 1 for DPS per cost</param>
         /// <param name="labels">True if row headers should be printed on every line</param>
@@ -60,7 +73,7 @@ namespace ApsCalc
             float minVelocityInput,
             float minEffectiveRangeInput,
             float targetAC,
-            float damageType,
+            DamageType damageType,
             Scheme targetArmorScheme,
             int testType,
             bool labels,
@@ -107,7 +120,7 @@ namespace ApsCalc
         public float MinVelocityInput { get; }
         public float MinEffectiveRangeInput { get; }
         public float TargetAC { get; }
-        public float DamageType { get; }
+        public DamageType DamageType { get; }
         public Scheme TargetArmorScheme { get; }
         public int TestType { get; }
         public bool Labels { get; }
@@ -189,38 +202,6 @@ namespace ApsCalc
 
             }
         }
-
-
-        /// <summary>
-        /// Divides a range of integers into even groups.  Used by railgun testing method.
-        /// </summary>
-        /// <param name="start">Beginning of range to be divided</param>
-        /// <param name="end">End of range to be divided</param>
-        /// <param name="numGroups">Number of groups into which range is divided</param>
-        /// <returns></returns>
-        public static IEnumerable<float> DistributeRange(float start, float end, float numGroups)
-        {
-            if (numGroups == 0)
-            {
-                yield return 0;
-            }
-            else
-            {
-                float total = MathF.Abs(end - start);
-                float value;
-                float groupSize = MathF.Floor(total / numGroups);
-
-                for (float i = 0; i < numGroups; i++)
-                {
-                    value = i * groupSize;
-                    yield return value;
-                }
-
-                yield return end;
-            }
-        }
-
-
 
         /// <summary>
         /// Iterates over possible configurations and stores the best according to test parameters
@@ -400,6 +381,12 @@ namespace ApsCalc
                         // Check performance against top shells
                         shellUnderTesting.RailDraw = optimalDraw;
                         shellUnderTesting.CalculateDpsByType(DamageType, TargetAC, TargetArmorScheme);
+                        if (DamageType == DamageType.Pendepth)
+                        {
+                            shellUnderTesting.CalculateDpsByType(DamageType.FlaK, TargetAC, TargetArmorScheme);
+                            shellUnderTesting.CalculateDpsByType(DamageType.Frag, TargetAC, TargetArmorScheme);
+                            shellUnderTesting.CalculateDpsByType(DamageType.HE, TargetAC, TargetArmorScheme);
+                        }
                         shellUnderTesting.CalculateVelocity();
                         shellUnderTesting.CalculateEffectiveRange();
 
@@ -656,6 +643,12 @@ namespace ApsCalc
                             // Check performance against top shells
                             shellUnderTestingBelt.RailDraw = optimalDraw;
                             shellUnderTestingBelt.CalculateDpsByTypeBelt(DamageType, TargetAC, TargetArmorScheme);
+                            if (DamageType == DamageType.Pendepth)
+                            {
+                                shellUnderTestingBelt.CalculateDpsByTypeBelt(DamageType.FlaK, TargetAC, TargetArmorScheme);
+                                shellUnderTestingBelt.CalculateDpsByTypeBelt(DamageType.Frag, TargetAC, TargetArmorScheme);
+                                shellUnderTestingBelt.CalculateDpsByTypeBelt(DamageType.HE, TargetAC, TargetArmorScheme);
+                            }
                             shellUnderTestingBelt.CalculateVelocity();
                             shellUnderTestingBelt.CalculateEffectiveRange();
 
@@ -685,37 +678,37 @@ namespace ApsCalc
         /// </summary>
         public void AddTopShellsToLocalList()
         {
-            if (TopBelt.KineticDpsBeltSustained > 0 || TopBelt.ChemDpsBeltSustained > 0 || TopBelt.ShieldRpsBeltSustained > 0)
+            if (TopBelt.DpsDict[DamageType] > 0)
             {
                 TopShellsLocal.Add(TopBelt);
             }
 
-            if (Top1000.KineticDps > 0 || Top1000.ChemDps > 0 || Top1000.ShieldRps > 0)
+            if (Top1000.DpsDict[DamageType] > 0)
             {
                 TopShellsLocal.Add(Top1000);
             }
 
-            if (Top2000.KineticDps > 0 || Top2000.ChemDps > 0 || Top2000.ShieldRps > 0)
+            if (Top2000.DpsDict[DamageType] > 0)
             {
                 TopShellsLocal.Add(Top2000);
             }
 
-            if (Top3000.KineticDps > 0 || Top3000.ChemDps > 0 || Top3000.ShieldRps > 0)
+            if (Top3000.DpsDict[DamageType] > 0)
             {
                 TopShellsLocal.Add(Top3000);
             }
 
-            if (Top4000.KineticDps > 0 || Top4000.ChemDps > 0 || Top4000.ShieldRps > 0)
+            if (Top4000.DpsDict[DamageType] > 0)
             {
                 TopShellsLocal.Add(Top4000);
             }
 
-            if (Top6000.KineticDps > 0 || Top6000.ChemDps > 0 || Top6000.ShieldRps > 0)
+            if (Top6000.DpsDict[DamageType] > 0)
             {
                 TopShellsLocal.Add(Top6000);
             }
 
-            if (Top8000.KineticDps > 0 || Top8000.ChemDps > 0 || Top8000.ShieldRps > 0)
+            if (Top8000.DpsDict[DamageType] > 0)
             {
                 TopShellsLocal.Add(Top8000);
             }
@@ -728,37 +721,37 @@ namespace ApsCalc
         /// </summary>
         public void AddTopShellsToDictionary()
         {
-            if (TopBelt.KineticDpsBeltSustained > 0 || TopBelt.ChemDpsBeltSustained > 0 || TopBelt.ShieldRpsBeltSustained > 0)
+            if (TopBelt.DpsDict[DamageType] > 0)
             {
                 TopDpsShells.Add("1 m (belt)", TopBelt);
             }
 
-            if (Top1000.KineticDps > 0 || Top1000.ChemDps > 0 || Top1000.ShieldRps > 0)
+            if (Top1000.DpsDict[DamageType] > 0)
             {
                 TopDpsShells.Add("1 m", Top1000);
             }
 
-            if (Top2000.KineticDps > 0 || Top2000.ChemDps > 0 || Top2000.ShieldRps > 0)
+            if (Top2000.DpsDict[DamageType] > 0)
             {
                 TopDpsShells.Add("2 m", Top2000);
             }
 
-            if (Top3000.KineticDps > 0 || Top3000.ChemDps > 0 || Top3000.ShieldRps > 0)
+            if (Top3000.DpsDict[DamageType] > 0)
             {
                 TopDpsShells.Add("3 m", Top3000);
             }
 
-            if (Top4000.KineticDps > 0 || Top4000.ChemDps > 0 || Top4000.ShieldRps > 0)
+            if (Top4000.DpsDict[DamageType] > 0)
             {
                 TopDpsShells.Add("4 m", Top4000);
             }
 
-            if (Top6000.KineticDps > 0 || Top6000.ChemDps > 0 || Top6000.ShieldRps > 0)
+            if (Top6000.DpsDict[DamageType] > 0)
             {
                 TopDpsShells.Add("6 m", Top6000);
             }
 
-            if (Top8000.KineticDps > 0 || Top8000.ChemDps > 0 || Top8000.ShieldRps > 0)
+            if (Top8000.DpsDict[DamageType] > 0)
             {
                 TopDpsShells.Add("8 m", Top8000);
             }
@@ -771,168 +764,55 @@ namespace ApsCalc
         /// <param name="shellBag"></param>
         public void FindTopShellsInList(ConcurrentBag<Shell> shellBag)
         {
-            if (DamageType == 0)
+            foreach (Shell rawShell in shellBag)
             {
-                foreach (Shell rawShell in shellBag)
+                if (rawShell.IsBelt)
                 {
-                    if (rawShell.IsBelt)
+                    if (rawShell.DpsDict[DamageType] > TopBelt.DpsDict[DamageType])
                     {
-                        if (rawShell.KineticDpsPerVolumeBeltSustained > TopBelt.KineticDpsPerVolumeBeltSustained)
-                        {
-                            TopBelt = rawShell;
-                        }
-                    }
-                    if (rawShell.TotalLength <= 1000f)
-                    {
-                        if (rawShell.KineticDpsPerVolume > Top1000.KineticDpsPerVolume)
-                        {
-                            Top1000 = rawShell;
-                        }
-                    }
-                    else if (rawShell.TotalLength <= 2000f)
-                    {
-                        if (rawShell.KineticDpsPerVolume > Top2000.KineticDpsPerVolume)
-                        {
-                            Top2000 = rawShell;
-                        }
-                    }
-                    else if (rawShell.TotalLength <= 3000f)
-                    {
-                        if (rawShell.KineticDpsPerVolume > Top3000.KineticDpsPerVolume)
-                        {
-                            Top3000 = rawShell;
-                        }
-                    }
-                    else if (rawShell.TotalLength <= 4000f)
-                    {
-                        if (rawShell.KineticDpsPerVolume > Top4000.KineticDpsPerVolume)
-                        {
-                            Top4000 = rawShell;
-                        }
-                    }
-                    else if (rawShell.TotalLength <= 6000f)
-                    {
-                        if (rawShell.KineticDpsPerVolume > Top6000.KineticDpsPerVolume)
-                        {
-                            Top6000 = rawShell;
-                        }
-                    }
-                    else if (rawShell.TotalLength <= 8000f)
-                    {
-                        if (rawShell.KineticDpsPerVolume > Top8000.KineticDpsPerVolume)
-                        {
-                            Top8000 = rawShell;
-                        }
+                        TopBelt = rawShell;
                     }
                 }
-            }
-            else if (DamageType == 1 || DamageType == 2)
-            {
-                foreach (Shell rawShell in shellBag)
+                else if (rawShell.TotalLength <= 1000f)
                 {
-                    if (rawShell.IsBelt)
+                    if (rawShell.DpsDict[DamageType] > Top1000.DpsDict[DamageType])
                     {
-                        if (rawShell.ChemDpsPerVolumeBeltSustained > TopBelt.ChemDpsPerVolumeBeltSustained)
-                        {
-                            TopBelt = rawShell;
-                        }
-                    }
-                    if (rawShell.TotalLength <= 1000f)
-                    {
-                        if (rawShell.ChemDpsPerVolume > Top1000.ChemDpsPerVolume)
-                        {
-                            Top1000 = rawShell;
-                        }
-                    }
-                    else if (rawShell.TotalLength <= 2000f)
-                    {
-                        if (rawShell.ChemDpsPerVolume > Top2000.ChemDpsPerVolume)
-                        {
-                            Top2000 = rawShell;
-                        }
-                    }
-                    else if (rawShell.TotalLength <= 3000f)
-                    {
-                        if (rawShell.ChemDpsPerVolume > Top3000.ChemDpsPerVolume)
-                        {
-                            Top3000 = rawShell;
-                        }
-                    }
-                    else if (rawShell.TotalLength <= 4000f)
-                    {
-                        if (rawShell.ChemDpsPerVolume > Top4000.ChemDpsPerVolume)
-                        {
-                            Top4000 = rawShell;
-                        }
-                    }
-                    else if (rawShell.TotalLength <= 6000f)
-                    {
-                        if (rawShell.ChemDpsPerVolume > Top6000.ChemDpsPerVolume)
-                        {
-                            Top6000 = rawShell;
-                        }
-                    }
-                    else if (rawShell.TotalLength <= 8000f)
-                    {
-                        if (rawShell.ChemDpsPerVolume > Top8000.ChemDpsPerVolume)
-                        {
-                            Top8000 = rawShell;
-                        }
+                        Top1000 = rawShell;
                     }
                 }
-            }
-            else if (DamageType == 3)
-            {
-                foreach (Shell rawShell in shellBag)
+                else if (rawShell.TotalLength <= 2000f)
                 {
-                    if (rawShell.IsBelt)
+                    if (rawShell.DpsDict[DamageType] > Top2000.DpsDict[DamageType])
                     {
-                        if (rawShell.ShieldRpsPerVolumeBeltSustained > TopBelt.ShieldRpsPerVolumeBeltSustained)
-                        {
-                            TopBelt = rawShell;
-                        }
+                        Top2000 = rawShell;
                     }
-                    if (rawShell.TotalLength <= 1000f)
+                }
+                else if (rawShell.TotalLength <= 3000f)
+                {
+                    if (rawShell.DpsDict[DamageType] > Top3000.DpsDict[DamageType])
                     {
-                        if (rawShell.ShieldRpsPerVolume > Top1000.ShieldRpsPerVolume)
-                        {
-                            Top1000 = rawShell;
-                        }
+                        Top3000 = rawShell;
                     }
-                    else if (rawShell.TotalLength <= 2000f)
+                }
+                else if (rawShell.TotalLength <= 4000f)
+                {
+                    if (rawShell.DpsDict[DamageType] > Top4000.DpsDict[DamageType])
                     {
-                        if (rawShell.ShieldRpsPerVolume > Top2000.ShieldRpsPerVolume)
-                        {
-                            Top2000 = rawShell;
-                        }
+                        Top4000 = rawShell;
                     }
-                    else if (rawShell.TotalLength <= 3000f)
+                }
+                else if (rawShell.TotalLength <= 6000f)
+                {
+                    if (rawShell.DpsDict[DamageType] > Top6000.DpsDict[DamageType])
                     {
-                        if (rawShell.ChemDpsPerVolume > Top3000.ChemDpsPerVolume)
-                        {
-                            Top3000 = rawShell;
-                        }
+                        Top6000 = rawShell;
                     }
-                    else if (rawShell.TotalLength <= 4000f)
+                }
+                else if (rawShell.TotalLength <= 8000f)
+                {
+                    if (rawShell.DpsDict[DamageType] > Top8000.DpsDict[DamageType])
                     {
-                        if (rawShell.ShieldRpsPerVolume > Top4000.ShieldRpsPerVolume)
-                        {
-                            Top4000 = rawShell;
-                        }
-                    }
-                    else if (rawShell.TotalLength <= 6000f)
-                    {
-                        if (rawShell.ShieldRpsPerVolume > Top6000.ShieldRpsPerVolume)
-                        {
-                            Top6000 = rawShell;
-                        }
-                    }
-                    else if (rawShell.TotalLength <= 8000f)
-                    {
-                        if (rawShell.ShieldRpsPerVolume > Top8000.ShieldRpsPerVolume)
-                        {
-                            Top8000 = rawShell;
-                        }
+                        Top8000 = rawShell;
                     }
                 }
             }
@@ -943,33 +823,102 @@ namespace ApsCalc
         /// </summary>
         public void WriteTopShells(float minGauge, float maxGauge)
         {
+            bool showGP = false;
+            if (MaxGPInput > 0)
+            {
+                showGP = true;
+            }
+
+            bool showRG = false;
+            if (MaxRGInput > 0)
+            {
+                showRG = true;
+            }
+
+            bool showDraw = false;
+            if (MaxDrawInput > 0)
+            {
+                showDraw = true;
+            }
+
+            // Determine module and damage types to show
+            Dictionary<DamageType, bool> dtToShow = new()
+            {
+                { DamageType.Kinetic, false },
+                { DamageType.Emp, false },
+                { DamageType.FlaK, false },
+                { DamageType.Frag, false },
+                { DamageType.HE, false },
+                { DamageType.Pendepth, false },
+                { DamageType.Disruptor, false }
+            };
+
+            List<int> modsToShow = new();
+
+            if (FixedModuleCounts[0] > 0 || VariableModuleIndices.Contains(0))
+            {
+                dtToShow[DamageType.Kinetic] = true;
+                modsToShow.Add(0);
+            }
+            if (FixedModuleCounts[1] > 0 || VariableModuleIndices.Contains(1))
+            {
+                dtToShow[DamageType.Kinetic] = true;
+                modsToShow.Add(1);
+            }
+            if (FixedModuleCounts[2] > 0 || VariableModuleIndices.Contains(2))
+            {
+                dtToShow[DamageType.Emp] = true;
+                modsToShow.Add(2);
+            }
+            if (FixedModuleCounts[3] > 0 || VariableModuleIndices.Contains(3))
+            {
+                dtToShow[DamageType.FlaK] = true;
+                modsToShow.Add(3);
+            }
+            if (FixedModuleCounts[4] > 0 || VariableModuleIndices.Contains(4))
+            {
+                dtToShow[DamageType.Frag] = true;
+                modsToShow.Add(4);
+            }
+            if (FixedModuleCounts[5] > 0 || VariableModuleIndices.Contains(5))
+            {
+                dtToShow[DamageType.HE] = true;
+                modsToShow.Add(5);
+            }
+
+            // Check non-damage body mods for inclusion
+            for (int index = 6; index < Module.AllModules.Length; index++)
+            {
+                if (Module.AllModules[index].ModulePosition == Module.Position.Middle && 
+                    (FixedModuleCounts[index] > 0 || VariableModuleIndices.Contains(index)))
+                {
+                    modsToShow.Add(index);
+                }
+            }
+
             if (WriteToFile)
             {
-                WriteTopShellsToFile(minGauge, maxGauge);
+                WriteTopShellsToFile(minGauge, maxGauge, showGP, showRG, showDraw, dtToShow, modsToShow);
             }
             else
             {
-                WriteTopShellsToConsole(minGauge, maxGauge);
+                WriteTopShellsToConsole(minGauge, maxGauge, showGP, showRG, showDraw, dtToShow, modsToShow);
             }
         }
 
         /// <summary>
         /// Write to console statistics of top shells
         /// </summary>
-        void WriteTopShellsToConsole(float minGauge, float maxGauge)
+        void WriteTopShellsToConsole(
+            float minGauge,
+            float maxGauge,
+            bool showGP,
+            bool showRG,
+            bool showDraw,
+            Dictionary<DamageType, bool> dtToShow,
+            List<int> modsToShow)
         {
-            // Determine presence of disruptor conduit
-            bool disruptor = false;
-            foreach (int headIndex in HeadList)
-            {
-                if (Module.AllModules[headIndex] == Module.Disruptor)
-                {
-                    disruptor = true;
-                    break;
-                }
-            }
-
-            Console.WriteLine("Test Parameters");
+            Console.WriteLine("\nTest Parameters");
             Console.WriteLine(BarrelCount + " Barrels");
             if (minGauge == maxGauge)
             {
@@ -979,7 +928,6 @@ namespace ApsCalc
             {
                 Console.WriteLine("Gauge: " + minGauge + " mm thru " + maxGauge + " mm");
             }
-
 
             if (HeadList.Count == 1)
             {
@@ -999,27 +947,26 @@ namespace ApsCalc
                 Console.WriteLine("Base: " + BaseModule.Name);
             }
 
-            Console.WriteLine("Fixed modules: ");
+            Console.WriteLine("Fixed module(s): ");
 
             int modIndex = 0;
             foreach (float modCount in FixedModuleCounts)
             {
-                Console.WriteLine(Module.AllModules[modIndex].Name + ": " + modCount);
+                if (modCount > 0)
+                {
+                    Console.WriteLine(Module.AllModules[modIndex].Name + ": " + modCount);
+                }
                 modIndex++;
             }
 
-            if (VariableModuleIndices[0] == VariableModuleIndices[1])
+            // Remove duplicate variable mod indices
+            List<int> uniqueVarModIndices = VariableModuleIndices.Distinct().ToList();
+            Console.WriteLine("Variable module(s):");
+            foreach (int index in uniqueVarModIndices)
             {
-                Console.WriteLine("Variable module: " + Module.AllModules[VariableModuleIndices[0]].Name);
+                Console.WriteLine(Module.AllModules[index].Name);
             }
-            else
-            {
-                Console.WriteLine("Variable modules: ");
-                foreach (int varModIndex in VariableModuleIndices)
-                {
-                    Console.WriteLine(Module.AllModules[varModIndex].Name);
-                }
-            }
+
 
             Console.WriteLine("Max GP casings: " + MaxGPInput);
             if (MaxGPInput > 0 && BoreEvacuator)
@@ -1033,27 +980,23 @@ namespace ApsCalc
             Console.WriteLine("Min velocity: " + MinVelocityInput);
             Console.WriteLine("Min effective range: " + MinEffectiveRangeInput);
 
-            if (DamageType == 0)
+            if (DamageType == DamageType.Kinetic)
             {
                 Console.WriteLine("Damage type: kinetic");
                 Console.WriteLine("Target AC: " + TargetAC);
             }
-            else if (DamageType == 1)
+            else if (DamageType == DamageType.Pendepth)
             {
-                Console.WriteLine("Damage type: chemical");
-            }
-            else if (DamageType == 2)
-            {
-                Console.WriteLine("Damage type: pendepth (chemical)");
+                Console.WriteLine("Damage type: pendepth");
                 Console.WriteLine("Target armor scheme:");
                 foreach (Layer armorLayer in TargetArmorScheme.LayerList)
                 {
                     Console.WriteLine(armorLayer.Name);
                 }
             }
-            else if (DamageType == 3)
+            else
             {
-                Console.WriteLine("Damage type: shield disruption");
+                Console.WriteLine("Damage type: " + (DamageType)(int)DamageType);
             }
 
             if (TestType == 0)
@@ -1069,99 +1012,97 @@ namespace ApsCalc
 
             if (!Labels)
             {
-                Console.WriteLine("\n");
-                Console.WriteLine("Row Headers:");
+                Console.WriteLine("Row Headers");
                 Console.WriteLine("Gauge (mm)");
                 Console.WriteLine("Total length (mm)");
-                Console.WriteLine("Length without casings (mm)");
+                Console.WriteLine("Length without casings");
                 Console.WriteLine("Total modules");
-                Console.WriteLine("GP casings");
-                Console.WriteLine("RG casings");
-
-                for (int i = 0; i < FixedModuleCounts.Length; i++)
+                if (showGP)
                 {
-                    Console.WriteLine(Module.AllModules[i].Name);
+                    Console.WriteLine("GP Casing");
+                }
+                if (showRG)
+                {
+                    Console.WriteLine("RG Casing");
                 }
 
+                foreach (int index in modsToShow)
+                {
+                    Console.WriteLine(Module.AllModules[index].Name);
+                }
                 Console.WriteLine("Head");
-                Console.WriteLine("Draw");
-                Console.WriteLine("Recoil");
+
+
+                if (showDraw)
+                {
+                    Console.WriteLine("Rail draw");
+                }
+                // Recoil = draw if no GP
+                if (showGP)
+                {
+                    Console.WriteLine("Recoil");
+                }
+
                 Console.WriteLine("Velocity (m/s)");
                 Console.WriteLine("Effective range (m)");
 
-                if (DamageType == 0)
+                if (dtToShow[DamageType.Kinetic])
                 {
                     Console.WriteLine("Raw KD");
                     Console.WriteLine("AP");
-                    Console.WriteLine("Eff. KD");
                 }
-                else if (DamageType == 1 || DamageType == 2 || DamageType == 3)
+                foreach (DamageType dt in dtToShow.Keys)
                 {
-                    if (disruptor)
+                    if (dtToShow[dt])
                     {
-                        Console.WriteLine("EMP damage");
-                        Console.WriteLine("Shield reduction");
-                    }
-                    else
-                    {
-                        Console.WriteLine("HE damage");
+                        Console.WriteLine((DamageType)(int)dt + " damage");
                     }
                 }
 
-                Console.WriteLine("Reload (s)");
-                Console.WriteLine("DPS");
+
+                Console.WriteLine("Reload time");
+                foreach (DamageType dt in dtToShow.Keys)
+                {
+                    if (dtToShow[dt])
+                    {
+                        Console.WriteLine((DamageType)(int)dt + " DPS");
+                    }
+                }
+
                 Console.WriteLine("Loader volume");
                 Console.WriteLine("Cooler volume");
                 Console.WriteLine("Charger volume");
                 Console.WriteLine("Recoil volume");
                 Console.WriteLine("Total volume");
-                Console.WriteLine("DPS per volume");
+                foreach (DamageType dt in dtToShow.Keys)
+                {
+                    if (dtToShow[dt])
+                    {
+                        Console.WriteLine((DamageType)(int)dt + " DPS per volume");
+                    }
+                }
 
                 Console.WriteLine("Loader cost");
                 Console.WriteLine("Cooler cost");
                 Console.WriteLine("Charger cost");
                 Console.WriteLine("Recoil cost");
                 Console.WriteLine("Total cost");
-                Console.WriteLine("DPS per cost");
-
-                if (disruptor)
+                foreach (DamageType dt in dtToShow.Keys)
                 {
-                    Console.WriteLine("Shield reduction / s");
-                    Console.WriteLine("Shield RPS / volume");
-                    Console.WriteLine("Shield RPS / cost");
-                }
-                Console.WriteLine("Uptime (belt)");
-                Console.WriteLine("DPS (belt, sustained)");
-                Console.WriteLine("DPS per volume (sustained)");
-                Console.WriteLine("DPS per cost (sustained)");
-                if (disruptor)
-                {
-                    Console.WriteLine("Shield RPS (belt, sustained)");
-                    Console.WriteLine("Shield RPS / volume (sustained)");
-                    Console.WriteLine("Shield RPS / cost (sustained)");
+                    if (dtToShow[dt])
+                    {
+                        Console.WriteLine((DamageType)(int)dt + " DPS per cost");
+                    }
                 }
             }
 
 
-            if (DamageType == 0)
+            foreach (KeyValuePair<string, Shell> topShell in TopDpsShells)
             {
-                foreach (KeyValuePair<string, Shell> topShell in TopDpsShells)
-                {
-                    Console.WriteLine("\n");
-                    Console.WriteLine(topShell.Key);
-                    topShell.Value.GetModuleCounts();
-                    topShell.Value.WriteShellInfoToConsoleKinetic(Labels);
-                }
-            }
-            else if (DamageType == 1 || DamageType == 2 || DamageType == 3)
-            {
-                foreach (KeyValuePair<string, Shell> topShell in TopDpsShells)
-                {
-                    Console.WriteLine("\n");
-                    Console.WriteLine(topShell.Key);
-                    topShell.Value.GetModuleCounts();
-                    topShell.Value.WriteShellInfoToConsoleChem(Labels);
-                }
+                Console.WriteLine("\n");
+                Console.WriteLine(topShell.Key);
+                topShell.Value.GetModuleCounts();
+                topShell.Value.WriteShellInfoToConsole(Labels, showGP, showRG, showDraw, dtToShow, modsToShow);
             }
         }
 
@@ -1169,19 +1110,16 @@ namespace ApsCalc
         /// <summary>
         /// Write to file statistics of top shells
         /// </summary>
-        void WriteTopShellsToFile(float minGauge, float maxGauge)
-        {
-            // Determine presence of disruptor conduit
-            bool disruptor = false;
-            foreach (int headIndex in HeadList)
-            {
-                if (Module.AllModules[headIndex] == Module.Disruptor)
-                {
-                    disruptor = true;
-                    break;
-                }
-            }
+        void WriteTopShellsToFile(
+            float minGauge,
+            float maxGauge,
+            bool showGP,
+            bool showRG,
+            bool showDraw,
+            Dictionary<DamageType, bool> dtToShow,
+            List<int> modsToShow)
 
+        {
             // Create filename from current time
             string fileName = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss-ff");
 
@@ -1190,7 +1128,7 @@ namespace ApsCalc
             Console.WriteLine("Writing results to filename: " + fs.Name);
 
 
-            writer.WriteLine("Test Parameters");
+            writer.WriteLine("\nTest Parameters");
             writer.WriteLine(BarrelCount + " Barrels");
             if (minGauge == maxGauge)
             {
@@ -1200,7 +1138,6 @@ namespace ApsCalc
             {
                 writer.WriteLine("Gauge: " + minGauge + " mm thru " + maxGauge + " mm");
             }
-
 
             if (HeadList.Count == 1)
             {
@@ -1220,27 +1157,26 @@ namespace ApsCalc
                 writer.WriteLine("Base: " + BaseModule.Name);
             }
 
-            writer.WriteLine("Fixed modules: ");
+            writer.WriteLine("Fixed module(s): ");
 
             int modIndex = 0;
             foreach (float modCount in FixedModuleCounts)
             {
-                writer.WriteLine(Module.AllModules[modIndex].Name + ": " + modCount);
+                if (modCount > 0)
+                {
+                    writer.WriteLine(Module.AllModules[modIndex].Name + ": " + modCount);
+                }
                 modIndex++;
             }
 
-            if (VariableModuleIndices[0] == VariableModuleIndices[1])
+            // Remove duplicate variable mod indices
+            List<int> uniqueVarModIndices = VariableModuleIndices.Distinct().ToList();
+            writer.WriteLine("Variable module(s):");
+            foreach (int index in uniqueVarModIndices)
             {
-                writer.WriteLine("Variable module: " + Module.AllModules[VariableModuleIndices[0]].Name);
+                writer.WriteLine(Module.AllModules[index].Name);
             }
-            else
-            {
-                writer.WriteLine("Variable modules: ");
-                foreach (int varModIndex in VariableModuleIndices)
-                {
-                    writer.WriteLine(Module.AllModules[varModIndex].Name);
-                }
-            }
+
 
             writer.WriteLine("Max GP casings: " + MaxGPInput);
             if (MaxGPInput > 0 && BoreEvacuator)
@@ -1254,27 +1190,23 @@ namespace ApsCalc
             writer.WriteLine("Min velocity: " + MinVelocityInput);
             writer.WriteLine("Min effective range: " + MinEffectiveRangeInput);
 
-            if (DamageType == 0)
+            if (DamageType == DamageType.Kinetic)
             {
                 writer.WriteLine("Damage type: kinetic");
                 writer.WriteLine("Target AC: " + TargetAC);
             }
-            else if (DamageType == 1)
+            else if (DamageType == DamageType.Pendepth)
             {
-                writer.WriteLine("Damage type: chemical");
-            }
-            else if (DamageType == 2)
-            {
-                writer.WriteLine("Damage type: pendepth (chemical)");
+                writer.WriteLine("Damage type: pendepth");
                 writer.WriteLine("Target armor scheme:");
                 foreach (Layer armorLayer in TargetArmorScheme.LayerList)
                 {
                     writer.WriteLine(armorLayer.Name);
                 }
             }
-            else if (DamageType == 3)
+            else
             {
-                writer.WriteLine("Damage type: shield disruption");
+                writer.WriteLine("Damage type: " + (DamageType)(int)DamageType);
             }
 
             if (TestType == 0)
@@ -1290,99 +1222,97 @@ namespace ApsCalc
 
             if (!Labels)
             {
-                writer.WriteLine("\n");
-                writer.WriteLine("Row Headers:");
+                writer.WriteLine("Row headers");
                 writer.WriteLine("Gauge (mm)");
                 writer.WriteLine("Total length (mm)");
-                writer.WriteLine("Length without casings (mm)");
+                writer.WriteLine("Length without casings");
                 writer.WriteLine("Total modules");
-                writer.WriteLine("GP casings");
-                writer.WriteLine("RG casings");
-
-                for (int i = 0; i < FixedModuleCounts.Length; i++)
+                if (showGP)
                 {
-                    writer.WriteLine(Module.AllModules[i].Name);
+                    writer.WriteLine("GP Casing");
+                }
+                if (showRG)
+                {
+                    writer.WriteLine("RG Casing");
                 }
 
+                foreach (int index in modsToShow)
+                {
+                    writer.WriteLine(Module.AllModules[index].Name);
+                }
                 writer.WriteLine("Head");
-                writer.WriteLine("Draw");
-                writer.WriteLine("Recoil");
+
+
+                if (showDraw)
+                {
+                    writer.WriteLine("Rail draw");
+                }
+                // Recoil = draw if no GP
+                if (showGP)
+                {
+                    writer.WriteLine("Recoil");
+                }
+
                 writer.WriteLine("Velocity (m/s)");
                 writer.WriteLine("Effective range (m)");
 
-                if (DamageType == 0)
+                if (dtToShow[DamageType.Kinetic])
                 {
                     writer.WriteLine("Raw KD");
                     writer.WriteLine("AP");
-                    writer.WriteLine("Eff. KD");
                 }
-                else if (DamageType == 1 || DamageType == 2 || DamageType == 3)
+                foreach (DamageType dt in dtToShow.Keys)
                 {
-                    if (disruptor)
+                    if (dtToShow[dt])
                     {
-                        writer.WriteLine("EMP damage");
-                        writer.WriteLine("Shield reduction");
-                    }
-                    else
-                    {
-                        writer.WriteLine("HE damage");
+                        writer.WriteLine((DamageType)(int)dt + " damage");
                     }
                 }
 
-                writer.WriteLine("Reload (s)");
-                writer.WriteLine("DPS");
+
+                writer.WriteLine("Reload time");
+                foreach (DamageType dt in dtToShow.Keys)
+                {
+                    if (dtToShow[dt])
+                    {
+                        writer.WriteLine((DamageType)(int)dt + " DPS");
+                    }
+                }
 
                 writer.WriteLine("Loader volume");
                 writer.WriteLine("Cooler volume");
                 writer.WriteLine("Charger volume");
                 writer.WriteLine("Recoil volume");
                 writer.WriteLine("Total volume");
-                writer.WriteLine("DPS per volume");
+                foreach (DamageType dt in dtToShow.Keys)
+                {
+                    if (dtToShow[dt])
+                    {
+                        writer.WriteLine((DamageType)(int)dt + " DPS per volume");
+                    }
+                }
 
                 writer.WriteLine("Loader cost");
                 writer.WriteLine("Cooler cost");
                 writer.WriteLine("Charger cost");
                 writer.WriteLine("Recoil cost");
                 writer.WriteLine("Total cost");
-                writer.WriteLine("DPS per cost");
-                if (disruptor)
+                foreach (DamageType dt in dtToShow.Keys)
                 {
-                    writer.WriteLine("Shield reduction / s");
-                    writer.WriteLine("Shield RPS / volume");
-                    writer.WriteLine("Shield RPS / cost");
-                }
-                writer.WriteLine("Uptime (belt)");
-                writer.WriteLine("DPS (belt, sustained)");
-                writer.WriteLine("DPS per volume (sustained)");
-                writer.WriteLine("DPS per cost (sustained)");
-                if (disruptor)
-                {
-                    writer.WriteLine("Shield RPS (belt, sustained)");
-                    writer.WriteLine("Shield RPS / volume (sustained)");
-                    writer.WriteLine("Shield RPS / cost (sustained)");
+                    if (dtToShow[dt])
+                    {
+                        writer.WriteLine((DamageType)(int)dt + " DPS per cost");
+                    }
                 }
             }
 
 
-            if (DamageType == 0)
+            foreach (KeyValuePair<string, Shell> topShell in TopDpsShells)
             {
-                foreach (KeyValuePair<string, Shell> topShell in TopDpsShells)
-                {
-                    writer.WriteLine("\n");
-                    writer.WriteLine(topShell.Key);
-                    topShell.Value.GetModuleCounts();
-                    topShell.Value.WriteShellInfoToFileKinetic(Labels, writer);
-                }
-            }
-            else if (DamageType == 1 || DamageType == 2 || DamageType == 3)
-            {
-                foreach (KeyValuePair<string, Shell> topShell in TopDpsShells)
-                {
-                    writer.WriteLine("\n");
-                    writer.WriteLine(topShell.Key);
-                    topShell.Value.GetModuleCounts();
-                    topShell.Value.WriteShellInfoToFileChem(Labels, writer);
-                }
+                writer.WriteLine("\n");
+                writer.WriteLine(topShell.Key);
+                topShell.Value.GetModuleCounts();
+                topShell.Value.WriteShellInfoToFile(writer, Labels, showGP, showRG, showDraw, dtToShow, modsToShow);
             }
         }
     }
