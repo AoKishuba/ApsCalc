@@ -13,6 +13,12 @@ namespace ApsCalc
         public float Var0Count;
         public float Var1Count;
         public float Var2Count;
+        public float Var3Count;
+        public float Var4Count;
+        public float Var5Count;
+        public float Var6Count;
+        public float Var7Count;
+        public float Var8Count;
         public float GPCount;
         public float RGCount;
     }
@@ -149,6 +155,12 @@ namespace ApsCalc
             float var0Max = 20f - FixedModuleTotal;
             float var1Max;
             float var2Max;
+            float var3Max;
+            float var4Max;
+            float var5Max;
+            float var6Max;
+            float var7Max;
+            float var8Max;
             float gpMax;
             float rgMax;
 
@@ -156,7 +168,7 @@ namespace ApsCalc
             {
                 for (float var0Count = 0; var0Count <= var0Max; var0Count++)
                 {
-                    if (VariableModuleIndices[0] == VariableModuleIndices[1])
+                    if (VariableModuleIndices[1] == VariableModuleIndices[0])
                     {
                         var1Max = 0; // No need to add duplicates
                     }
@@ -167,7 +179,7 @@ namespace ApsCalc
 
                     for (float var1Count = 0; var1Count <= var1Max; var1Count++)
                     {
-                        if (VariableModuleIndices[2] == VariableModuleIndices[0] || VariableModuleIndices[2] == VariableModuleIndices[1])
+                        if (VariableModuleIndices[2] == VariableModuleIndices[0])
                         {
                             var2Max = 0; // No need to add duplicates
                         }
@@ -175,31 +187,124 @@ namespace ApsCalc
                         {
                             var2Max = 20f - (FixedModuleTotal + var0Count + var1Count);
                         }
+
                         for (float var2Count = 0; var2Count <= var2Max; var2Count++)
                         {
-                            gpMax = MathF.Min(20f - (FixedModuleTotal + var0Count + var1Count), MaxGPInput);
-
-                            for (float gpCount = 0; gpCount <= gpMax; gpCount += 0.01f)
+                            if (VariableModuleIndices[3] == VariableModuleIndices[0])
                             {
-                                rgMax = MathF.Min(20f - (FixedModuleTotal + var0Count + var1Count + gpCount), MaxRGInput);
+                                var3Max = 0; // No need to add duplicates
+                            }
+                            else
+                            {
+                                var3Max = 20f - (FixedModuleTotal + var0Count + var1Count + var2Count);
+                            }
 
-                                for (float rgCount = 0; rgCount <= rgMax; rgCount++)
+                            for (float var3Count = 0; var3Count <= var3Max; var3Count++)
+                            {
+                                if (VariableModuleIndices[4] == VariableModuleIndices[0])
                                 {
-                                    yield return new ModuleCount
+                                    var4Max = 0; // No need to add duplicates
+                                }
+                                else
+                                {
+                                    var4Max = 20f - (FixedModuleTotal + var0Count + var1Count + var2Count + var3Count);
+                                }
+
+                                for (float var4Count = 0; var4Count <= var4Max; var4Count++)
+                                {
+                                    if (VariableModuleIndices[5] == VariableModuleIndices[0])
                                     {
-                                        HeadIndex = index,
-                                        Var0Count = var0Count,
-                                        Var1Count = var1Count,
-                                        Var2Count = var2Count,
-                                        GPCount = gpCount,
-                                        RGCount = rgCount
-                                    };
+                                        var5Max = 0; // No need to add duplicates
+                                    }
+                                    else
+                                    {
+                                        var5Max = 20f - (FixedModuleTotal + var0Count + var1Count + var2Count + var3Count + var4Count);
+                                    }
+
+                                    for (float var5Count = 0; var5Count <= var5Max; var5Count++)
+                                    {
+                                        if (VariableModuleIndices[6] == VariableModuleIndices[0])
+                                        {
+                                            var6Max = 0; // No need to add duplicates
+                                        }
+                                        else
+                                        {
+                                            var6Max = 20f - (FixedModuleTotal + var0Count + var1Count + var2Count + var3Count + var4Count + var5Count);
+                                        }
+
+                                        for (float var6Count = 0; var6Count <= var6Max; var6Count++)
+                                        {
+                                            if (VariableModuleIndices[7] == VariableModuleIndices[0])
+                                            {
+                                                var7Max = 0; // No need to add duplicates
+                                            }
+                                            else
+                                            {
+                                                var7Max = 20f - (FixedModuleTotal
+                                                    + var0Count
+                                                    + var1Count
+                                                    + var2Count
+                                                    + var3Count
+                                                    + var4Count
+                                                    + var5Count
+                                                    + var6Count);
+                                            }
+
+                                            for (float var7Count = 0; var7Count <= var7Max; var7Count++)
+                                            {
+                                                if (VariableModuleIndices[8] == VariableModuleIndices[0])
+                                                {
+                                                    var8Max = 0; // No need to add duplicates
+                                                }
+                                                else
+                                                {
+                                                    var8Max = 20f - (FixedModuleTotal
+                                                        + var0Count
+                                                        + var1Count
+                                                        + var2Count
+                                                        + var3Count
+                                                        + var4Count
+                                                        + var5Count
+                                                        + var6Count
+                                                        + var7Count);
+                                                }
+
+                                                for (float var8Count = 0; var8Count <= var8Max; var8Count++)
+                                                {
+                                                    gpMax = MathF.Min(20f - (FixedModuleTotal + var0Count + var1Count), MaxGPInput);
+
+                                                    for (float gpCount = 0; gpCount <= gpMax; gpCount += 0.01f)
+                                                    {
+                                                        rgMax = MathF.Min(20f - (FixedModuleTotal + var0Count + var1Count + gpCount), MaxRGInput);
+
+                                                        for (float rgCount = 0; rgCount <= rgMax; rgCount++)
+                                                        {
+                                                            yield return new ModuleCount
+                                                            {
+                                                                HeadIndex = index,
+                                                                Var0Count = var0Count,
+                                                                Var1Count = var1Count,
+                                                                Var2Count = var2Count,
+                                                                Var3Count = var3Count,
+                                                                Var4Count = var4Count,
+                                                                Var5Count = var5Count,
+                                                                Var6Count = var6Count,
+                                                                Var7Count = var7Count,
+                                                                Var8Count = var8Count,
+                                                                GPCount = gpCount,
+                                                                RGCount = rgCount
+                                                            };
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
                     }
                 }
-
             }
         }
 
@@ -221,6 +326,12 @@ namespace ApsCalc
                 shellUnderTesting.BodyModuleCounts[VariableModuleIndices[0]] += counts.Var0Count;
                 shellUnderTesting.BodyModuleCounts[VariableModuleIndices[1]] += counts.Var1Count;
                 shellUnderTesting.BodyModuleCounts[VariableModuleIndices[2]] += counts.Var2Count;
+                shellUnderTesting.BodyModuleCounts[VariableModuleIndices[3]] += counts.Var3Count;
+                shellUnderTesting.BodyModuleCounts[VariableModuleIndices[4]] += counts.Var4Count;
+                shellUnderTesting.BodyModuleCounts[VariableModuleIndices[5]] += counts.Var5Count;
+                shellUnderTesting.BodyModuleCounts[VariableModuleIndices[6]] += counts.Var6Count;
+                shellUnderTesting.BodyModuleCounts[VariableModuleIndices[7]] += counts.Var7Count;
+                shellUnderTesting.BodyModuleCounts[VariableModuleIndices[8]] += counts.Var8Count;
                 shellUnderTesting.GPCasingCount = counts.GPCount;
                 shellUnderTesting.RGCasingCount = counts.RGCount;
 

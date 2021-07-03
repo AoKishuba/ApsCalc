@@ -417,9 +417,10 @@ namespace ApsCalc
 
             // Get variable modules
             Console.WriteLine("\n\n");
-            int[] variableModuleIndices = { 100, 100, 100 };
+            int[] variableModuleIndices = { 100, 100, 100, 100, 100, 100, 100, 100, 100 };
             int varModCount = 0;
-            while (varModCount < 3)
+            int arrayLength = variableModuleIndices.Length;
+            while (varModCount < arrayLength)
             {
                 for (int i = minBodyIndex; i <= maxBodyIndex; i++)
                 {
@@ -430,7 +431,7 @@ namespace ApsCalc
                     Console.WriteLine("\nEnter a number to select an additional variable module "
                         + (varModCount + 1) // Compensate for 0 indexing for display
                         + " of "
-                        + variableModuleIndices.Length
+                        + arrayLength
                         + ", or type 'done' if finished.");
                 }
                 else
@@ -444,8 +445,8 @@ namespace ApsCalc
                 {
                     if (varModCount > 0)
                     {
-                        // Set remaining indices to first intex entered by user to overwrite default values
-                        for (int i = varModCount; i < variableModuleIndices.Length; i++)
+                        // Set remaining indices to first index entered by user to overwrite default values
+                        for (int i = varModCount; i < arrayLength; i++)
                         {
                             variableModuleIndices[i] = variableModuleIndices[0];
                         }
@@ -707,7 +708,7 @@ namespace ApsCalc
             float minVelocity = minShellVelocityInput;
 
 
-            // Get minimum velocity
+            // Get minimum effective range
             int minEffectiveRangeInput;
             Console.WriteLine("\nEnter minimum effective range in m from 0 thru 2 000.");
             while (true)
