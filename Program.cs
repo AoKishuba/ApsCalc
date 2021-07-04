@@ -1045,7 +1045,7 @@ namespace ApsCalc
             {
                 Stopwatch stopWatchIndiv = Stopwatch.StartNew();
 
-                if (tP.DamageType == 0)
+                if (tP.DamageType == DamageType.Kinetic)
                 {
                     foreach (float ac in tP.TargetACList)
                     {
