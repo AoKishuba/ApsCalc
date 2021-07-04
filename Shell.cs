@@ -812,6 +812,7 @@ namespace ApsCalc
             CalculateAP();
 
             EffectiveKineticDamage = KineticDamage * MathF.Min(1, ArmorPierce / targetAC);
+            DamageDict[DamageType.Kinetic] = EffectiveKineticDamage;
             DpsDict[DamageType.Kinetic] = EffectiveKineticDamage / ReloadTime;
 
             DpsPerVolumeDict[DamageType.Kinetic] = DpsDict[DamageType.Kinetic] / VolumePerIntake;
@@ -827,6 +828,7 @@ namespace ApsCalc
                 CalculateAP();
 
                 EffectiveKineticDamage = KineticDamage * MathF.Min(1, ArmorPierce / targetAC);
+                DamageDict[DamageType.Kinetic] = EffectiveKineticDamage;
                 DpsDict[DamageType.Kinetic] = EffectiveKineticDamage / ReloadTimeBelt * UptimeBelt;
 
                 DpsPerVolumeDict[DamageType.Kinetic] = DpsDict[DamageType.Kinetic] / VolumePerIntakeBelt;
