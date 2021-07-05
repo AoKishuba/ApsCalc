@@ -966,6 +966,7 @@ namespace ApsCalc
 
             List<int> modsToShow = new();
 
+            dtToShow[DamageType] = true; // Always show selected damage type
             if (FixedModuleCounts[0] > 0 || VariableModuleIndices.Contains(0))
             {
                 dtToShow[DamageType.Kinetic] = true;
