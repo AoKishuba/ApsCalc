@@ -926,6 +926,8 @@ namespace ApsCalc
         /// </summary>
         public void CalculateShieldRps()
         {
+            CalculateEmpDps();
+
             DpsDict[DamageType.Disruptor] = DamageDict[DamageType.Disruptor] / ReloadTime;
 
             DpsPerVolumeDict[DamageType.Disruptor] = DpsDict[DamageType.Disruptor] / VolumePerIntake;
@@ -936,6 +938,8 @@ namespace ApsCalc
         {
             if (TotalLength <= 1000f)
             {
+                CalculateEmpDpsBelt();
+
                 DpsDict[DamageType.Disruptor] = DamageDict[DamageType.Disruptor] / ReloadTimeBelt * UptimeBelt;
 
                 DpsPerVolumeDict[DamageType.Disruptor] = DpsDict[DamageType.Disruptor] / VolumePerIntakeBelt;
