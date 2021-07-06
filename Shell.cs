@@ -728,41 +728,36 @@ namespace ApsCalc
         /// </summary>
         void CalculatePendepthDamage()
         {
-            // Calculate theoretical max and actual FlaK, Frag, and HE damage
+            // Calculate each damage type with and without damage-specific multipliers for equal comparison
             float flaKBodies = BodyModuleCounts[4];
-            float maxFlaK;
-            float flaKPercentage = 0;
+            float flakDamageEquivalent = 0;
             if (flaKBodies > 0)
             {
-                DamageDict[DamageType.FlaK] = MathF.Pow(GaugeCoefficient * flaKBodies * 204 / 300, 0.9f) * OverallChemModifier * 3000;
-                maxFlaK = MathF.Pow(flaKBodies * 204 / 300, 0.9f) * OverallChemModifier * 3000;
-                flaKPercentage = DamageDict[DamageType.FlaK] / maxFlaK;
+                flakDamageEquivalent = MathF.Pow(GaugeCoefficient * flaKBodies * 204 / 300, 0.9f) * OverallChemModifier;
+                DamageDict[DamageType.FlaK] = flakDamageEquivalent * 3000;
             }
 
             float fragBodies = BodyModuleCounts[4];
-            float maxFrag;
-            float fragPercentage = 0;
+            float fragDamageEquivalent = 0;
             if (fragBodies > 0)
             {
-                DamageDict[DamageType.Frag] = GaugeCoefficient * fragBodies * OverallChemModifier * 60000;
-                maxFrag = fragBodies * OverallChemModifier * 60000;
-                fragPercentage = DamageDict[DamageType.Frag] / maxFrag;
+                fragDamageEquivalent = GaugeCoefficient * fragBodies * OverallChemModifier;
+                DamageDict[DamageType.Frag] = fragDamageEquivalent * 60000;
             }
 
             float heBodies = BodyModuleCounts[5];
-            float maxHE;
-            float hePercentage = 0;
+            float heDamageEquivalent = 0;
             if (heBodies > 0)
             {
-                DamageDict[DamageType.HE] = MathF.Pow(GaugeCoefficient * heBodies * 24 / 30, 0.9f) * OverallChemModifier * 3000;
-                maxHE = MathF.Pow(heBodies * 24 / 30, 0.9f) * OverallChemModifier * 3000;
-                hePercentage = DamageDict[DamageType.HE] / maxHE;
+                heDamageEquivalent = MathF.Pow(GaugeCoefficient * heBodies * 24 / 30, 0.9f) * OverallChemModifier;
+                DamageDict[DamageType.HE] = heDamageEquivalent * 3000;
             }
 
-            // Weighted average of damage percentages
-            DamageDict[DamageType.Pendepth] = 
-                (flaKPercentage * flaKBodies + fragPercentage * fragBodies + hePercentage * heBodies)
-                / (flaKBodies + fragBodies + heBodies);
+            // Weighted average of damage equivalents * 1 000 000 for easier reading
+            DamageDict[DamageType.Pendepth] =
+                (flakDamageEquivalent * flaKBodies + fragDamageEquivalent * fragBodies + heDamageEquivalent * heBodies)
+                / (flaKBodies + fragBodies + heBodies)
+                * 1000000;
         }
 
 
