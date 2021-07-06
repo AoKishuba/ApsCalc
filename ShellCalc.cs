@@ -489,6 +489,7 @@ namespace ApsCalc
                         shellUnderTesting.CalculateDpsByType(DamageType, TargetAC, TargetArmorScheme);
                         if (DamageType == DamageType.Pendepth)
                         {
+                            shellUnderTesting.CalculateDpsByType(DamageType.Kinetic, TargetAC, TargetArmorScheme);
                             shellUnderTesting.CalculateDpsByType(DamageType.FlaK, TargetAC, TargetArmorScheme);
                             shellUnderTesting.CalculateDpsByType(DamageType.Frag, TargetAC, TargetArmorScheme);
                             shellUnderTesting.CalculateDpsByType(DamageType.HE, TargetAC, TargetArmorScheme);
@@ -750,6 +751,7 @@ namespace ApsCalc
                             shellUnderTestingBelt.CalculateDpsByTypeBelt(DamageType, TargetAC, TargetArmorScheme);
                             if (DamageType == DamageType.Pendepth)
                             {
+                                shellUnderTestingBelt.CalculateDpsByTypeBelt(DamageType.Kinetic, TargetAC, TargetArmorScheme);
                                 shellUnderTestingBelt.CalculateDpsByTypeBelt(DamageType.FlaK, TargetAC, TargetArmorScheme);
                                 shellUnderTestingBelt.CalculateDpsByTypeBelt(DamageType.Frag, TargetAC, TargetArmorScheme);
                                 shellUnderTestingBelt.CalculateDpsByTypeBelt(DamageType.HE, TargetAC, TargetArmorScheme);
