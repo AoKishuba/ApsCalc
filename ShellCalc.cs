@@ -49,7 +49,6 @@ namespace ApsCalc
         /// <param name="fixedModuleTotal">Minimum number of modules on every shell</param>
         /// <param name="variableModuleIndices">Module indices of modules to be used in varying numbers in testing</param>
         /// <param name="maxGPInput">Max desired number of gunpowder casings</param>
-        /// <param name="boreEvacuator">True if bore evacuator is used</param>
         /// <param name="maxRGInput">Max desired number of railgun casings</param>
         /// <param name="maxShellLengthInput">Max desired shell length in mm</param>
         /// <param name="maxDrawInput">Max desired rail draw</param>
@@ -71,7 +70,6 @@ namespace ApsCalc
             float fixedModuleTotal,
             int[] variableModuleIndices,
             float maxGPInput,
-            bool boreEvacuator,
             float maxRGInput,
             float maxShellLengthInput,
             float maxDrawInput,
@@ -94,7 +92,6 @@ namespace ApsCalc
             FixedModuleTotal = fixedModuleTotal;
             VariableModuleIndices = variableModuleIndices;
             MaxGPInput = maxGPInput;
-            BoreEvacuator = boreEvacuator;
             MaxRGInput = maxRGInput;
             MaxShellLength = maxShellLengthInput;
             MaxDrawInput = maxDrawInput;
@@ -118,7 +115,6 @@ namespace ApsCalc
         public float FixedModuleTotal { get; }
         public int[] VariableModuleIndices { get; }
         public float MaxGPInput { get; }
-        public bool BoreEvacuator { get; }
         public float MaxRGInput { get; }
         public float MaxShellLength { get; }
         public float MaxDrawInput { get; }
@@ -317,7 +313,6 @@ namespace ApsCalc
             {
                 Shell shellUnderTesting = new();
                 shellUnderTesting.BarrelCount = BarrelCount;
-                shellUnderTesting.BoreEvacuator = BoreEvacuator;
                 shellUnderTesting.HeadModule = Module.AllModules[counts.HeadIndex];
                 shellUnderTesting.BaseModule = BaseModule;
                 FixedModuleCounts.CopyTo(shellUnderTesting.BodyModuleCounts, 0);
@@ -598,7 +593,6 @@ namespace ApsCalc
                         {
                             Shell shellUnderTestingBelt = new();
                             shellUnderTestingBelt.BarrelCount = BarrelCount;
-                            shellUnderTestingBelt.BoreEvacuator = BoreEvacuator;
                             shellUnderTestingBelt.HeadModule = Module.AllModules[counts.HeadIndex];
                             shellUnderTestingBelt.BaseModule = BaseModule;
                             FixedModuleCounts.CopyTo(shellUnderTestingBelt.BodyModuleCounts, 0);
@@ -1081,10 +1075,6 @@ namespace ApsCalc
 
 
             Console.WriteLine("Max GP casings: " + MaxGPInput);
-            if (MaxGPInput > 0 && BoreEvacuator)
-            {
-                Console.WriteLine("Bore evacuator equipped");
-            }
             Console.WriteLine("Max RG casings: " + MaxRGInput);
             Console.WriteLine("Max draw: " + MaxDrawInput);
             Console.WriteLine("Max recoil: " + MaxRecoilInput);
@@ -1291,10 +1281,6 @@ namespace ApsCalc
 
 
             writer.WriteLine("Max GP casings: " + MaxGPInput);
-            if (MaxGPInput > 0 && BoreEvacuator)
-            {
-                writer.WriteLine("Bore evacuator equipped");
-            }
             writer.WriteLine("Max RG casings: " + MaxRGInput);
             writer.WriteLine("Max draw: " + MaxDrawInput);
             writer.WriteLine("Max recoil: " + MaxRecoilInput);

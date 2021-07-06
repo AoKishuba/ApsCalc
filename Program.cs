@@ -19,7 +19,6 @@ namespace ApsCalc
         public float MinModulecount;
         public int[] VariableModuleIndices;
         public float MaxGPCasingCount;
-        public bool UseEvacuator;
         public float MaxRGCasingCount;
         public float MaxLength;
         public float MaxDraw;
@@ -538,34 +537,6 @@ namespace ApsCalc
             float maxGPCasingCount = maxGunPowderCasingInput;
 
 
-            // Get bore evacuator
-            bool useEvacuator = true;
-            if (maxGunPowderCasingInput > 0)
-            {
-                Console.WriteLine("\nBore evacuator?\nEnter 'y' or 'n'.");
-                while (true)
-                {
-                    input = Console.ReadLine();
-                    if (input.ToLower() == "y")
-                    {
-                        useEvacuator = true;
-                        Console.WriteLine("\nUsing bore evacuator.\n");
-                        break;
-                    }
-                    else if (input.ToLower() == "n")
-                    {
-                        useEvacuator = false;
-                        Console.WriteLine("\nNo evacuator.\n");
-                        break;
-                    }
-                    else
-                    {
-                        Console.WriteLine("\nERROR: Enter 'y' to include bore evacuator, or 'n' to omit evacuator.\n");
-                    }
-                }
-            }
-
-
             // Get maximum RG casing count
             int maxRailgunCasingInput;
             Console.WriteLine("\nEnter maximum number of RG casings from 0 thru " + maxOtherCount + ": ");
@@ -985,7 +956,6 @@ namespace ApsCalc
             tP.MinModulecount = minModulecount;
             tP.VariableModuleIndices = variableModuleIndices;
             tP.MaxGPCasingCount = maxGPCasingCount;
-            tP.UseEvacuator = useEvacuator;
             tP.MaxRGCasingCount = maxRGCasingCount;
             tP.MaxDraw = maxDraw;
             tP.MaxRecoil = maxRecoil;
@@ -1062,7 +1032,6 @@ namespace ApsCalc
                                 tP.MinModulecount,
                                 tP.VariableModuleIndices,
                                 tP.MaxGPCasingCount,
-                                tP.UseEvacuator,
                                 tP.MaxRGCasingCount,
                                 tP.MaxLength,
                                 tP.MaxDraw,
@@ -1096,7 +1065,6 @@ namespace ApsCalc
                                 tP.MinModulecount,
                                 tP.VariableModuleIndices,
                                 tP.MaxGPCasingCount,
-                                tP.UseEvacuator,
                                 tP.MaxRGCasingCount,
                                 tP.MaxLength,
                                 tP.MaxDraw,
@@ -1131,7 +1099,6 @@ namespace ApsCalc
                             tP.MinModulecount,
                             tP.VariableModuleIndices,
                             tP.MaxGPCasingCount,
-                            tP.UseEvacuator,
                             tP.MaxRGCasingCount,
                             tP.MaxLength,
                             tP.MaxDraw,
@@ -1164,7 +1131,6 @@ namespace ApsCalc
                             tP.MinModulecount,
                             tP.VariableModuleIndices,
                             tP.MaxGPCasingCount,
-                            tP.UseEvacuator,
                             tP.MaxRGCasingCount,
                             tP.MaxLength,
                             tP.MaxDraw,

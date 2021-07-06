@@ -36,7 +36,6 @@ namespace ApsCalc
 
         // Gunpowder and Railgun casing counts
         public float GPCasingCount { get; set; }
-        public bool BoreEvacuator { get; set; }
         public float RGCasingCount { get; set; }
 
 
@@ -488,30 +487,6 @@ namespace ApsCalc
         /// </summary>
         public void CalculateCoolerVolumeAndCost()
         {
-            float multiBarrelPenalty;
-            if (BarrelCount > 1f)
-            {
-                multiBarrelPenalty = 1f + (BarrelCount - 1f) * 0.2f;
-            }
-            else
-            {
-                multiBarrelPenalty = 1f;
-            }
-
-            float boreEvacuatorBonus;
-            if (BoreEvacuator)
-            {
-                boreEvacuatorBonus =
-                    0.15f
-                    / (0.35355f / MathF.Sqrt(Gauge / 1000f))
-                    * multiBarrelPenalty
-                    / BarrelCount;
-            }
-            else
-            {
-                boreEvacuatorBonus = 0;
-            }
-
             float coolerVolume;
             float coolerCost;
 
@@ -519,24 +494,12 @@ namespace ApsCalc
             float coolerCostBelt;
             if (GPCasingCount > 0)
             {
-                coolerVolume =
-                    (CooldownTime * multiBarrelPenalty / ReloadTime - boreEvacuatorBonus)
-                    / (1f + BarrelCount * 0.05f)
-                    / multiBarrelPenalty
-                    * MathF.Sqrt(Gauge / 1000f)
-                    / 0.176775f;
-
+                coolerVolume = CooldownTime * MathF.Sqrt(Gauge / 1000) / ReloadTime / (1 + BarrelCount * 0.05f) / 0.176775f;
                 coolerCost = coolerVolume * 50f;
 
                 if (TotalLength <= 1000f)
                 {
-                    coolerVolumeBelt =
-                    (CooldownTime * multiBarrelPenalty / ReloadTimeBelt - boreEvacuatorBonus)
-                    / (1f + BarrelCount * 0.05f)
-                    / multiBarrelPenalty
-                    * MathF.Sqrt(Gauge / 1000f)
-                    / 0.176775f;
-
+                    coolerVolumeBelt = coolerVolume * ReloadTime / ReloadTimeBelt;
                     coolerCostBelt = coolerVolumeBelt * 50f;
                 }
                 else
@@ -553,11 +516,11 @@ namespace ApsCalc
                 coolerCostBelt = 0;
             }
 
-            CoolerVolume = MathF.Max(coolerVolume, 0);
-            CoolerCost = MathF.Max(coolerCost, 0);
+            CoolerVolume = coolerVolume;
+            CoolerCost = coolerCost;
 
-            CoolerVolumeBelt = MathF.Max(coolerVolumeBelt, 0);
-            CoolerCostBelt = MathF.Max(coolerCostBelt, 0);
+            CoolerVolumeBelt = coolerVolumeBelt;
+            CoolerCostBelt = coolerCostBelt;
         }
 
         /// <summary>

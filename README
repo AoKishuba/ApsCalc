@@ -25,7 +25,6 @@ Solid Body and Chem Body for pendepth.
 
 Max Gunpowder Casings: maximum allowed number of GP casings. Note that GP casing length is adjustable up to two decimal places, although a decimal casing counts as
 a complete module for module count limit purposes.
-Bore Evacuator: whether a bore evacuator will be used. A bore evacuator is an APS component which forms part of the barrel and increases the efficiency of coolers.
 
 Max Railgun Casings: maximum allowed number of RG casings. RG casings increase the max rail draw of the shell, but are not part of the projectile, and so do not
 reduce the shell velocity for a given amount of charge. This means a shell with RG casings can be "supercharged" to go faster than it would under its own max draw.
