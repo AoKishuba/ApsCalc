@@ -458,7 +458,7 @@ namespace ApsCalc
                                     }
 
                                     // Determine which half of range to continue testing
-                                    // Midrange upper will equal a lot of time for pendepth
+                                    // Midrange upper will equal 0 a lot of time for pendepth
                                     if (midRangeUpperScore == 0)
                                     {
                                         bottomOfRange = midRangeUpper;
@@ -873,53 +873,108 @@ namespace ApsCalc
         {
             foreach (Shell rawShell in shellBag)
             {
-                if (rawShell.IsBelt)
+                if (TestType == 0)
                 {
-                    if (rawShell.DpsDict[DamageType] > TopBelt.DpsDict[DamageType])
+                    if (rawShell.IsBelt)
                     {
-                        TopBelt = rawShell;
+                        if (rawShell.DpsPerVolumeDict[DamageType] > TopBelt.DpsPerVolumeDict[DamageType])
+                        {
+                            TopBelt = rawShell;
+                        }
+                    }
+                    else if (rawShell.TotalLength <= 1000f)
+                    {
+                        if (rawShell.DpsPerVolumeDict[DamageType] > Top1000.DpsPerVolumeDict[DamageType])
+                        {
+                            Top1000 = rawShell;
+                        }
+                    }
+                    else if (rawShell.TotalLength <= 2000f)
+                    {
+                        if (rawShell.DpsPerVolumeDict[DamageType] > Top2000.DpsPerVolumeDict[DamageType])
+                        {
+                            Top2000 = rawShell;
+                        }
+                    }
+                    else if (rawShell.TotalLength <= 3000f)
+                    {
+                        if (rawShell.DpsPerVolumeDict[DamageType] > Top3000.DpsPerVolumeDict[DamageType])
+                        {
+                            Top3000 = rawShell;
+                        }
+                    }
+                    else if (rawShell.TotalLength <= 4000f)
+                    {
+                        if (rawShell.DpsPerVolumeDict[DamageType] > Top4000.DpsPerVolumeDict[DamageType])
+                        {
+                            Top4000 = rawShell;
+                        }
+                    }
+                    else if (rawShell.TotalLength <= 6000f)
+                    {
+                        if (rawShell.DpsPerVolumeDict[DamageType] > Top6000.DpsPerVolumeDict[DamageType])
+                        {
+                            Top6000 = rawShell;
+                        }
+                    }
+                    else if (rawShell.TotalLength <= 8000f)
+                    {
+                        if (rawShell.DpsPerVolumeDict[DamageType] > Top8000.DpsPerVolumeDict[DamageType])
+                        {
+                            Top8000 = rawShell;
+                        }
                     }
                 }
-                else if (rawShell.TotalLength <= 1000f)
+                else if (TestType == 1)
                 {
-                    if (rawShell.DpsDict[DamageType] > Top1000.DpsDict[DamageType])
+                    if (rawShell.IsBelt)
                     {
-                        Top1000 = rawShell;
+                        if (rawShell.DpsPerCostDict[DamageType] > TopBelt.DpsPerCostDict[DamageType])
+                        {
+                            TopBelt = rawShell;
+                        }
                     }
-                }
-                else if (rawShell.TotalLength <= 2000f)
-                {
-                    if (rawShell.DpsDict[DamageType] > Top2000.DpsDict[DamageType])
+                    else if (rawShell.TotalLength <= 1000f)
                     {
-                        Top2000 = rawShell;
+                        if (rawShell.DpsPerCostDict[DamageType] > Top1000.DpsPerCostDict[DamageType])
+                        {
+                            Top1000 = rawShell;
+                        }
                     }
-                }
-                else if (rawShell.TotalLength <= 3000f)
-                {
-                    if (rawShell.DpsDict[DamageType] > Top3000.DpsDict[DamageType])
+                    else if (rawShell.TotalLength <= 2000f)
                     {
-                        Top3000 = rawShell;
+                        if (rawShell.DpsPerCostDict[DamageType] > Top2000.DpsPerCostDict[DamageType])
+                        {
+                            Top2000 = rawShell;
+                        }
                     }
-                }
-                else if (rawShell.TotalLength <= 4000f)
-                {
-                    if (rawShell.DpsDict[DamageType] > Top4000.DpsDict[DamageType])
+                    else if (rawShell.TotalLength <= 3000f)
                     {
-                        Top4000 = rawShell;
+                        if (rawShell.DpsPerCostDict[DamageType] > Top3000.DpsPerCostDict[DamageType])
+                        {
+                            Top3000 = rawShell;
+                        }
                     }
-                }
-                else if (rawShell.TotalLength <= 6000f)
-                {
-                    if (rawShell.DpsDict[DamageType] > Top6000.DpsDict[DamageType])
+                    else if (rawShell.TotalLength <= 4000f)
                     {
-                        Top6000 = rawShell;
+                        if (rawShell.DpsPerCostDict[DamageType] > Top4000.DpsPerCostDict[DamageType])
+                        {
+                            Top4000 = rawShell;
+                        }
                     }
-                }
-                else if (rawShell.TotalLength <= 8000f)
-                {
-                    if (rawShell.DpsDict[DamageType] > Top8000.DpsDict[DamageType])
+                    else if (rawShell.TotalLength <= 6000f)
                     {
-                        Top8000 = rawShell;
+                        if (rawShell.DpsPerCostDict[DamageType] > Top6000.DpsPerCostDict[DamageType])
+                        {
+                            Top6000 = rawShell;
+                        }
+                    }
+                    else if (rawShell.TotalLength <= 8000f)
+                    {
+                        if (rawShell.DpsPerCostDict[DamageType] > Top8000.DpsPerCostDict[DamageType])
+                        {
+                            Top8000 = rawShell;
+                        }
                     }
                 }
             }
@@ -997,7 +1052,7 @@ namespace ApsCalc
             // Check non-damage body mods for inclusion
             for (int index = 6; index < Module.AllModules.Length; index++)
             {
-                if (Module.AllModules[index].ModulePosition == Module.Position.Middle && 
+                if (Module.AllModules[index].ModulePosition == Module.Position.Middle &&
                     (FixedModuleCounts[index] > 0 || VariableModuleIndices.Contains(index)))
                 {
                     modsToShow.Add(index);
